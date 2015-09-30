@@ -79,7 +79,9 @@ terminal
     T_TILDE,
     T_TRUE,
     T_WHILE,
-    T_VOID
+    T_VOID,
+    T_NEW,
+    T_DELETE
     ;
 
 terminal String
@@ -148,7 +150,9 @@ non terminal
     Pointer,
     OptArrayList,
     ArrayList,
-    Array
+    Array,
+    NewStmt,
+    DeleteStmt
     ;
 
 non terminal String    
@@ -494,6 +498,8 @@ Stmt ::=            VarDecl
     |               ReturnStmt
     |               ReadStmt
     |               WriteStmt
+    |               NewStmt
+    |               DeleteStmt
     ;
 
 
@@ -878,4 +884,10 @@ Designator3 ::=     T_LPAREN Expr:_2 T_RPAREN
                     {:
                         RESULT = ((MyParser) parser).DoDesignator3_ID (_1);
                     :}
+    ;
+
+NewStmt ::=         T_NEW Designator OptCtorCall T_SEMI
+    ;
+
+DeleteStmt ::=      T_DELETE Designator T_SEMI
     ;

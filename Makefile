@@ -4,7 +4,7 @@
 # University of California, San Diego
 #---------------------------------------------------------------------
 
-JAVACUP=$(PUBLIC)/Tools/java-cup-v11a.jar
+JAVACUP=/Users/Darmadoo/Desktop/cse131/Tools/java-cup-v11a.jar
 
 SOURCES:sh = find src -type f -name '*.java' ! -name 'RC.java'
 
