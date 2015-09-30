@@ -891,3 +891,13 @@ NewStmt ::=         T_NEW Designator OptCtorCall T_SEMI
 
 DeleteStmt ::=      T_DELETE Designator T_SEMI
     ;
+
+UnarySign ::=       T_PLUS
+                    {:
+                        RESULT = "+";
+                    :}
+    |               T_MINUS
+                    {:
+                        RESULT = "-";
+                    :}
+    ;
