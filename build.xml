@@ -1,0 +1,103 @@
+<!-- SEE THE INSTRUCTIONS below for how to use this file with Eclipse --> 
+
+<project name="131Project" default="compile" basedir=".">
+    <property name="src" location="${basedir}\src" />
+    <property name="bin" location="${basedir}\bin" />
+    <property name="lib" location="${basedir}\lib" />
+    <property name="javacup" location="${basedir}/lib/java-cup-v11a.jar" />
+    <description>  Ant build file for CSE 131 Project  </description>
+
+    <!-- Check that the rc.cup file has been updated before generating a new parser --> 
+    <uptodate property="parser.notRequired" srcfile="${src}\rc.cup" targetfile="${src}\parser.java"/>
+
+    <target name="compile" unless="parser.notRequired">
+        <java jar="${javacup}" input="${src}\rc.cup" dir="${src}" fork="true" failonerror="true"/>
+    </target>
+
+    <target name="clean">
+        <delete dir="${bin}"/>
+        <delete file="${src}\parser.java"/>
+    	<delete file="${src}\sym.java"/>
+    </target>
+</project>
+
+
+<!--
+Instructions for using Eclipse to work on the project:
+
+1) Open eclipse and start a new project. 
+
+2) Grab the starter code from the public directory and copy all files within it into your 
+   project directory (including the src/ subdirectory).
+
+3) Create a 'lib' subdirectory in your project directory and copy the java cup jar into
+   this 'lib' directory. After this step, make sure to refresh your project (F5).
+
+4) Right-click on your project and go to Build-Path -> Configure Build Path
+
+5) Click on Libraries Tab. Add JARs and then java-cup-v11a.jar, which should be under 'lib' 
+   in the tree. Click ok.
+
+6) Right click on the build.xml file in your project and go to Run As -> Ant Build. Now 
+   refresh your project and you should have no errors. (What this does is use the JAR file
+   and rc.cup to generate parser.java which is inherited from MyParser.java)
+
+7) Now every time you want to generate a new parser (i.e. you changed your rc.cup file), 
+   you just have to run the ant build as described in step 6. Let's make this automatic though.
+
+8) Right click on the project and click Properties. Go to the Builders section and click 
+   new -> Ant Builder -> Ok.
+
+9) Name the builder, "ParserBuild". On the Main tab, under Build file select 
+   Browse Workspace -> build.xml.
+
+10) For the Base directory hit browse workspace and hit ok.
+
+11) Under the Refresh tab. Click "Refresh resources upon completion" for the entire workspace.
+
+12) Under the Targets tab, make sure the targets for "After a Clean", "Manual build", and 
+    "Auto build" are set only to the (default) compile target. The "During a Clean" target 
+    should be set only to the clean target. Now everytime you change rc.cup and save it. 
+    Eclipse will automatically re-generate parser.java using your modified rc.cup.
+
+13) Finally, you set up the run configuration to run your compiler on some test file. To 
+    do this, right click on the project and select the options:
+    Run As -> Run Configurations ... The Run configuration menu/wizard should pop up.
+
+14) Rick click on "Java Application" and select "New..".
+
+15) Within the Main tab, name your run configuration in the Name field to whatever you 
+    want (perhaps cse131_compiler). In the project field, be sure that your project is 
+    filled in the textfield. If not, select "Browse..." and choose your compiler project.
+
+16) For the Main class field. Select the "Search..." button and make sure to select 
+    "RC - (default package)".
+
+17) Now click on the Arguments tab, and click on the "Variables.." button that 
+    corresponds to the Program arguments text box. Of the many variables you can select, 
+    choose "string_prompt". Alternatively, you can enter: ${string_prompt}, into the text 
+    box. Select Apply and then select run.
+
+18) You should be good to go. Try the program with the new.rc as input and you should see 
+    the syntax error print out. (Granted you didn't do phase 0 yet)". You can use the 
+    "External Tools" button (The play button with the briefcase next to it) to re-run the 
+    generation of the parser.java file and you can use the "Run" button to run your run 
+    configuration you just created (this will prompt you a string. this is where you enter 
+    a test file such as scope.rc). If you want debug messages like line numbers, add 
+    "-debug" to the arguments passed to the string prompt.
+
+19) Additionally, if you add breakpoints inside some of your java files such as 
+    MyParser.java, you can use the "Debug" button and use the same run configuration you 
+    create to debug your compiler which will become very useful in the near future.
+
+
+Some students run into issues at Step 7 of the instructions. Here are some of the 
+recommended fixes that might help:
+
+1. Use Eclipse Galileo 3.5 or later (verified up to Eclipse Luna 4.4)
+2. Set JAVA_HOME environment variable to JDK directory instead of JRE directory
+    ->   Environment Variable -> System Variable -> New
+    ->   If JAVA_HOME variable does not exist yet, set a new entry
+          Variable Name: JAVA_HOME
+          Variable Value: "[Path to to your JDK directory]"  
+-->

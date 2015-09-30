@@ -1,0 +1,38 @@
+In this subdirectory is the base code you will use to build your compiler.
+In lecture you will learn that a basic compiler handles lexing, parsing
+sementaic checking and code generation.  This code handles the first half
+of that list.  Specifically:
+
+* lexing, 
+  Lexing breaks down the input into recognized tokens.  For instance, 
+  'if(X<5)' becomes if, (, X, <, 5, ).  In this starter code, the lexing
+  is done directly in the code rather than using a tool such as JFlex.   
+  This is not because the code is superior, rather because time did not 
+  permit integrating JFlex into the source code.  
+
+* parsing 
+  Parsing takes the tokens into valid statements as defined by the language.
+  For instance, parsing determines that 'while (if(X>5))' is not a valid
+  while statement.  In this starter code, the parsing is done using a tool
+  called CUP.  See the file CUP_Overview.txt for an explanation of how
+  CUP works.
+
+* basic semantic checking (specifically scope issues).  
+  Basic semantic checking involve visibility and scoping of variables, 
+  constants and functions.  Semantic checking will determine that 
+  'if(X<5)' X has not been declared.  Later semantic checking (that you 
+  provide) will determine if X can actually be compared to the number 5.
+
+
+In this code, the compiler can be run by entering code through standard 
+input or through files listed in the command line.  Standard input 
+(terminated by cntrl-D) does not sound helpful but it a useful method for
+quickly testing a specific code snippet.  Through the command line, many
+files can be listed.  Files are read in the order listed.  A file may
+not be used more than once.  Any command line argument beginning with "-"
+is ignored.
+
+The main program can be found in the class RC.
+
+Errors are printed through the one instance of the class ErrorPrinter defined
+in the class MyParser.  Actual error messages are listed the class ErrorMsg.

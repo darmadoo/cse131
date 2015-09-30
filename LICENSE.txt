@@ -1,0 +1,86 @@
+CSE 131 Reduced-C Compiler Project
+Copyright (C) 2008-2015 Garo Bournoutian and Rick Ord
+University of California, San Diego
+
+END USER LICENSE AGREEMENT
+
+Please read this END USER LICENSE AGREEMENT carefully before copying, 
+downloading, or using any portion of the Software.
+
+If you do not read and agree to be bound by the terms and conditions 
+defined in this document, you are not permitted to use the Software or 
+any portion of it.
+
+DEFINITIONS
+
+The following definitions apply to the terms and conditions included 
+in this EULA.
+
+The term "Software" means the CSE 131 Reduced-C software framework, 
+its modules, classes, components, all program files, source code, and 
+example code which are part of the Software package, as well as any 
+portion of them. This includes, but is not limited to, Java source 
+files, CUP grammar files, assembly code files, Makefiles, and scripts.
+
+The term "Authors" means Garo Bournoutian and Rick Ord.
+
+TERMS OF AGREEMENT
+
+This is a legal agreement between you, the end user, and the Authors 
+of the Software. By copying, downloading, or using the Software, you 
+are consenting to be bound by this agreement. If you do not agree to 
+those terms, you may not use the Software for any purposes. If any 
+provision of this agreement is invalid or unenforceable under 
+applicable law, the remaining provisions of this agreement will remain 
+valid and fully enforceable.
+
+The Software is copyrighted and protected by copyright laws and 
+international treaties. You cannot transfer, sublicense, or resell 
+the license unless you obtain explicit written authorization from one 
+of the Authors. All rights not explicitly granted by this agreement 
+are reserved.
+
+The Software source code is provided to you, the end user, under this
+license agreement, and does not constitute transfer of any legal 
+ownership to the Software or its source code. The Software and its 
+source code are provided to you for private, non-commercial use. You 
+may only use the Software and its source code according to the 
+following conditions:
+
+- This license agreement and all copyright notices shall not be modified 
+  and must be preserved in all copies or substantial portions of the 
+  Software.
+
+- You may examine, use, copy, debug, modify, or build derivative work 
+  upon the Software and its source code.
+
+- You may not publish, distribute, sublicense, and/or sell copies of the
+  Software, nor make the Software, its source code, and/or any derivative 
+  code publicly available.
+
+TERMINATION
+
+Any one of the Authors may terminate this agreement at any time and 
+without prior notice if you violate it or any conditions contained herein. 
+As a result the Authors may cancel your license. You must immediately 
+stop using the Software upon termination. Termination of this agreement 
+will not limit any other rights of the Authors. Any provision of this 
+agreement that is intended to survive termination of this agreement will 
+survive termination.
+
+EXPORT REGULATIONS
+
+The Software may be subject to export or import regulations, and you 
+agree to comply strictly with all such laws and regulations.
+
+DISCLAIMER OF WARRANTY
+
+The Software is provided "as is", without warranty of any kind, express or
+implied, including but not limited to the warranties of merchantability,
+fitness for a particular purpose, and noninfringement. In no event shall the
+Authors be liable for any claim, damages, or other liability, whether in an
+action of contract, tort, or otherwise, arising from, out of, or in 
+connection with the Software or the use or other dealings in the Software.
+
+If you have any questions regarding the EULA please contact us by 
+e-mail at: garo@ucsd.edu
