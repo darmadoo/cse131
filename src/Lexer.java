@@ -7,6 +7,8 @@
 import 	java.util.*;
 import	java.io.*;
 
+import static java.lang.Integer.parseInt;
+
 class Lexer
 {
 	//----------------------------------------------------------------
@@ -291,8 +293,8 @@ class Lexer
             else
             {
               ungetChar (c);
-              token = new Token (sym.T_INT_LITERAL,
-                  new String (buffer));
+			  String temp = Integer.toString(parseInt(new String(buffer), 16));
+			  token = new Token (sym.T_INT_LITERAL, temp);
             }
             break;
 
@@ -306,8 +308,8 @@ class Lexer
             else
             {
               ungetChar (c);
-              token = new Token (sym.T_INT_LITERAL,
-                  new String (buffer));
+			  String temp = Integer.toString(parseInt(new String(buffer), 8));
+			  token = new Token (sym.T_INT_LITERAL, temp);
             }
             break;
 
