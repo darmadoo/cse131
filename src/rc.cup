@@ -235,7 +235,7 @@ ExternDecl ::=      T_EXTERN DecoratedBasicType:_2 T_ID:_3 OptArrayList:_4
 
 VarDecl ::=         OptStatic:_1 DecoratedType:_2 T_ID:_3 OptArrayList:_4 OptInit:_5
                     {:
-                        ((MyParser) parser).DoVarDecl (_3);
+                        ((MyParser) parser).DoVarDecl (_3, _2);
                     :}
                     T_SEMI
     |               OptStatic:_1 T_AUTO T_ID:_3 T_ASSIGN Expr:_5
@@ -878,7 +878,7 @@ Designator3 ::=     T_LPAREN Expr:_2 T_RPAREN
                     :}
     |               T_COLONCOLON T_ID:_1
                     {:
-                        RESULT = ((MyParser) parser).DoDesignator3_ID (_1);
+                        RESULT = ((MyParser) parser).DoDesignator4_ID (_1);
                     :}
     |               T_ID:_1
                     {:

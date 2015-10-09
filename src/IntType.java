@@ -8,5 +8,5 @@ class IntType extends NumericType{
         super(strName, size);
     }
 
-    public boolean  isInt()	    { return false; }
+    public boolean  isInt()	    { return true; }
 }

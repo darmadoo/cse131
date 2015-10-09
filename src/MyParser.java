@@ -166,6 +166,21 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
+	void DoVarDecl(String id, Type t)
+	{
+		if (m_symtab.accessLocal(id) != null)
+		{
+			m_nNumErrors++;
+			m_errors.print(Formatter.toString(ErrorMsg.redeclared_id, id));
+		}
+
+		VarSTO sto = new VarSTO(id, t);
+		m_symtab.insert(sto);
+	}
+
+	//----------------------------------------------------------------
+	//
+	//----------------------------------------------------------------
 	void DoVarDecl(String id)
 	{
 		if (m_symtab.accessLocal(id) != null)
@@ -343,6 +358,16 @@ class MyParser extends parser
 			sto = new ErrorSTO(strID);
 		}
 
+		return sto;
+	}
+
+	//----------------------------------------------------------------
+	//
+	//----------------------------------------------------------------
+	STO DoDesignator4_ID(String strID)
+	{
+		STO sto;
+
 		if ((sto = m_symtab.accessGlobal(strID)) == null)
 		{
 			m_nNumErrors++;
@@ -352,6 +377,7 @@ class MyParser extends parser
 
 		return sto;
 	}
+
 
 	//----------------------------------------------------------------
 	//

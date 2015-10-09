@@ -66,4 +66,19 @@ abstract class Type
 	//----------------------------------------------------------------
 	public boolean  isError()   { return false; }
 	public boolean  isInt()	    { return false; }
+	public boolean  isFloat()	    { return false; }
+	public boolean  isBool()	    { return false; }
+	public boolean  isArray()	    { return false; }
+	public boolean  isStruct()	    { return false; }
+	public boolean  isPointer()	    { return false; }
+	public boolean  isNullPointer()	    { return false; }
+	public boolean  isVoid()	    { return false; }
+	public boolean  isComposite()	    { return false; }
+	public boolean  isNumeric()	    { return false; }
+	public boolean  isBasic()	    { return false; }
+
+
+	public Boolean isAssignableTo(Type t)	{return false; }
+	public Boolean isEquivalentTo(Type t)	{return false; }
+
 }

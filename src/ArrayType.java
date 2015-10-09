@@ -7,4 +7,22 @@ class ArrayType extends CompositeType {
     {
         super(strName, size);
     }
+
+    public Boolean isAssignableTo(Type t){
+        if(t.isArray()){
+            return true;
+        }
+
+        return false;
+    }
+
+    public Boolean isEquivalentTo(Type t){
+        if(t.isArray()){
+            return true;
+        }
+
+        return false;
+    }
+
+    public boolean  isArray()	    { return true; }
 }
