@@ -1,0 +1,13 @@
+function : int main() {
+int x; int y; int w;
+x= true;
+
+y = x++;
+w = x++ + --y;
+
+
+bool z;
+z++;
+
+return 0;
+}
