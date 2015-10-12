@@ -726,7 +726,12 @@ Expr6 ::=           Expr6:_1 Relation:_2 Expr7:_3
 
 Expr7 ::=           Expr7:_1 AddOp:_2 Expr8:_3
                     {:
+                      if(_2 == "+"){
                         RESULT = ((MyParser) parser).DoBinaryExpr (_1, new AddOp(), _3);
+                      }
+                      else{
+                        RESULT = ((MyParser) parser).DoBinaryExpr (_1, new MinusOp(), _3);
+                      }
                     :}
     |               Expr8:_1
                     {:
@@ -756,14 +761,32 @@ Expr8 ::=           Expr8:_1 MulOp:_2 Designator:_3
 
 
 Equality ::=        T_EQU
+                    {:
+                        RESULT = "==";
+                    :}
     |               T_NEQ
+                    {:
+                        RESULT = "!=";
+                    :}
     ;
 
 
 Relation ::=        T_LT
+                    {:
+                        RESULT = "<";
+                    :}
     |               T_GT
+                    {:
+                        RESULT = ">";
+                    :}
     |               T_LTE
+                    {:
+                        RESULT = "<=";
+                    :}
     |               T_GTE
+                    {:
+                        RESULT = ">=";
+                    :}
     ;
 
 

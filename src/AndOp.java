@@ -10,14 +10,14 @@ public class AndOp extends BooleanOp {
         Type bType = b.getType();
         if (!(aType instanceof BoolType) || !(bType instanceof BoolType)) {
             // error when one of them is not numeric
-            if(!(aType instanceof BoolType)){
-                return new ErrorSTO(Formatter.toString(ErrorMsg.error1w_Expr, aType.getName(), "&&", bType.getName()));
+            if(!(aType instanceof BoolType) && !(bType instanceof BoolType)){
+                return new ErrorSTO(Formatter.toString(ErrorMsg.error1w_Expr, aType.getName(), "&&", new BoolType("bool", 4).getName()));
             }
             else if(!(bType instanceof BoolType)){
                 return new ErrorSTO(Formatter.toString(ErrorMsg.error1w_Expr, bType.getName(), "&&", aType.getName()));
             }
             else{
-                return new ErrorSTO(Formatter.toString(ErrorMsg.error1w_Expr, aType.getName(), "&&", new BoolType("bool", 4).getName()));
+                return new ErrorSTO(Formatter.toString(ErrorMsg.error1w_Expr, aType.getName(), "&&", bType.getName()));
             }
         }
         else {

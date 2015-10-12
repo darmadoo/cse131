@@ -9,14 +9,14 @@ public class CaretOp extends BitwiseOp {
         Type bType = b.getType();
         if (!(aType instanceof IntType) || !(bType instanceof IntType)) {
             // error when one of them is not numeric
-            if(!(aType instanceof IntType)){
-                return new ErrorSTO(Formatter.toString(ErrorMsg.error1w_Expr, aType.getName(), "^", bType.getName()));
+            if(!(aType instanceof IntType && !(bType instanceof IntType))){
+                return new ErrorSTO(Formatter.toString(ErrorMsg.error1w_Expr, aType.getName(), "^", new IntType("int", 4).getName()));
             }
             else if(!(bType instanceof IntType)){
                 return new ErrorSTO(Formatter.toString(ErrorMsg.error1w_Expr, bType.getName(), "^", aType.getName()));
             }
             else{
-                return new ErrorSTO(Formatter.toString(ErrorMsg.error1w_Expr, aType.getName(), "^", new IntType("int", 4).getName()));
+                return new ErrorSTO(Formatter.toString(ErrorMsg.error1w_Expr, aType.getName(), "^", bType.getName()));
             }
         }
         else {
