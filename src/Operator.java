@@ -3,5 +3,4 @@
  */
 abstract class Operator {
 
-    abstract STO checkOperands(STO a, STO b);
 }

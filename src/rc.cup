@@ -841,7 +841,7 @@ Designator ::=      T_STAR Designator:_1
                     :}
     |               T_NOT Designator:_1
                     {:
-                        RESULT = _1;
+                        RESULT = ((MyParser) parser).DoUnaryExpr (_1, new NotOp());
                     :}
     |               T_SIZEOF T_LPAREN Designator:_2 T_RPAREN
                     {:
@@ -855,9 +855,15 @@ Designator ::=      T_STAR Designator:_1
                     {:
                         RESULT = _2;
                     :}
-    |               IncDecOp Designator:_2
+    |               IncDecOp:_1 Designator:_2
                     {:
-                        RESULT = _2;
+                      if(_1 == "++")
+                      {
+                        RESULT = ((MyParser) parser).DoUnaryExpr (_2, new IncOp());
+                      }
+                      else{
+                        RESULT = ((MyParser) parser).DoUnaryExpr (_2, new DecOp());
+                      }
                     :}
     |               Designator2:_1 
                     {:
@@ -878,9 +884,15 @@ Designator2 ::=     Designator2:_1 T_DOT T_ID:_3
                     {:
                         RESULT = _1;
                     :}
-    |               Designator2:_1 IncDecOp
+    |               Designator2:_1 IncDecOp:_2
                     {:
-                        RESULT = _1;
+                        if(_2 == "++")
+                        {
+                          RESULT = ((MyParser) parser).DoUnaryExpr (_1, new IncOp());
+                        }
+                        else{
+                          RESULT = ((MyParser) parser).DoUnaryExpr (_1, new DecOp());
+                    }
                     :}
     |               Designator2:_1 T_LPAREN OptExprList T_RPAREN
                     {:

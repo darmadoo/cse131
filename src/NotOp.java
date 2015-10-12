@@ -3,10 +3,6 @@
  */
 public class NotOp extends UnaryOp {
 
-    @Override
-    STO checkOperands(STO a, STO b) {
-        return null;
-    }
     // SHOULD ONLY TAKE IN ONE PARAMETER
     @Override
     STO checkOperands(STO a) {

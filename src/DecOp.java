@@ -1,11 +1,6 @@
 public class DecOp extends UnaryOp {
 
     @Override
-    STO checkOperands(STO a, STO b) {
-        return null;
-    }
-
-    @Override
     STO checkOperands(STO a) {
         Type aType = a.getType();
 

@@ -312,7 +312,7 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
-	STO DoBinaryExpr(STO a, Operator o, STO b) {
+	STO DoBinaryExpr(STO a, BinaryOp o, STO b) {
 
 		if(a instanceof ErrorSTO){
 			return a;
@@ -329,6 +329,24 @@ class MyParser extends parser
 			m_errors.print(result.getName());
 		}
 			//do stuff...
+		return result ;
+	}
+
+	//----------------------------------------------------------------
+	//
+	//----------------------------------------------------------------
+	STO DoUnaryExpr(STO a, UnaryOp o){
+		if(a instanceof ErrorSTO){
+			return a;
+		}
+
+		STO result = o.checkOperands(a);
+		if (result instanceof ErrorSTO) {
+			// handle propagating errors
+			m_nNumErrors++;
+			m_errors.print(result.getName());
+		}
+		//do stuff...
 		return result ;
 	}
 
