@@ -312,6 +312,29 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
+	STO DoBinaryExpr(STO a, Operator o, STO b) {
+
+		if(a instanceof ErrorSTO){
+			return a;
+		}
+
+		if(b instanceof ErrorSTO){
+			return b;
+		}
+
+		STO result = o.checkOperands(a, b);
+		if (result instanceof ErrorSTO) {
+			// handle propagating errors
+			m_nNumErrors++;
+			m_errors.print(result.getName());
+		}
+			//do stuff...
+		return result ;
+	}
+
+	//----------------------------------------------------------------
+	//
+	//----------------------------------------------------------------
 	STO DoFuncCall(STO sto)
 	{
 		if (!sto.isFunc())

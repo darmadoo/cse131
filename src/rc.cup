@@ -414,15 +414,15 @@ DecoratedBasicType ::= BasicType:_1 OptPointerList:_2
 
 BasicType ::=       T_INT
                     {:
-                        RESULT = null;  // gotta do something here!
+                        RESULT = new IntType();  // gotta do something here!
                     :}
     |               T_FLOAT
                     {:
-                        RESULT = null;  // gotta do something here!
+                        RESULT = new FloatType();  // gotta do something here!
                     :}
     |               T_BOOL
                     {:
-                        RESULT = null;  // gotta do something here!
+                        RESULT = new BoolType();  // gotta do something here!
                     :}
     ;
 
@@ -629,9 +629,9 @@ Expr ::=            Designator:_1 T_ASSIGN Expr
     ;
 
 
-Expr0 ::=           Expr0:_1 T_OR Expr1
+Expr0 ::=           Expr0:_1 T_OR Expr1:_3
                     {:
-                        RESULT = _1;
+                        RESULT = ((MyParser) parser).DoBinaryExpr (_1, new OrOp(), _3);
                     :}
     |               Expr1:_1
                     {:
@@ -640,9 +640,9 @@ Expr0 ::=           Expr0:_1 T_OR Expr1
     ;
 
 
-Expr1 ::=           Expr1:_1 T_AND Expr2
+Expr1 ::=           Expr1:_1 T_AND Expr2:_3
                     {:
-                        RESULT = _1;
+                        RESULT = ((MyParser) parser).DoBinaryExpr (_1, new AndOp(), _3);
                     :}
     |               Expr2:_1
                     {:
@@ -651,9 +651,9 @@ Expr1 ::=           Expr1:_1 T_AND Expr2
     ;
 
 
-Expr2 ::=           Expr2:_1 T_BAR Expr3
+Expr2 ::=           Expr2:_1 T_BAR Expr3:_3
                     {:
-                        RESULT = _1;
+                        RESULT = ((MyParser) parser).DoBinaryExpr (_1, new BarOp(), _3);
                     :}
     |               Expr3:_1
                     {:
@@ -662,9 +662,9 @@ Expr2 ::=           Expr2:_1 T_BAR Expr3
     ;
 
 
-Expr3 ::=           Expr3:_1 T_CARET Expr4
+Expr3 ::=           Expr3:_1 T_CARET Expr4:_3
                     {:
-                        RESULT = _1;
+                        RESULT = ((MyParser) parser).DoBinaryExpr (_1, new CaretOp(), _3);
                     :}
     |               Expr4:_1
                     {:
@@ -673,9 +673,9 @@ Expr3 ::=           Expr3:_1 T_CARET Expr4
     ;
 
 
-Expr4 ::=           Expr4:_1 T_AMPERSAND Expr5
+Expr4 ::=           Expr4:_1 T_AMPERSAND Expr5:_3
                     {:
-                        RESULT = _1;
+                        RESULT = ((MyParser) parser).DoBinaryExpr (_1, new AmpersandOp(), _3);
                     :}
     |               Expr5:_1
                     {:
@@ -708,7 +708,7 @@ Expr6 ::=           Expr6:_1 Relation Expr7
 
 Expr7 ::=           Expr7:_1 AddOp:_2 Expr8:_3
                     {:
-                        RESULT = _1;
+                        RESULT = ((MyParser) parser).DoBinaryExpr (_1, new AddOp(), _3);
                     :}
     |               Expr8:_1
                     {:
@@ -719,7 +719,16 @@ Expr7 ::=           Expr7:_1 AddOp:_2 Expr8:_3
 
 Expr8 ::=           Expr8:_1 MulOp:_2 Designator:_3
                     {:
-                        RESULT = _1;
+                      if(_2 == "*")
+                      {
+                        RESULT = ((MyParser) parser).DoBinaryExpr (_1, new StarOp(), _3);
+                      }
+                      else if(_2 == "%"){
+                        RESULT = ((MyParser) parser).DoBinaryExpr (_1, new ModOp(), _3);
+                      }
+                      else{
+                        RESULT = ((MyParser) parser).DoBinaryExpr (_1, new SlashOp(), _3);
+                      }
                     :}
     |               Designator:_1
                     {:
@@ -850,11 +859,11 @@ Designator3 ::=     T_LPAREN Expr:_2 T_RPAREN
                     :}
     |               T_INT_LITERAL:_1
                     {:
-                        RESULT = new ConstSTO (_1, null, 0);    // fix me!
+                        RESULT = new ConstSTO (_1, new IntType(), Integer.parseInt(_1, 10));    // fix me!
                     :}
     |               T_FLOAT_LITERAL:_1
                     {:
-                        RESULT = new ConstSTO (_1, null, 0.00);  // fix me!
+                        RESULT = new ConstSTO (_1, new FloatType(), Float.parseFloat(_1));  // fix me!
                     :}
     |               T_STR_LITERAL:_1
                     {:
@@ -862,11 +871,11 @@ Designator3 ::=     T_LPAREN Expr:_2 T_RPAREN
                     :}
     |               T_TRUE
                     {:
-                        RESULT = new ConstSTO ("true", null, 1);    // fix me!
+                        RESULT = new ConstSTO ("true", new BoolType(), 1);    // fix me!
                     :}
     |               T_FALSE
                     {:
-                        RESULT = new ConstSTO ("false", null, 0);   // fix me!
+                        RESULT = new ConstSTO ("false", new BoolType(), 0);   // fix me!
                     :}
     |               T_NULLPTR
                     {:

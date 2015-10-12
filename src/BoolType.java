@@ -3,6 +3,10 @@
  */
 class BoolType extends BasicType{
 
+    public BoolType(){
+        super("bool", 4);
+    }
+
     public BoolType(String strName, int size)
     {
         super(strName, size);

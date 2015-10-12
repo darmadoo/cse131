@@ -3,6 +3,11 @@
  */
 class IntType extends NumericType{
 
+
+    public IntType(){
+        super("int", 4);
+    }
+
     public IntType(String strName, int size)
     {
         super(strName, size);

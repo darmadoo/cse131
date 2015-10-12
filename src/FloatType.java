@@ -3,6 +3,10 @@
  */
 class FloatType extends NumericType {
 
+    public FloatType(){
+        super("float", 4);
+    }
+
     public FloatType(String strName, int size)
     {
         super(strName, size);
