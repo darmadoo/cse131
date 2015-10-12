@@ -11,11 +11,11 @@ public class NotEqualOp extends ComparisonOp {
             // error when one of them is not numeric
             return new ErrorSTO(Formatter.toString(ErrorMsg.error1b_Expr, aType.getName(), "!=", bType.getName()));
         }
-        else if (!(aType instanceof NumericType) || !(bType instanceof BoolType)) {
+        else if ((aType instanceof NumericType) && (bType instanceof BoolType)) {
             // error when one of them is not Bool
             return new ErrorSTO(Formatter.toString(ErrorMsg.error1b_Expr, aType.getName(), "!=", bType.getName()));
         }
-        else if (!(aType instanceof BoolType) || !(bType instanceof NumericType)) {
+        else if ((aType instanceof BoolType) && (bType instanceof NumericType)) {
             // error when one of them is not Bool
             return new ErrorSTO(Formatter.toString(ErrorMsg.error1b_Expr, aType.getName(), "!=", bType.getName()));
         }
