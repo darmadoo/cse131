@@ -9,7 +9,12 @@ public class ModOp extends ArithmeticOp {
         Type bType = b.getType();
         if (!(aType instanceof IntType) || !(bType instanceof IntType)) {
             // error when one of them is not numeric
-            return new ErrorSTO(Formatter.toString(ErrorMsg.error1w_Expr, aType.getName(), "%", "int"));
+            if(!(aType instanceof  IntType)){
+                return new ErrorSTO(Formatter.toString(ErrorMsg.error1w_Expr, aType.getName(), "%", "int"));
+            }
+            else{
+                return new ErrorSTO(Formatter.toString(ErrorMsg.error1w_Expr, bType.getName(), "%", "int"));
+            }
         } else {
             // Int % Int = Int
             return new ExprSTO(a.getName() + " % " + b.getName(), new IntType("int", 4));

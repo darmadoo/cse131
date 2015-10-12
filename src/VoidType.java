@@ -7,4 +7,22 @@ class VoidType extends Type{
     {
         super(strName, size);
     }
+
+    public Boolean isAssignableTo(Type t){
+        if(t.isVoid()){
+            return true;
+        }
+
+        return false;
+    }
+
+    public Boolean isEquivalentTo(Type t){
+        if(t.isVoid()){
+            return true;
+        }
+
+        return false;
+    }
+
+    public boolean  isVoid()	    { return true; }
 }

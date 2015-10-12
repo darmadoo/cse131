@@ -7,4 +7,22 @@ class StructType extends CompositeType{
     {
         super(strName, size);
     }
+
+    public Boolean isAssignableTo(Type t){
+        if(t.isStruct()){
+            return true;
+        }
+
+        return false;
+    }
+
+    public Boolean isEquivalentTo(Type t){
+        if(t.isStruct()){
+            return true;
+        }
+
+        return false;
+    }
+
+    public boolean  isStruct()	    { return true; }
 }

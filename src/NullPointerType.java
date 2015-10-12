@@ -7,4 +7,22 @@ class NullPointerType extends PointerType{
     {
         super(strName, size);
     }
+
+    public Boolean isAssignableTo(Type t){
+        if(t.isNullPointer()){
+            return true;
+        }
+
+        return false;
+    }
+
+    public Boolean isEquivalentTo(Type t){
+        if(t.isNullPointer()){
+            return true;
+        }
+
+        return false;
+    }
+
+    public boolean  isNullPointer()	    { return true; }
 }

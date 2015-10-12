@@ -8,5 +8,21 @@ class IntType extends NumericType{
         super(strName, size);
     }
 
+    public Boolean isAssignableTo(Type t){
+        if(t.isInt()){
+            return true;
+        }
+
+        return false;
+    }
+
+    public Boolean isEquivalentTo(Type t){
+        if(t.isInt()){
+            return true;
+        }
+
+        return false;
+    }
+
     public boolean  isInt()	    { return true; }
 }

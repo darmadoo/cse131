@@ -7,4 +7,22 @@ class CompositeType extends Type{
     {
         super(strName, size);
     }
+
+    public Boolean isAssignableTo(Type t){
+        if(t.isComposite()){
+            return true;
+        }
+
+        return false;
+    }
+
+    public Boolean isEquivalentTo(Type t){
+        if(t.isComposite()){
+            return true;
+        }
+
+        return false;
+    }
+
+    public boolean  isComposite()	    { return true; }
 }

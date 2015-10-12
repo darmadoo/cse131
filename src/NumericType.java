@@ -7,4 +7,22 @@ class NumericType extends BasicType{
     {
         super(strName, size);
     }
+
+    public Boolean isAssignableTo(Type t){
+        if(t.isNumeric()){
+            return true;
+        }
+
+        return false;
+    }
+
+    public Boolean isEquivalentTo(Type t){
+        if(t.isNumeric()){
+            return true;
+        }
+
+        return false;
+    }
+
+    public boolean  isNumeric()	    { return true; }
 }

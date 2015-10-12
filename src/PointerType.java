@@ -7,4 +7,22 @@ class PointerType extends CompositeType{
     {
         super(strName, size);
     }
+
+    public Boolean isAssignableTo(Type t){
+        if(t.isPointer()){
+            return true;
+        }
+
+        return false;
+    }
+
+    public Boolean isEquivalentTo(Type t){
+        if(t.isPointer()){
+            return true;
+        }
+
+        return false;
+    }
+
+    public boolean  isPointer()	    { return true; }
 }

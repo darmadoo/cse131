@@ -11,14 +11,14 @@ public class SlashOp extends ArithmeticOp {
             // error when one of them is not numeric
             return new ErrorSTO(Formatter.toString(ErrorMsg.error1n_Expr, aType.getName(), "/"));
         } else if (aType instanceof IntType && bType instanceof IntType) {
-            // Int + Int = Int
+            // Int / Int = Int
             // return ExprSTO of int types
             return new ExprSTO(a.getName() + " / " + b.getName(), new IntType("int", 4));
         } else {
-            // Float + int = Float
-            // Float + Float = Float
+            // Float / int = Float
+            // Float / Float = Float
             // return ExprSTO of float type
-            return new ExprSTO(a.getName() + " / " + b.getName(), new IntType("float", 4));
+            return new ExprSTO(a.getName() + " / " + b.getName(), new FloatType("float", 4));
         }
     }
 

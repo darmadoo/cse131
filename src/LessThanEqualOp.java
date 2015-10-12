@@ -1,7 +1,7 @@
 /**
- * Created by Darmadoo on 10/8/15.
+ * Created by Darmadoo on 10/9/15.
  */
-public class LessThanOp extends ComparisonOp {
+public class LessThanEqualOp extends ComparisonOp {
 
     @Override
     STO checkOperands(STO a, STO b) {
@@ -10,13 +10,13 @@ public class LessThanOp extends ComparisonOp {
         if (!(aType instanceof NumericType) || !(bType instanceof NumericType)) {
             // error when one of them is not numeric
             if(!(aType instanceof NumericType)){
-                return new ErrorSTO(Formatter.toString(ErrorMsg.error1n_Expr, aType.getName(), "<"));
+                return new ErrorSTO(Formatter.toString(ErrorMsg.error1n_Expr, aType.getName(), "<="));
             }
             else{
-                return new ErrorSTO(Formatter.toString(ErrorMsg.error1n_Expr, bType.getName(), "<"));
+                return new ErrorSTO(Formatter.toString(ErrorMsg.error1n_Expr, bType.getName(), "<="));
             }
         } else {
-            return new ExprSTO(a.getName() + " < " + b.getName(), new BoolType("bool", 4));
+            return new ExprSTO(a.getName() + " <= " + b.getName(), new BoolType("bool", 4));
         }
     }
 
