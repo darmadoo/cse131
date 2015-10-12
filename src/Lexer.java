@@ -293,7 +293,7 @@ class Lexer
             else
             {
               ungetChar (c);
-		String temp = Integer.toString(parseInt(new String(buffer), 16));
+		String temp = Integer.toString(parseInt(buffer.delete(0,2).toString(), 16));
 		token = new Token (sym.T_INT_LITERAL, temp);
             }
             break;
