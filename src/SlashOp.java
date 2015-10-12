@@ -9,7 +9,12 @@ public class SlashOp extends ArithmeticOp {
         Type bType = b.getType();
         if (!(aType instanceof NumericType) || !(bType instanceof NumericType)) {
             // error when one of them is not numeric
-            return new ErrorSTO(Formatter.toString(ErrorMsg.error1n_Expr, aType.getName(), "/"));
+            if(!(aType instanceof NumericType)){
+                return new ErrorSTO(Formatter.toString(ErrorMsg.error1n_Expr, aType.getName(), "/"));
+            }
+            else{
+                return new ErrorSTO(Formatter.toString(ErrorMsg.error1n_Expr, bType.getName(), "/"));
+            }
         } else if (aType instanceof IntType && bType instanceof IntType) {
             // Int / Int = Int
             // return ExprSTO of int types

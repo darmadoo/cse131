@@ -684,9 +684,15 @@ Expr4 ::=           Expr4:_1 T_AMPERSAND Expr5:_3
     ;
 
 
-Expr5 ::=           Expr5:_1 Equality Expr6
+Expr5 ::=           Expr5:_1 Equality:_2 Expr6:_3
                     {:
-                        RESULT = _1;
+                      if(_2 == "==")
+                      {
+                        RESULT = ((MyParser) parser).DoBinaryExpr (_1, new EqualOp(), _3);
+                      }
+                      else{
+                        RESULT = ((MyParser) parser).DoBinaryExpr (_1, new NotEqualOp(), _3);
+                      }
                     :}
     |               Expr6:_1
                     {:
@@ -695,9 +701,21 @@ Expr5 ::=           Expr5:_1 Equality Expr6
     ;
 
 
-Expr6 ::=           Expr6:_1 Relation Expr7
+Expr6 ::=           Expr6:_1 Relation:_2 Expr7:_3
                     {:
-                        RESULT = _1;
+                      if(_2 == "<")
+                      {
+                        RESULT = ((MyParser) parser).DoBinaryExpr (_1, new LessThanOp(), _3);
+                      }
+                      else if(_2 == "<="){
+                        RESULT = ((MyParser) parser).DoBinaryExpr (_1, new LessThanEqualOp(), _3);
+                      }
+                      else if(_2 == ">"){
+                        RESULT = ((MyParser) parser).DoBinaryExpr (_1, new GreaterThanOp(), _3);
+                      }
+                      else{
+                        RESULT = ((MyParser) parser).DoBinaryExpr (_1, new GreaterThanEqualOp(), _3);
+                      }
                     :}
     |               Expr7:_1
                     {:
