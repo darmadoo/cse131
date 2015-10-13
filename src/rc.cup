@@ -158,8 +158,7 @@ non terminal
 non terminal String    
     AddOp,
     MulOp,
-    IncDecOp,
-    ParamDecl
+    IncDecOp
     ;
 
 non terminal STO
@@ -175,7 +174,8 @@ non terminal STO
     Expr8,
     Designator,
     Designator2,
-    Designator3
+    Designator3,
+    ParamDecl
     ;
 
 non terminal Type
@@ -504,6 +504,9 @@ Stmt ::=            VarDecl
 
 
 OptParamList ::=    ParamList:_1
+                    {:
+                        RESULT = _1;
+                    :}
     |               /* empty */
     ;
 
@@ -521,7 +524,10 @@ ParamList ::=       ParamDecl:_2
     ;
 
 
-ParamDecl ::=       Type OptRef T_ID OptArrayList
+ParamDecl ::=       Type:_1 OptRef T_ID:_3 OptArrayList
+                    {:
+                      RESULT = new VarSTO(_3, _1);
+                    :}
     ;
 
 
@@ -544,7 +550,10 @@ CtorCall ::=        T_COLON T_LPAREN OptExprList T_RPAREN
     ;
 
 
-IfStmt ::=          T_IF Expr CodeBlock OptElse
+IfStmt ::=          T_IF Expr:_1 CodeBlock OptElse
+                    {:
+                        RESULT = ((MyParser) parser).DoBoolCheck(_1);
+                    :}
     ;
 
 
@@ -553,7 +562,10 @@ OptElse ::=         T_ELSE CodeBlock
     ;
 
 
-WhileStmt ::=       T_WHILE Expr CodeBlock
+WhileStmt ::=       T_WHILE Expr:_1 CodeBlock
+                    {:
+                        RESULT = ((MyParser) parser).DoBoolCheck(_1);
+                    :}
     ;
 
 

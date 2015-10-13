@@ -5,6 +5,9 @@
 //---------------------------------------------------------------------
 
 import java_cup.runtime.*;
+
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Vector;
 
 class MyParser extends parser
@@ -18,6 +21,8 @@ class MyParser extends parser
 	private int m_nSavedLineNum;
 
 	private SymbolTable m_symtab;
+
+	private HashMap<String, FuncSTO> map = new HashMap<String, FuncSTO>();
 
 	//----------------------------------------------------------------
 	//
@@ -261,6 +266,8 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	void DoFuncDecl_2()
 	{
+		map.put(buildHashMap(m_symtab.getFunc()), m_symtab.getFunc());
+
 		m_symtab.closeScope();
 		m_symtab.setFunc(null);
 	}
@@ -268,7 +275,22 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
-	void DoFormalParams(Vector<String> params)
+	String buildHashMap(FuncSTO curr){
+		String name = curr.getName();
+		String currParams = "";
+		Iterator<STO> itr = curr.getParams().iterator();
+
+		while(itr.hasNext()){
+			currParams += ("_" + itr.next().getType().getName());
+		}
+
+		return name + currParams;
+	}
+
+	//----------------------------------------------------------------
+	//
+	//----------------------------------------------------------------
+	void DoFormalParams(Vector<STO> params)
 	{
 		if (m_symtab.getFunc() == null)
 		{
@@ -277,6 +299,11 @@ class MyParser extends parser
 		}
 
 		// insert parameters here
+		if(params == null){
+			params = new Vector<STO>();
+		}
+
+		m_symtab.getFunc().setParams(params);
 	}
 
 	//----------------------------------------------------------------
@@ -294,6 +321,21 @@ class MyParser extends parser
 	void DoBlockClose()
 	{
 		m_symtab.closeScope();
+	}
+
+	//----------------------------------------------------------------
+	//
+	//----------------------------------------------------------------
+	STO DoBoolCheck(STO expr){
+		Type varType = expr.getType();
+
+		if(!(varType instanceof BoolType)){
+			// handle propagating errors
+			m_nNumErrors++;
+			m_errors.print(Formatter.toString(ErrorMsg.error4_Test, varType.getName()));
+		}
+
+		return expr;
 	}
 
 	//----------------------------------------------------------------
