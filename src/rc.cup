@@ -235,7 +235,7 @@ ExternDecl ::=      T_EXTERN DecoratedBasicType:_2 T_ID:_3 OptArrayList:_4
 
 VarDecl ::=         OptStatic:_1 DecoratedType:_2 T_ID:_3 OptArrayList:_4 OptInit:_5
                     {:
-                        ((MyParser) parser).DoVarDecl (_3, _2);
+                        ((MyParser) parser).DoVarDecl (_3, _2, (STO) _5);
                     :}
                     T_SEMI
     |               OptStatic:_1 T_AUTO T_ID:_3 T_ASSIGN Expr:_5
@@ -253,7 +253,7 @@ VarDecl ::=         OptStatic:_1 DecoratedType:_2 T_ID:_3 OptArrayList:_4 OptIni
 
 ConstDecl ::=       OptStatic:_1 T_CONST BasicType:_2 T_ID:_3 T_ASSIGN ConstExpr:_5
                     {:
-                        ((MyParser) parser).DoConstDecl (_3);
+                        ((MyParser) parser).DoConstDecl (_3, _2, (STO) _5);
                     :}
                     T_SEMI
     |               OptStatic:_1 T_CONST T_AUTO T_ID:_3 T_ASSIGN ConstExpr:_5
@@ -536,7 +536,10 @@ OptRef ::=          T_AMPERSAND
     ;
 
 
-OptInit ::=         T_ASSIGN Expr
+OptInit ::=         T_ASSIGN Expr:_1
+                    {:
+                        RESULT = _1;
+                    :}
     |               /* empty */
     ;
 
@@ -589,7 +592,10 @@ ContinueStmt ::=    T_CONTINUE T_SEMI
     ;
 
 
-ExitStmt ::=        T_EXIT T_LPAREN Expr T_RPAREN T_SEMI
+ExitStmt ::=        T_EXIT T_LPAREN Expr:_1 T_RPAREN T_SEMI
+                    {:
+                        RESULT = ((MyParser) parser).DoExitCheck(_1);
+                    :}
     ;
 
 
