@@ -14,6 +14,8 @@ class VarSTO extends STO
 		super(strName);
 		// You may want to change the isModifiable and isAddressable 
 		// fields as necessary
+		super.setIsAddressable(true);
+		super.setIsModifiable(true);
 	}
 
 	public VarSTO(String strName, Type typ)
@@ -21,6 +23,8 @@ class VarSTO extends STO
 		super(strName, typ);
 		// You may want to change the isModifiable and isAddressable 
 		// fields as necessary
+		super.setIsAddressable(true);
+		super.setIsModifiable(true);
 	}
 
 	//----------------------------------------------------------------

@@ -404,7 +404,7 @@ class MyParser extends parser
 		{
 			return new ErrorSTO(stoDes.getName());
 		}
-		else if(!stoDes.getType().isAssignableTo(expr.getType()))
+		else if(!(stoDes.getType().isAssignableTo(expr.getType())))
 		{
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.error3b_Assign, expr.getType().getName(), stoDes.getType().getName()));
