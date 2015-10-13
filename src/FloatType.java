@@ -16,7 +16,9 @@ class FloatType extends NumericType {
         if(t.isFloat()){
             return true;
         }
-
+        if(t.isInt()){
+            return true;
+        }
         return false;
     }
 
