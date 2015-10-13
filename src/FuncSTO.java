@@ -57,4 +57,8 @@ class FuncSTO extends STO
 	public Vector<STO> getParams(){
 		return currentFunc;
 	}
+
+	public int getParamSize(){
+		return currentFunc.size();
+	}
 }

@@ -266,7 +266,8 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	void DoFuncDecl_2()
 	{
-		map.put(buildHashMap(m_symtab.getFunc()), m_symtab.getFunc());
+		FuncSTO temp = m_symtab.getFunc();
+		map.put(buildHashMap(temp, temp.getParams()), m_symtab.getFunc());
 
 		m_symtab.closeScope();
 		m_symtab.setFunc(null);
@@ -275,16 +276,16 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
-	String buildHashMap(FuncSTO curr){
+	String buildHashMap(FuncSTO curr, Vector<STO> currParam){
 		String name = curr.getName();
-		String currParams = "";
-		Iterator<STO> itr = curr.getParams().iterator();
+		String params = "";
+		Iterator<STO> itr = currParam.iterator();
 
 		while(itr.hasNext()){
-			currParams += ("_" + itr.next().getType().getName());
+			params += ("_" + itr.next().getType().getName());
 		}
 
-		return name + currParams;
+		return name + params;
 	}
 
 	//----------------------------------------------------------------
@@ -395,12 +396,37 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
-	STO DoFuncCall(STO sto)
+	STO DoFuncCall(STO sto, Vector<STO> param)
 	{
+		FuncSTO temp = (FuncSTO) sto;
+		String hashKey = buildHashMap(temp, param);
+		int size = temp.getParamSize();
+		int paramSize = param.size();
+
 		if (!sto.isFunc())
 		{
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.not_function, sto.getName()));
+			return new ErrorSTO(sto.getName());
+		}
+
+		if(size != paramSize){
+			m_nNumErrors++;
+			m_errors.print(Formatter.toString(ErrorMsg.error5n_Call, paramSize, size));
+			return new ErrorSTO(sto.getName());
+		}
+
+		if(!map.containsKey(hashKey)){
+			for(int i = 0; i < size; i++){
+				Type aType = param.get(i).getType();
+				Type bType = temp.getParams().get(i).getType();
+
+				if(!(aType.isEquivalentTo(bType))){
+					m_nNumErrors++;
+					m_errors.print(Formatter.toString(ErrorMsg.error5a_Call, aType.getName(), temp.getParams().get(i).getName(), bType.getName()));
+				}
+			}
+
 			return new ErrorSTO(sto.getName());
 		}
 

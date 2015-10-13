@@ -124,7 +124,6 @@ non terminal
     StmtList,
     Stmt,
     CodeBlock,
-    OptExprList,
     IfStmt,
     OptElse,
     ForeachStmt,
@@ -138,7 +137,6 @@ non terminal
     WritePairList,
     WritePair,
     ConstExpr,
-    ExprList,
     UnarySign,
     Equality,
     Relation,
@@ -189,7 +187,9 @@ non terminal Type
 
 non terminal Vector
     OptParamList,
-    ParamList
+    ParamList,
+    OptExprList,
+    ExprList
     ;
 
 //--------------------------------------------------------------------
@@ -620,13 +620,27 @@ ConstExpr ::=       Expr
     ;
 
 
-OptExprList ::=     ExprList
+OptExprList ::=     ExprList:_1
+                    {:
+                        RESULT = _1;
+                    :}
     |               /* empty */
+                    {:
+                        RESULT = new Vector();
+                    :}
     ;
 
 
-ExprList ::=        Expr
-    |               ExprList T_COMMA Expr
+ExprList ::=        Expr:_2
+                    {:
+                        RESULT = new Vector ();
+                        RESULT.addElement (_2);
+                    :}
+    |               ExprList:_1 T_COMMA Expr:_2
+                    {:
+                        RESULT = _1;
+                        RESULT.addElement (_2);
+                    :}
     ;
 
 
@@ -906,9 +920,9 @@ Designator2 ::=     Designator2:_1 T_DOT T_ID:_3
                           RESULT = ((MyParser) parser).DoUnaryExpr (_1, new DecOp());
                     }
                     :}
-    |               Designator2:_1 T_LPAREN OptExprList T_RPAREN
+    |               Designator2:_1 T_LPAREN OptExprList:_2 T_RPAREN
                     {:
-                        ((MyParser) parser).DoFuncCall (_1);
+                        ((MyParser) parser).DoFuncCall (_1, _2);
                         RESULT = _1;
                     :}
     |               Designator3:_1
