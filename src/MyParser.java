@@ -171,12 +171,22 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
-	void DoVarDecl(String id, Type t)
+	void DoVarDecl(String id, Type t, STO expr)
 	{
+
 		if (m_symtab.accessLocal(id) != null)
 		{
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.redeclared_id, id));
+		}
+		else if(expr != null && !t.isAssignableTo(expr.getType()))
+		{
+			if (expr.isError()) {
+				return;
+			} else {
+				m_nNumErrors++;
+				m_errors.print(Formatter.toString(ErrorMsg.error3b_Assign, expr.getType().getName(), t.getName()));
+			}
 		}
 
 		VarSTO sto = new VarSTO(id, t);
@@ -213,6 +223,30 @@ class MyParser extends parser
 		m_symtab.insert(sto);
 	}
 
+	//----------------------------------------------------------------
+	//
+	//----------------------------------------------------------------
+	void DoConstDecl(String id, Type t, STO expr)
+	{
+		if (m_symtab.accessLocal(id) != null)
+		{
+			m_nNumErrors++;
+			m_errors.print(Formatter.toString(ErrorMsg.redeclared_id, id));
+		}
+		else if(expr != null && !t.isAssignableTo(expr.getType()))
+		{
+			if (expr.isError()) {
+				return;
+			} else {
+				m_nNumErrors++;
+				m_errors.print(Formatter.toString(ErrorMsg.error3b_Assign, expr.getType().getName(), t.getName()));
+			}
+		}
+
+		ConstSTO sto = new ConstSTO(id, t, 0);
+		m_symtab.insert(sto);
+	}
+	
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
@@ -342,12 +376,47 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
-	STO DoAssignExpr(STO stoDes)
-	{
-		if (!stoDes.isModLValue())
+	STO DoExitCheck(STO expr){
+		if(expr != null)
 		{
-			// Good place to do the assign checks
+			Type varType = expr.getType();
+			if (!(varType instanceof IntType)) {
+				// handle propagating errors
+				m_nNumErrors++;
+				m_errors.print(Formatter.toString(ErrorMsg.error7_Exit, varType.getName()));
+			}
 		}
+		return expr;
+	}
+	
+	//----------------------------------------------------------------
+	//
+	//----------------------------------------------------------------
+	STO DoAssignExpr(STO stoDes, STO expr)
+	{
+		//System.out.println("StoDes Type: " + stoDes.getType());
+		//System.out.println("Expr Type: " + expr.getType());
+		if(stoDes.isError())
+		{
+			return new ErrorSTO(stoDes.getName());
+		}
+		else if(expr.isError())
+		{
+			return new ErrorSTO(stoDes.getName());
+		}
+		else if(!stoDes.getType().isAssignableTo(expr.getType()))
+		{
+			m_nNumErrors++;
+			m_errors.print(Formatter.toString(ErrorMsg.error3b_Assign, expr.getType().getName(), stoDes.getType().getName()));
+			return new ErrorSTO(stoDes.getName());
+		}
+		else if(!stoDes.isModLValue())
+		{
+			m_nNumErrors++;
+			m_errors.print(ErrorMsg.error3a_Assign);
+			return new ErrorSTO(stoDes.getName());
+		}
+
 		
 		return stoDes;
 	}
