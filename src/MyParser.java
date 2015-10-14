@@ -422,18 +422,19 @@ class MyParser extends parser
 		{
 			return new ErrorSTO(stoDes.getName());
 		}
-		else if(!(stoDes.getType().isAssignableTo(expr.getType())))
-		{
-			m_nNumErrors++;
-			m_errors.print(Formatter.toString(ErrorMsg.error3b_Assign, expr.getType().getName(), stoDes.getType().getName()));
-			return new ErrorSTO(stoDes.getName());
-		}
 		else if(!stoDes.isModLValue())
 		{
 			m_nNumErrors++;
 			m_errors.print(ErrorMsg.error3a_Assign);
 			return new ErrorSTO(stoDes.getName());
 		}
+		else if(!expr.isFunc() && !(stoDes.getType().isAssignableTo(expr.getType())))
+		{
+			m_nNumErrors++;
+			m_errors.print(Formatter.toString(ErrorMsg.error3b_Assign, expr.getType().getName(), stoDes.getType().getName()));
+			return new ErrorSTO(stoDes.getName());
+		}
+
 
 		
 		return stoDes;
