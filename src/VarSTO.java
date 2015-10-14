@@ -34,4 +34,14 @@ class VarSTO extends STO
 	{
 		return true;
 	}
+
+	private boolean pbr = false;
+
+	public void setPbr(boolean p){
+		pbr = p;
+	}
+
+	public boolean getPbr(){
+		return pbr;
+	}
 }

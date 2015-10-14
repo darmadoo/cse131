@@ -111,7 +111,6 @@ non terminal
     StructdefDecl,
     CtorDef,
     DtorDef,
-    OptRef,
     FieldVarsList,
     FieldVarDecl,
     OptCtorDtorList,
@@ -156,7 +155,8 @@ non terminal
 non terminal String    
     AddOp,
     MulOp,
-    IncDecOp
+    IncDecOp,
+    OptRef
     ;
 
 non terminal STO
@@ -356,7 +356,7 @@ FieldFuncDecl ::=   FuncDef
 FuncDef ::=         T_FUNCTION T_COLON ReturnType:_1 OptRef:_2 T_ID:_3
                     {:
                         ((MyParser) parser).SaveLineNum ();
-                        ((MyParser) parser).DoFuncDecl_1(_3);
+                        ((MyParser) parser).DoFuncDecl_1(_3, _1);
                     :}
                     T_LPAREN OptParamList:_4 T_RPAREN
                     {:
@@ -372,7 +372,7 @@ FuncDef ::=         T_FUNCTION T_COLON ReturnType:_1 OptRef:_2 T_ID:_3
 
 FuncDecl ::=        T_EXTERN T_FUNCTION T_COLON ReturnType:_1 T_ID:_3
                     {:
-                        ((MyParser) parser).DoFuncDecl_1(_3);
+                        ((MyParser) parser).DoFuncDecl_1(_3, _1);
                     :}
                     T_LPAREN OptParamList:_4 T_RPAREN
                     {:
@@ -524,15 +524,30 @@ ParamList ::=       ParamDecl:_2
     ;
 
 
-ParamDecl ::=       Type:_1 OptRef T_ID:_3 OptArrayList
+ParamDecl ::=       Type:_1 OptRef:_2 T_ID:_3 OptArrayList
                     {:
-                      RESULT = new VarSTO(_3, _1);
+                        VarSTO temp = new VarSTO(_3, _1);
+
+                        if(_2 == "&"){
+                            temp.setPbr(true);
+                        }
+                        else{
+                            temp.setPbr(false);
+                        }
+
+                        RESULT = temp;
                     :}
     ;
 
 
 OptRef ::=          T_AMPERSAND
+                    {:
+                        RESULT = "&";
+                    :}
     |               /* empty */
+                    {:
+                        RESULT = "";
+                    :}
     ;
 
 

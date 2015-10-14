@@ -18,8 +18,21 @@ class FuncSTO extends STO
 	{
 		super (strName);
 		setReturnType(null);
-		// You may want to change the isModifiable and isAddressable                      
+		// You may want to change the isModifiable and isAddressable
 		// fields as necessary
+	}
+
+	//----------------------------------------------------------------
+	//
+	//----------------------------------------------------------------
+	public FuncSTO(String strName, Type typ)
+	{
+		super (strName, typ);
+		setReturnType(typ);
+		// You may want to change the isModifiable and isAddressable
+		// fields as necessary
+		super.setIsAddressable(true);
+		super.setIsModifiable(false);
 	}
 
 	//----------------------------------------------------------------

@@ -298,6 +298,24 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
+	void DoFuncDecl_1(String id, Type typ)
+	{
+		if (m_symtab.accessLocal(id) != null)
+		{
+			m_nNumErrors++;
+			m_errors.print(Formatter.toString(ErrorMsg.redeclared_id, id));
+		}
+
+		FuncSTO sto = new FuncSTO(id, typ);
+		m_symtab.insert(sto);
+
+		m_symtab.openScope();
+		m_symtab.setFunc(sto);
+	}
+
+	//----------------------------------------------------------------
+	//
+	//----------------------------------------------------------------
 	void DoFuncDecl_2()
 	{
 		FuncSTO temp = m_symtab.getFunc();
@@ -487,15 +505,23 @@ class MyParser extends parser
 
 		if(!map.containsKey(hashKey)){
 			for(int i = 0; i < size; i++){
-				Type aType = param.get(i).getType();
-				Type bType = temp.getParams().get(i).getType();
+				STO aSTO = param.get(i);
+				Type aType = aSTO.getType();
 
-				if(!(aType.isEquivalentTo(bType))){
+				STO bSTO = temp.getParams().get(i);
+				Type bType = bSTO.getType();
+
+				if(aSTO instanceof VarSTO && bSTO instanceof VarSTO){
+					if(((VarSTO)aSTO).getPbr() != (((VarSTO) bSTO).getPbr())){
+						m_nNumErrors++;
+						m_errors.print(Formatter.toString(ErrorMsg.error5r_Call, aType.getName(), bSTO.getName(), bType.getName()));
+					}
+				}
+				else if(!(aType.isEquivalentTo(bType))){
 					m_nNumErrors++;
-					m_errors.print(Formatter.toString(ErrorMsg.error5a_Call, aType.getName(), temp.getParams().get(i).getName(), bType.getName()));
+					m_errors.print(Formatter.toString(ErrorMsg.error5r_Call, aType.getName(), bSTO.getName(), bType.getName()));
 				}
 			}
-
 			return new ErrorSTO(sto.getName());
 		}
 
