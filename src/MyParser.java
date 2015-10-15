@@ -188,7 +188,7 @@ class MyParser extends parser
 				m_errors.print(Formatter.toString(ErrorMsg.error8_Assign, expr.getType().getName(), t.getName()));
 			}
 		}
-		if(expr != null)
+		if(expr != null && expr.isConst())
 		{
 			if (expr.getType().isInt()) {
 				VarSTO sto = new VarSTO(id, t, ((ConstSTO) expr).getIntValue());
