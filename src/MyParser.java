@@ -188,23 +188,24 @@ class MyParser extends parser
 				m_errors.print(Formatter.toString(ErrorMsg.error8_Assign, expr.getType().getName(), t.getName()));
 			}
 		}
-
-		if(expr.getType().isInt())
+		if(expr != null)
 		{
-			VarSTO sto = new VarSTO(id, t, ((ConstSTO) expr).getIntValue());
-			m_symtab.insert(sto);
-		}
-		else if(expr.getType().isFloat())
-		{
-			VarSTO sto = new VarSTO(id, t, ((ConstSTO) expr).getFloatValue());
-			m_symtab.insert(sto);
+			if (expr.getType().isInt()) {
+				VarSTO sto = new VarSTO(id, t, ((ConstSTO) expr).getIntValue());
+				m_symtab.insert(sto);
+			} else if (expr.getType().isFloat()) {
+				VarSTO sto = new VarSTO(id, t, ((ConstSTO) expr).getFloatValue());
+				m_symtab.insert(sto);
+			} else {
+				VarSTO sto = new VarSTO(id, t, ((ConstSTO) expr).getBoolValue());
+				m_symtab.insert(sto);
+			}
 		}
 		else
 		{
-			VarSTO sto = new VarSTO(id, t, ((ConstSTO) expr).getBoolValue());
+			VarSTO sto = new VarSTO(id, t);
 			m_symtab.insert(sto);
 		}
-
 	}
 
 	//----------------------------------------------------------------
@@ -222,6 +223,24 @@ class MyParser extends parser
 		m_symtab.insert(sto);
 	}
 
+	//----------------------------------------------------------------
+	//
+	//----------------------------------------------------------------
+	void DoAutoDecl(String id,STO expr){
+		//create a new STO and assign it the type of exp
+		// proceed as normal
+		if(expr != null)
+		{
+			VarSTO sto = new VarSTO(id, expr.getType());
+			m_symtab.insert(sto);
+		}
+		else
+		{
+			VarSTO sto = new VarSTO(id);
+			m_symtab.insert(sto);
+		}
+
+	}
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
@@ -256,12 +275,12 @@ class MyParser extends parser
 				m_errors.print(Formatter.toString(ErrorMsg.error8_Assign, expr.getType().getName(), t.getName()));
 			}
 		}
-		else if(!expr.isConst())
+		else if(!expr.isConst() && expr != null)
 		{
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.error8_CompileTime, id));
 		}
-		else
+		else if(expr !=null)
 		{
 			if(expr.getType().isInt())
 			{
@@ -278,6 +297,11 @@ class MyParser extends parser
 				ConstSTO sto = new ConstSTO(id, t, ((ConstSTO) expr).getBoolValue());
 				m_symtab.insert(sto);
 			}
+		}
+		else
+		{
+			ConstSTO sto = new ConstSTO(id, t);
+			m_symtab.insert(sto);
 		}
 	}
 
@@ -296,6 +320,37 @@ class MyParser extends parser
 		m_symtab.insert(sto);
 	}
 
+	//----------------------------------------------------------------
+	//
+	//----------------------------------------------------------------
+	void DoAutoConstDecl(String id,STO expr){
+		//create a new STO and assign it the type of exp
+		// proceed as normal
+		if(expr != null)
+		{
+			if(expr.getType().isInt())
+			{
+				ConstSTO sto = new ConstSTO(id, ((ConstSTO) expr).getIntValue());
+				m_symtab.insert(sto);
+			}
+			else if(expr.getType().isFloat())
+			{
+				ConstSTO sto = new ConstSTO(id, ((ConstSTO) expr).getFloatValue());
+				m_symtab.insert(sto);
+			}
+			else
+			{
+				ConstSTO sto = new ConstSTO(id, ((ConstSTO) expr).getBoolValue());
+				m_symtab.insert(sto);
+			}
+		}
+		else
+		{
+			ConstSTO sto = new ConstSTO(id);
+			m_symtab.insert(sto);
+		}
+
+	}
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------

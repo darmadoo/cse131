@@ -240,7 +240,7 @@ VarDecl ::=         OptStatic:_1 DecoratedType:_2 T_ID:_3 OptArrayList:_4 OptIni
                     T_SEMI
     |               OptStatic:_1 T_AUTO T_ID:_3 T_ASSIGN Expr:_5
                     {:
-                        ((MyParser) parser).DoVarDecl (_3);
+                        ((MyParser) parser).DoAutoDecl ( _3, (STO) _5);
                     :}
                     T_SEMI
     |               OptStatic:_1 StructType:_2 T_ID:_3 OptArrayList:_4 OptCtorCall:_5
@@ -258,7 +258,7 @@ ConstDecl ::=       OptStatic:_1 T_CONST BasicType:_2 T_ID:_3 T_ASSIGN ConstExpr
                     T_SEMI
     |               OptStatic:_1 T_CONST T_AUTO T_ID:_3 T_ASSIGN ConstExpr:_5
                     {:
-                        ((MyParser) parser).DoConstDecl (_3);
+                        ((MyParser) parser).DoAutoConstDecl (_3, (STO) _5);
                     :}
                     T_SEMI
     ;
@@ -646,7 +646,10 @@ WritePair ::=       Expr
     ;
 
 
-ConstExpr ::=       Expr
+ConstExpr ::=       Expr:_1
+                    {:
+                        RESULT = _1;
+                    :}
     ;
 
 

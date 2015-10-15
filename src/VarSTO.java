@@ -31,6 +31,40 @@ class VarSTO extends STO
 		super.setIsModifiable(true);
 	}
 
+	public VarSTO(String strName, int val)
+	{
+		super(strName, new IntType());
+		m_value = new BigDecimal(val);
+		// You may want to change the isModifiable and isAddressable
+		// fields as necessary
+		super.setIsAddressable(true);
+		super.setIsModifiable(true);
+	}
+
+	public VarSTO(String strName, double val)
+	{
+		super(strName, new FloatType());
+		m_value = new BigDecimal(val);
+		// You may want to change the isModifiable and isAddressable
+		// fields as necessary
+		super.setIsAddressable(true);
+		super.setIsModifiable(true);
+	}
+
+	public VarSTO(String strName, boolean val)
+	{
+		super(strName, new BoolType());
+		if(val == true) {
+			m_value = new BigDecimal(1);
+		}
+		else
+			m_value = new BigDecimal(0);
+		// You may want to change the isModifiable and isAddressable
+		// fields as necessary
+		super.setIsAddressable(true);
+		super.setIsModifiable(true);
+	}
+
 	public VarSTO(String strName, Type typ, int val)
 	{
 		super(strName, typ);
