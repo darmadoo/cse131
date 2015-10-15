@@ -171,9 +171,12 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
-	void DoVarDecl(String id, Type t, STO expr)
+	void DoVarDecl(String id, Type t, STO expr, Vector<STO> arguments)
 	{
+		if(arguments != null)
+		{
 
+		}
 		if (m_symtab.accessLocal(id) != null)
 		{
 			m_nNumErrors++;
@@ -761,7 +764,24 @@ class MyParser extends parser
 	STO DoDesignator2_Array(STO sto)
 	{
 		// Good place to do the array checks
-
+		if(!sto.getType().isInt())
+		{
+			m_nNumErrors++;
+			m_errors.print(Formatter.toString(ErrorMsg.error10i_Array, sto.getType().getName()));
+			return new ErrorSTO(sto.getName());
+		}
+		else if(!sto.isConst())
+		{
+			m_nNumErrors++;
+			m_errors.print(ErrorMsg.error10c_Array);
+			return new ErrorSTO(sto.getName());
+		}
+		else if(((ConstSTO)sto).getIntValue() < 0 )
+		{
+			m_nNumErrors++;
+			m_errors.print(Formatter.toString(ErrorMsg.error10z_Array, ((ConstSTO)sto).getIntValue()));
+			return new ErrorSTO(sto.getName());
+		}
 		return sto;
 	}
 
