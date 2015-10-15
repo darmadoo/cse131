@@ -61,6 +61,29 @@ class ConstSTO extends STO
 		super.setIsModifiable(false);
 	}
 
+	public ConstSTO(String strName, Type typ, boolean val)
+	{
+		super(strName, typ);
+		if(val == true) {
+			m_value = new BigDecimal(1);
+		}
+		else
+			m_value = new BigDecimal(0);
+		// You may want to change the isModifiable and isAddressable
+		// fields as necessary
+		super.setIsAddressable(true);
+		super.setIsModifiable(false);
+	}
+
+	public ConstSTO(String strName, Type typ, BigDecimal val)
+	{
+		super(strName, typ);
+		m_value = val;
+		// You may want to change the isModifiable and isAddressable
+		// fields as necessary
+		super.setIsAddressable(true);
+		super.setIsModifiable(false);
+	}
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------

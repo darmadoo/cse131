@@ -20,7 +20,10 @@ public class OrOp extends BooleanOp {
             }
         }
         else {
-            return new ExprSTO(a.getName() + " || " + b.getName(), new BoolType("bool", 4));
+            if(a.isConst() && b.isConst())
+                return new ConstSTO(a.getName() + " || " + b.getName(), new BoolType("bool", 4), ((ConstSTO)a).getBoolValue() || ((ConstSTO)b).getBoolValue());
+            else
+                return new ExprSTO(a.getName() + " || " + b.getName(), new BoolType("bool", 4));
         }
     }
 }

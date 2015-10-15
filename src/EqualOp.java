@@ -20,7 +20,10 @@ public class EqualOp extends ComparisonOp {
             return new ErrorSTO(Formatter.toString(ErrorMsg.error1b_Expr, aType.getName(), "==", bType.getName()));
         }
         else {
-            return new ExprSTO(a.getName() + " == " + b.getName(), new BoolType("bool", 4));
+            if(a.isConst() && b.isConst())
+                return new ConstSTO(a.getName() + " == " + b.getName(), new BoolType("bool", 4), ((ConstSTO)a).getBoolValue() == ((ConstSTO)b).getBoolValue());
+            else
+                return new ExprSTO(a.getName() + " == " + b.getName(), new BoolType("bool", 4));
         }
     }
 

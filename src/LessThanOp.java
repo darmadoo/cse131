@@ -16,7 +16,10 @@ public class LessThanOp extends ComparisonOp {
                 return new ErrorSTO(Formatter.toString(ErrorMsg.error1n_Expr, bType.getName(), "<"));
             }
         } else {
-            return new ExprSTO(a.getName() + " < " + b.getName(), new BoolType("bool", 4));
+            if(a.isConst() && b.isConst())
+                return new ConstSTO(a.getName() + " < " + b.getName(), new BoolType("bool", 4), ((ConstSTO)a).getFloatValue() < ((ConstSTO)b).getFloatValue());
+            else
+                return new ExprSTO(a.getName() + " < " + b.getName(), new BoolType("bool", 4));
         }
     }
 
