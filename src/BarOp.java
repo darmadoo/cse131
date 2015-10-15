@@ -20,7 +20,10 @@ public class BarOp extends BitwiseOp {
             }
         }
         else {
-            return new ExprSTO(a.getName() + " | " + b.getName(), new IntType("int", 4));
+            if(a.isConst() && b.isConst())
+                return new ConstSTO(a.getName() + " | " + b.getName(), new IntType("int", 4), ((ConstSTO) a).getIntValue() | ((ConstSTO) b).getIntValue());
+            else
+                return new ExprSTO(a.getName() + " | " + b.getName(), new IntType("int", 4));
         }
     }
 }

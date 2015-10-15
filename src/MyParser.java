@@ -185,7 +185,7 @@ class MyParser extends parser
 				return;
 			} else {
 				m_nNumErrors++;
-				m_errors.print(Formatter.toString(ErrorMsg.error3b_Assign, expr.getType().getName(), t.getName()));
+				m_errors.print(Formatter.toString(ErrorMsg.error8_Assign, expr.getType().getName(), t.getName()));
 			}
 		}
 
@@ -242,14 +242,34 @@ class MyParser extends parser
 				return;
 			} else {
 				m_nNumErrors++;
-				m_errors.print(Formatter.toString(ErrorMsg.error3b_Assign, expr.getType().getName(), t.getName()));
+				m_errors.print(Formatter.toString(ErrorMsg.error8_Assign, expr.getType().getName(), t.getName()));
 			}
 		}
-
-		ConstSTO sto = new ConstSTO(id, t, 0);
-		m_symtab.insert(sto);
+		else if(!expr.isConst())
+		{
+			m_nNumErrors++;
+			m_errors.print(Formatter.toString(ErrorMsg.error8_CompileTime, id));
+		}
+		else
+		{
+			if(expr.getType().isInt())
+			{
+				ConstSTO sto = new ConstSTO(id, t, ((ConstSTO) expr).getIntValue());
+				m_symtab.insert(sto);
+			}
+			else if(expr.getType().isFloat())
+			{
+				ConstSTO sto = new ConstSTO(id, t, ((ConstSTO) expr).getFloatValue());
+				m_symtab.insert(sto);
+			}
+			else
+			{
+				ConstSTO sto = new ConstSTO(id, t, ((ConstSTO) expr).getBoolValue());
+				m_symtab.insert(sto);
+			}
+		}
 	}
-	
+
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------

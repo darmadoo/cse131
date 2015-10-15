@@ -18,12 +18,18 @@ public class SlashOp extends ArithmeticOp {
         } else if (aType instanceof IntType && bType instanceof IntType) {
             // Int / Int = Int
             // return ExprSTO of int types
-            return new ExprSTO(a.getName() + " / " + b.getName(), new IntType("int", 4));
+            if(a.isConst() && b.isConst())
+                return new ConstSTO(a.getName() + " / " + b.getName(), new IntType("int", 4), ((ConstSTO) a).getIntValue() / ((ConstSTO) b).getIntValue());
+            else
+                return new ExprSTO(a.getName() + " / " + b.getName(), new IntType("int", 4));
         } else {
             // Float / int = Float
             // Float / Float = Float
             // return ExprSTO of float type
-            return new ExprSTO(a.getName() + " / " + b.getName(), new FloatType("float", 4));
+            if(a.isConst() && b.isConst())
+                return new ConstSTO(a.getName() + " / " + b.getName(), new FloatType("float", 4), ((ConstSTO) a).getFloatValue() / ((ConstSTO) b).getFloatValue());
+            else
+                return new ExprSTO(a.getName() + " / " + b.getName(), new FloatType("float", 4));
         }
     }
 
