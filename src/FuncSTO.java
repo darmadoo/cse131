@@ -10,6 +10,7 @@ class FuncSTO extends STO
 {
 	private Type m_returnType;
 	private Vector<STO> currentFunc;
+	private int level;
 
 	//----------------------------------------------------------------
 	//
@@ -77,13 +78,23 @@ class FuncSTO extends STO
 		return currentFunc.size();
 	}
 
-	private boolean pbr = false;
+	private boolean rbr = false;
 
-	public void setPbr(boolean p){
-		pbr = p;
+	public void setRbr(boolean p){
+		rbr = p;
 	}
 
-	public boolean getPbr(){
-		return pbr;
+	public boolean getRbr(){
+		return rbr;
+	}
+
+	// 6.3
+	public int getLevel(){
+		return level;
+	}
+
+	// 6.3
+	public void setLevel(int currentLevel){
+		level = currentLevel;
 	}
 }
