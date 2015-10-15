@@ -19,7 +19,10 @@ public class SlashOp extends ArithmeticOp {
             // Int / Int = Int
             // return ExprSTO of int types
             if(a.isConst() && b.isConst())
-                return new ConstSTO(a.getName() + " / " + b.getName(), new IntType("int", 4), ((ConstSTO) a).getIntValue() / ((ConstSTO) b).getIntValue());
+                if(((ConstSTO) b).getIntValue() == 0)
+                    return new ErrorSTO(ErrorMsg.error8_Arithmetic);
+                else
+                    return new ConstSTO(a.getName() + " / " + b.getName(), new IntType("int", 4), ((ConstSTO) a).getIntValue() / ((ConstSTO) b).getIntValue());
             else
                 return new ExprSTO(a.getName() + " / " + b.getName(), new IntType("int", 4));
         } else {
@@ -27,7 +30,10 @@ public class SlashOp extends ArithmeticOp {
             // Float / Float = Float
             // return ExprSTO of float type
             if(a.isConst() && b.isConst())
-                return new ConstSTO(a.getName() + " / " + b.getName(), new FloatType("float", 4), ((ConstSTO) a).getFloatValue() / ((ConstSTO) b).getFloatValue());
+                if(((ConstSTO) b).getIntValue() == 0.0)
+                    return new ErrorSTO(ErrorMsg.error8_Arithmetic);
+                else
+                    return new ConstSTO(a.getName() + " / " + b.getName(), new FloatType("float", 4), ((ConstSTO) a).getFloatValue() / ((ConstSTO) b).getFloatValue());
             else
                 return new ExprSTO(a.getName() + " / " + b.getName(), new FloatType("float", 4));
         }
