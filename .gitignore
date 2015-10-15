@@ -1,6 +1,6 @@
 *.class
-parser.java
-sym.java
+src/parser.java
+src/sym.java
 
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
