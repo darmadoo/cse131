@@ -17,8 +17,12 @@ public class ModOp extends ArithmeticOp {
             }
         } else {
             // Int % Int = Int
-            if(a.isConst() && b.isConst())
-                return new ConstSTO(a.getName() + " % " + b.getName(), new IntType("int", 4), ((ConstSTO) a).getIntValue() % ((ConstSTO) b).getIntValue());
+            if(a.isConst() && b.isConst()) {
+                if (((ConstSTO) b).getIntValue() == 0)
+                    return new ErrorSTO(ErrorMsg.error8_Arithmetic);
+                else
+                    return new ConstSTO(a.getName() + " % " + b.getName(), new IntType("int", 4), ((ConstSTO) a).getIntValue() % ((ConstSTO) b).getIntValue());
+            }
             else
                 return new ExprSTO(a.getName() + " % " + b.getName(), new IntType("int", 4));
         }

@@ -30,7 +30,7 @@ public class SlashOp extends ArithmeticOp {
             // Float / Float = Float
             // return ExprSTO of float type
             if(a.isConst() && b.isConst())
-                if(((ConstSTO) b).getIntValue() == 0.0)
+                if(((ConstSTO) b).getFloatValue() == 0.0)
                     return new ErrorSTO(ErrorMsg.error8_Arithmetic);
                 else
                     return new ConstSTO(a.getName() + " / " + b.getName(), new FloatType("float", 4), ((ConstSTO) a).getFloatValue() / ((ConstSTO) b).getFloatValue());
