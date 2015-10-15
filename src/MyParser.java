@@ -22,7 +22,9 @@ class MyParser extends parser
 
 	private SymbolTable m_symtab;
 
+	// Self-defined variables
 	private HashMap<String, FuncSTO> map = new HashMap<String, FuncSTO>();
+	private boolean topLevelFlag = false;
 
 	//----------------------------------------------------------------
 	//
@@ -379,11 +381,14 @@ class MyParser extends parser
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.redeclared_id, id));
 		}
+
 	
 		FuncSTO sto = new FuncSTO(id);
 		m_symtab.insert(sto);
 
 		m_symtab.openScope();
+		// 6.3
+		sto.setLevel(m_symtab.getLevel());
 		m_symtab.setFunc(sto);
 	}
 
@@ -392,16 +397,20 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	void DoFuncDecl_1(String id, Type typ)
 	{
+		/*
 		if (m_symtab.accessLocal(id) != null)
 		{
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.redeclared_id, id));
 		}
+		*/
 
 		FuncSTO sto = new FuncSTO(id, typ);
 		m_symtab.insert(sto);
 
 		m_symtab.openScope();
+		// 6.3
+		sto.setLevel(m_symtab.getLevel());
 		m_symtab.setFunc(sto);
 	}
 
@@ -410,24 +419,30 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	void DoFuncDecl_1(String id, Type typ, String rtType)
 	{
+		/*
 		if (m_symtab.accessLocal(id) != null)
 		{
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.redeclared_id, id));
 		}
+		*/
 
 		FuncSTO sto = new FuncSTO(id, typ);
 
+		// TODO CHANGE TO RETURN BY REF
 		if(rtType == "&"){
-			sto.setPbr(true);
+			sto.setRbr(true);
 		}
 		else{
-			sto.setPbr(false);
+			sto.setRbr(false);
 		}
 
 		m_symtab.insert(sto);
 
 		m_symtab.openScope();
+		// 6.3
+		sto.setLevel(m_symtab.getLevel());
+
 		m_symtab.setFunc(sto);
 	}
 
@@ -437,9 +452,29 @@ class MyParser extends parser
 	void DoFuncDecl_2()
 	{
 		FuncSTO temp = m_symtab.getFunc();
-		map.put(buildHashMap(temp, temp.getParams()), m_symtab.getFunc());
+		String hashKey = buildHashMap(temp, temp.getParams());
+
+		// 6.3
+		if(!(temp.getReturnType() instanceof VoidType)) {
+			if (!topLevelFlag) {
+				m_nNumErrors++;
+				m_errors.print(ErrorMsg.error6c_Return_missing);
+				return;
+			}
+		}
+
+		// 9.1
+		if(map.containsKey(hashKey)){
+			m_nNumErrors++;
+			m_errors.print(Formatter.toString(ErrorMsg.error9_Decl, temp.getName()));
+			return;
+		}
+
+		map.put(hashKey, m_symtab.getFunc());
 
 		m_symtab.closeScope();
+		// 6.3
+		topLevelFlag = false;
 		m_symtab.setFunc(null);
 	}
 
@@ -690,6 +725,10 @@ class MyParser extends parser
 		FuncSTO temp = m_symtab.getFunc();
 		Type returnType = temp.getReturnType();
 
+		if(temp.getLevel() == m_symtab.getLevel()){
+			topLevelFlag = true;
+		}
+
 		if(!(returnType instanceof VoidType)){
 			m_nNumErrors++;
 			m_errors.print(ErrorMsg.error6a_Return_expr);
@@ -703,10 +742,23 @@ class MyParser extends parser
 	//
 	//----------------------------------------------------------------
 	STO DoReturnCheck(STO a){
+
+		if(a instanceof ErrorSTO){
+			// 6.3
+			topLevelFlag = true;
+			return a;
+		}
+
 		FuncSTO temp = m_symtab.getFunc();
 		Type returnType = temp.getReturnType();
 		Type returnStmt = a.getType();
 		STO var;
+
+		// 6.3
+		// 6.3
+		if(temp.getLevel() == m_symtab.getLevel()){
+			topLevelFlag = true;
+		}
 
 		if(a instanceof ConstSTO){
 			var = a;
@@ -715,13 +767,8 @@ class MyParser extends parser
 			var = m_symtab.access(a.getName());
 		}
 
-		// Checks if the return type of the function is an errorType
-		if(returnStmt instanceof ErrorType){
-			return new ErrorSTO(returnStmt.getName());
-		}
-
 		// Is passByRef
-		if(temp.getPbr()){
+		if(temp.getRbr()){
 			// Check if they are equivalent
 			if(!returnType.isEquivalentTo(returnStmt)){
 				m_nNumErrors++;
