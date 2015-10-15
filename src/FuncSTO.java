@@ -20,6 +20,8 @@ class FuncSTO extends STO
 		setReturnType(null);
 		// You may want to change the isModifiable and isAddressable
 		// fields as necessary
+		super.setIsAddressable(true);
+		super.setIsModifiable(false);
 	}
 
 	//----------------------------------------------------------------
@@ -73,5 +75,15 @@ class FuncSTO extends STO
 
 	public int getParamSize(){
 		return currentFunc.size();
+	}
+
+	private boolean pbr = false;
+
+	public void setPbr(boolean p){
+		pbr = p;
+	}
+
+	public boolean getPbr(){
+		return pbr;
 	}
 }

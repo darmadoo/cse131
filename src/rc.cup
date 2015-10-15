@@ -356,7 +356,7 @@ FieldFuncDecl ::=   FuncDef
 FuncDef ::=         T_FUNCTION T_COLON ReturnType:_1 OptRef:_2 T_ID:_3
                     {:
                         ((MyParser) parser).SaveLineNum ();
-                        ((MyParser) parser).DoFuncDecl_1(_3, _1);
+                        ((MyParser) parser).DoFuncDecl_1(_3, _1, _2);
                     :}
                     T_LPAREN OptParamList:_4 T_RPAREN
                     {:
@@ -439,6 +439,9 @@ ReturnType ::=      Type:_1
                         RESULT = _1;
                     :}
     |               T_VOID
+                    {:
+                        RESULT = new VoidType();
+                    :}
     ;
 
 
@@ -615,7 +618,13 @@ ExitStmt ::=        T_EXIT T_LPAREN Expr:_1 T_RPAREN T_SEMI
 
 
 ReturnStmt ::=      T_RETURN T_SEMI
-    |               T_RETURN Expr T_SEMI
+                    {:
+                        RESULT = ((MyParser) parser).DoReturnCheck();
+                    :}
+    |               T_RETURN Expr:_1 T_SEMI
+                    {:
+                        RESULT = ((MyParser) parser).DoReturnCheck(_1);
+                    :}
     ;
 
 
@@ -723,6 +732,8 @@ Expr3 ::=           Expr3:_1 T_CARET Expr4:_3
 Expr4 ::=           Expr4:_1 T_AMPERSAND Expr5:_3
                     {:
                         RESULT = ((MyParser) parser).DoBinaryExpr (_1, new AmpersandOp(), _3);
+                        // Make a function that returns a Pointer TYPE
+                        // Make it a pointer with the data type from dobinaryexpr
                     :}
     |               Expr5:_1
                     {:

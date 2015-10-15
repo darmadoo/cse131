@@ -190,6 +190,9 @@ class MyParser extends parser
 		}
 
 		VarSTO sto = new VarSTO(id, t);
+		sto.setIsAddressable(true);
+		sto.setIsModifiable(true);
+
 		m_symtab.insert(sto);
 	}
 
@@ -316,6 +319,32 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
+	void DoFuncDecl_1(String id, Type typ, String rtType)
+	{
+		if (m_symtab.accessLocal(id) != null)
+		{
+			m_nNumErrors++;
+			m_errors.print(Formatter.toString(ErrorMsg.redeclared_id, id));
+		}
+
+		FuncSTO sto = new FuncSTO(id, typ);
+
+		if(rtType == "&"){
+			sto.setPbr(true);
+		}
+		else{
+			sto.setPbr(false);
+		}
+
+		m_symtab.insert(sto);
+
+		m_symtab.openScope();
+		m_symtab.setFunc(sto);
+	}
+
+	//----------------------------------------------------------------
+	//
+	//----------------------------------------------------------------
 	void DoFuncDecl_2()
 	{
 		FuncSTO temp = m_symtab.getFunc();
@@ -326,7 +355,7 @@ class MyParser extends parser
 	}
 
 	//----------------------------------------------------------------
-	//
+	// New helper function to generate the string for the hash map
 	//----------------------------------------------------------------
 	String buildHashMap(FuncSTO curr, Vector<STO> currParam){
 		String name = curr.getName();
@@ -334,7 +363,7 @@ class MyParser extends parser
 		Iterator<STO> itr = currParam.iterator();
 
 		while(itr.hasNext()){
-			params += ("_" + itr.next().getType().getName());
+			params += ("~" + itr.next().getType().getName());
 		}
 
 		return name + params;
@@ -357,6 +386,10 @@ class MyParser extends parser
 		}
 
 		m_symtab.getFunc().setParams(params);
+
+		for(int i = 0;i < params.size(); i++){
+			m_symtab.insert(params.get(i));
+		}
 	}
 
 	//----------------------------------------------------------------
@@ -484,13 +517,8 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
-	STO DoFuncCall(STO sto, Vector<STO> param)
+	STO DoFuncCall(STO sto, Vector<STO> arguments)
 	{
-		FuncSTO temp = (FuncSTO) sto;
-		String hashKey = buildHashMap(temp, param);
-		int size = temp.getParamSize();
-		int paramSize = param.size();
-
 		if (!sto.isFunc())
 		{
 			m_nNumErrors++;
@@ -498,36 +526,138 @@ class MyParser extends parser
 			return new ErrorSTO(sto.getName());
 		}
 
+		if(sto instanceof ErrorSTO){
+			return sto;
+		}
+
+		FuncSTO temp = (FuncSTO) sto;
+		String hashKey = buildHashMap(temp, arguments);
+		int size = temp.getParamSize();
+		int paramSize = arguments.size();
+
+		// Check 5.1
 		if(size != paramSize){
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.error5n_Call, paramSize, size));
 			return new ErrorSTO(sto.getName());
 		}
 
+		// Check if the function declared is in the hash map
 		if(!map.containsKey(hashKey)){
 			for(int i = 0; i < size; i++){
-				STO aSTO = param.get(i);
-				Type aType = aSTO.getType();
+				// Get the STO and the type
+				STO argumentSTO = arguments.get(i);
+				Type argumentType = argumentSTO.getType();
 
-				STO bSTO = temp.getParams().get(i);
-				Type bType = bSTO.getType();
+				VarSTO parameterSTO = (VarSTO)temp.getParams().get(i);
+				Type parameterType = parameterSTO.getType();
 
-				if(aSTO instanceof VarSTO && bSTO instanceof VarSTO){
-					if(((VarSTO)aSTO).getPbr() != (((VarSTO) bSTO).getPbr())){
+				if(parameterSTO.getPbr()){
+					// MAYBE NEED TO MAKE IT IS EQUIVALENT
+					if(!parameterType.isAssignableTo(argumentType)){
 						m_nNumErrors++;
-						m_errors.print(Formatter.toString(ErrorMsg.error5r_Call, aType.getName(), bSTO.getName(), bType.getName()));
+						m_errors.print(Formatter.toString(ErrorMsg.error5r_Call, argumentType.getName(), parameterSTO.getName(), parameterType.getName()));
+					}
+					else if(!argumentSTO.isModLValue()){
+						m_nNumErrors++;
+						m_errors.print(Formatter.toString(ErrorMsg.error5c_Call, parameterSTO.getName(), parameterType.getName()));
 					}
 				}
-				else if(!(aType.isEquivalentTo(bType))){
-					m_nNumErrors++;
-					m_errors.print(Formatter.toString(ErrorMsg.error5r_Call, aType.getName(), bSTO.getName(), bType.getName()));
+				else{
+					if(!parameterType.isAssignableTo(argumentType)){
+						m_nNumErrors++;
+						m_errors.print(Formatter.toString(ErrorMsg.error5a_Call, argumentType.getName(), parameterSTO.getName(), parameterType.getName()));
+					}
 				}
 			}
+
 			return new ErrorSTO(sto.getName());
+		}
+		else{
+			for(int j = 0; j < size; j++){
+				// Get the STO and the type
+				STO argumentSTO = arguments.get(j);
+
+				VarSTO parameterSTO = (VarSTO)temp.getParams().get(j);
+				Type parameterType = parameterSTO.getType();
+
+				if(parameterSTO.getPbr()){
+					if(!argumentSTO.isModLValue()){
+						m_nNumErrors++;
+						m_errors.print(Formatter.toString(ErrorMsg.error5c_Call, parameterSTO.getName(), parameterType.getName()));
+						sto = new ErrorSTO(sto.getName());
+					}
+				}
+			}
 		}
 
 		return sto;
 	}
+
+	//----------------------------------------------------------------
+	//
+	//----------------------------------------------------------------
+	STO DoReturnCheck(){
+		FuncSTO temp = m_symtab.getFunc();
+		Type returnType = temp.getReturnType();
+
+		if(!(returnType instanceof VoidType)){
+			m_nNumErrors++;
+			m_errors.print(ErrorMsg.error6a_Return_expr);
+			return new ErrorSTO("Return type not void");
+		}
+
+		return temp;
+	}
+
+	//----------------------------------------------------------------
+	//
+	//----------------------------------------------------------------
+	STO DoReturnCheck(STO a){
+		FuncSTO temp = m_symtab.getFunc();
+		Type returnType = temp.getReturnType();
+		Type returnStmt = a.getType();
+		STO var;
+
+		if(a instanceof ConstSTO){
+			var = a;
+		}
+		else{
+			var = m_symtab.access(a.getName());
+		}
+
+		// Checks if the return type of the function is an errorType
+		if(returnStmt instanceof ErrorType){
+			return new ErrorSTO(returnStmt.getName());
+		}
+
+		// Is passByRef
+		if(temp.getPbr()){
+			// Check if they are equivalent
+			if(!returnType.isEquivalentTo(returnStmt)){
+				m_nNumErrors++;
+				m_errors.print(Formatter.toString(ErrorMsg.error6b_Return_equiv, returnStmt.getName(), returnType.getName()));
+				return new ErrorSTO(a.getName());
+			}
+			// Check if the return type is a modifiable L-value
+			else if(!var.isModLValue()){
+				m_nNumErrors++;
+				m_errors.print(ErrorMsg.error6b_Return_modlval);
+				return new ErrorSTO(a.getName());
+			}
+		}
+		// Not passByRef
+		else{
+			if(!returnType.isAssignableTo(returnStmt)){
+				m_nNumErrors++;
+				m_errors.print(Formatter.toString(ErrorMsg.error6a_Return_type, returnStmt.getName(), returnType.getName()));
+				return new ErrorSTO(a.getName());
+			}
+		}
+
+		return a;
+	}
+
 
 	//----------------------------------------------------------------
 	//
