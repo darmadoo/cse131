@@ -189,11 +189,22 @@ class MyParser extends parser
 			}
 		}
 
-		VarSTO sto = new VarSTO(id, t);
-		sto.setIsAddressable(true);
-		sto.setIsModifiable(true);
+		if(expr.getType().isInt())
+		{
+			VarSTO sto = new VarSTO(id, t, ((ConstSTO) expr).getIntValue());
+			m_symtab.insert(sto);
+		}
+		else if(expr.getType().isFloat())
+		{
+			VarSTO sto = new VarSTO(id, t, ((ConstSTO) expr).getFloatValue());
+			m_symtab.insert(sto);
+		}
+		else
+		{
+			VarSTO sto = new VarSTO(id, t, ((ConstSTO) expr).getBoolValue());
+			m_symtab.insert(sto);
+		}
 
-		m_symtab.insert(sto);
 	}
 
 	//----------------------------------------------------------------
