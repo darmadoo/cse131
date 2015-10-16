@@ -26,6 +26,8 @@ class MyParser extends parser
 	private HashMap<String, FuncSTO> map = new HashMap<String, FuncSTO>();
 	// Check 6.3
 	private boolean topLevelFlag = false;
+	// Check 12.2
+	private int breakCounter = 0;
 
 	//----------------------------------------------------------------
 	//
@@ -488,7 +490,7 @@ class MyParser extends parser
 		Iterator<STO> itr = currParam.iterator();
 
 		while(itr.hasNext()){
-			params += ("~" + itr.next().getType().getName());
+			params += ("." + itr.next().getType().getName());
 		}
 
 		return name + params;
@@ -532,6 +534,20 @@ class MyParser extends parser
 	void DoBlockClose()
 	{
 		m_symtab.closeScope();
+	}
+
+	//----------------------------------------------------------------
+	// Check 12.2
+	//----------------------------------------------------------------
+	void incrementBreakCounter(){
+		breakCounter++;
+	}
+
+	//----------------------------------------------------------------
+	// Check 12.2
+	//----------------------------------------------------------------
+	void decrementBreakCounter(){
+		breakCounter--;
 	}
 
 	//----------------------------------------------------------------
@@ -887,5 +903,25 @@ class MyParser extends parser
 		}
 
 		return sto.getType();
+	}
+
+	//----------------------------------------------------------------
+	// Check 12.2
+	//----------------------------------------------------------------
+	void DoBreakCheck(){
+		if(breakCounter == 0){
+			m_nNumErrors++;
+			m_errors.print(ErrorMsg.error12_Break);
+		}
+	}
+
+	//----------------------------------------------------------------
+	// Check 12.2
+	//----------------------------------------------------------------
+	void DoContinueCheck(){
+		if(breakCounter == 0){
+			m_nNumErrors++;
+			m_errors.print(ErrorMsg.error12_Continue);
+		}
 	}
 }

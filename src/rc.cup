@@ -597,30 +597,43 @@ OptElse ::=         T_ELSE CodeBlock
     ;
 
 
-WhileStmt ::=       T_WHILE Expr:_1 CodeBlock
+WhileStmt ::=       T_WHILE Expr:_1
+                    {:
+                        ((MyParser) parser).incrementBreakCounter();
+                    :}
+                    CodeBlock
                     {:
                         RESULT = ((MyParser) parser).DoBoolCheck(_1);
+                        ((MyParser) parser).decrementBreakCounter();
                     :}
     ;
 
 
-ForeachStmt ::=     T_FOREACH T_LPAREN Type OptRef T_ID:_3 T_COLON Expr T_RPAREN
+ForeachStmt ::=     T_FOREACH T_LPAREN Type:_1 OptRef T_ID:_3 T_COLON Expr:_4 T_RPAREN
                     {:
                         ((MyParser) parser).DoBlockOpen();
-                        ((MyParser) parser).DoVarDecl (_3);
+                        ((MyParser) parser).incrementBreakCounter();
+                        ((MyParser) parser).DoVarDecl (_3, _1, _4, new Vector ());
                     :}
                     CodeBlock
                     {:
+                        ((MyParser) parser).decrementBreakCounter();
                         ((MyParser) parser).DoBlockClose();
                     :}
     ;
 
 
 BreakStmt ::=       T_BREAK T_SEMI
+                    {:
+                        ((MyParser) parser).DoBreakCheck();
+                    :}
     ;
 
 
 ContinueStmt ::=    T_CONTINUE T_SEMI
+                    {:
+                        ((MyParser) parser).DoContinueCheck();
+                    :}
     ;
 
 
