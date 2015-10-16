@@ -10,7 +10,6 @@ import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
-import java.util.*;
 
 class MyParser extends parser
 {
@@ -24,9 +23,12 @@ class MyParser extends parser
 
 	private SymbolTable m_symtab;
 
-	// Self-defined variables
+	// SELF-DEFINED VARIABLES
 	private HashMap<String, FuncSTO> map = new HashMap<String, FuncSTO>();
+	// Check 6.3
 	private boolean topLevelFlag = false;
+	// Check 12.2
+	private int breakCounter = 0;
 
 	//----------------------------------------------------------------
 	//
@@ -185,7 +187,7 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
-	void DoVarDecl(String id, Type t, STO expr, Vector<STO> arguments)
+	void DoVarDecl(String id, Type t, STO expr, Vector<STO> arguments, String rtType)
 	{
 		if (m_symtab.accessLocal(id) != null)
 		{
@@ -229,8 +231,11 @@ class MyParser extends parser
 
 			}
 
-			if(pointer != null)
+			if(pointer != null){
 				pointer.setChild(t);
+			}
+
+			//pointer.setChild(t);
 
 			pointer= head;
 			while(pointer.hasNext())
@@ -447,13 +452,13 @@ class MyParser extends parser
 		m_symtab.insert(sto);
 
 		m_symtab.openScope();
-		// 6.3
+		// Check 6.3
 		sto.setLevel(m_symtab.getLevel());
 		m_symtab.setFunc(sto);
 	}
 
 	//----------------------------------------------------------------
-	//
+	// New overloaded function
 	//----------------------------------------------------------------
 	void DoFuncDecl_1(String id, Type typ)
 	{
@@ -469,13 +474,13 @@ class MyParser extends parser
 		m_symtab.insert(sto);
 
 		m_symtab.openScope();
-		// 6.3
+		// Check 6.3
 		sto.setLevel(m_symtab.getLevel());
 		m_symtab.setFunc(sto);
 	}
 
 	//----------------------------------------------------------------
-	//
+	//	New overloaded function
 	//----------------------------------------------------------------
 	void DoFuncDecl_1(String id, Type typ, String rtType)
 	{
@@ -489,7 +494,7 @@ class MyParser extends parser
 
 		FuncSTO sto = new FuncSTO(id, typ);
 
-		// TODO CHANGE TO RETURN BY REF
+		// Check 6.2
 		if(rtType == "&"){
 			sto.setRbr(true);
 		}
@@ -500,7 +505,7 @@ class MyParser extends parser
 		m_symtab.insert(sto);
 
 		m_symtab.openScope();
-		// 6.3
+		// Check 6.3
 		sto.setLevel(m_symtab.getLevel());
 
 		m_symtab.setFunc(sto);
@@ -514,7 +519,7 @@ class MyParser extends parser
 		FuncSTO temp = m_symtab.getFunc();
 		String hashKey = buildHashMap(temp, temp.getParams());
 
-		// 6.3
+		// Check 6.3
 		if(!(temp.getReturnType() instanceof VoidType)) {
 			if (!topLevelFlag) {
 				m_nNumErrors++;
@@ -523,7 +528,7 @@ class MyParser extends parser
 			}
 		}
 
-		// 9.1
+		// Check 9.1
 		if(map.containsKey(hashKey)){
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.error9_Decl, temp.getName()));
@@ -533,7 +538,7 @@ class MyParser extends parser
 		map.put(hashKey, m_symtab.getFunc());
 
 		m_symtab.closeScope();
-		// 6.3
+		// Check 6.3
 		topLevelFlag = false;
 		m_symtab.setFunc(null);
 	}
@@ -547,7 +552,7 @@ class MyParser extends parser
 		Iterator<STO> itr = currParam.iterator();
 
 		while(itr.hasNext()){
-			params += ("~" + itr.next().getType().getName());
+				params += ("." + itr.next().getType().getName());
 		}
 
 		return name + params;
@@ -594,6 +599,20 @@ class MyParser extends parser
 	}
 
 	//----------------------------------------------------------------
+	// Check 12.2
+	//----------------------------------------------------------------
+	void incrementBreakCounter(){
+		breakCounter++;
+	}
+
+	//----------------------------------------------------------------
+	// Check 12.2
+	//----------------------------------------------------------------
+	void decrementBreakCounter(){
+		breakCounter--;
+	}
+
+	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
 	STO DoBoolCheck(STO expr){
@@ -609,7 +628,7 @@ class MyParser extends parser
 	}
 
 	//----------------------------------------------------------------
-	//
+	// Check 7
 	//----------------------------------------------------------------
 	STO DoExitCheck(STO expr){
 		if(expr != null)
@@ -652,8 +671,6 @@ class MyParser extends parser
 			return new ErrorSTO(stoDes.getName());
 		}
 
-
-		
 		return stoDes;
 	}
 
@@ -738,7 +755,7 @@ class MyParser extends parser
 
 				if(parameterSTO.getPbr()){
 					// MAYBE NEED TO MAKE IT IS EQUIVALENT
-					if(!parameterType.isAssignableTo(argumentType)){
+					if(!parameterType.isEquivalentTo(argumentType)){
 						m_nNumErrors++;
 						m_errors.print(Formatter.toString(ErrorMsg.error5r_Call, argumentType.getName(), parameterSTO.getName(), parameterType.getName()));
 					}
@@ -786,6 +803,7 @@ class MyParser extends parser
 		Type returnType = temp.getReturnType();
 
 		if(temp.getLevel() == m_symtab.getLevel()){
+			// Check 6.3
 			topLevelFlag = true;
 		}
 
@@ -799,12 +817,12 @@ class MyParser extends parser
 	}
 
 	//----------------------------------------------------------------
-	//
+	// Check 6.2
 	//----------------------------------------------------------------
 	STO DoReturnCheck(STO a){
 
 		if(a instanceof ErrorSTO){
-			// 6.3
+			// Check 6.3
 			topLevelFlag = true;
 			return a;
 		}
@@ -814,8 +832,7 @@ class MyParser extends parser
 		Type returnStmt = a.getType();
 		STO var;
 
-		// 6.3
-		// 6.3
+		// Check 6.3
 		if(temp.getLevel() == m_symtab.getLevel()){
 			topLevelFlag = true;
 		}
@@ -976,5 +993,43 @@ class MyParser extends parser
 		}
 
 		return sto.getType();
+	}
+
+	//----------------------------------------------------------------
+	// Check 12.2
+	//----------------------------------------------------------------
+	void DoBreakCheck(){
+		if(breakCounter == 0){
+			m_nNumErrors++;
+			m_errors.print(ErrorMsg.error12_Break);
+		}
+	}
+
+	//----------------------------------------------------------------
+	// Check 12.2
+	//----------------------------------------------------------------
+	void DoContinueCheck() {
+		if (breakCounter == 0) {
+			m_nNumErrors++;
+			m_errors.print(ErrorMsg.error12_Continue);
+		}
+	}
+
+	//----------------------------------------------------------------
+	// Check 13.1
+	//----------------------------------------------------------------
+	void DoDuplicateCheck(Vector<STO> members){
+		Iterator<STO> itr = members.iterator();
+		Vector<String> tempVec = new Vector<>();
+
+		while(itr.hasNext()){
+			STO cur = itr.next();
+			if(tempVec.contains(cur.getName())){
+				m_nNumErrors++;
+				m_errors.print(Formatter.toString(ErrorMsg.error13a_Struct, cur.getName()));
+			} else {
+				tempVec.add(cur.getName());
+			}
+		}
 	}
 }
