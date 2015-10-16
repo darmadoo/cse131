@@ -6,6 +6,7 @@
 
 import java_cup.runtime.*;
 
+import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
@@ -176,7 +177,8 @@ class MyParser extends parser
 	{
 		String result = "";
 		for(STO x : arguments) {
-			result = result + "[" + ((ConstSTO)x).getIntValue() + "]";
+			if(x.isConst())
+				result = result + "[" + ((ConstSTO)x).getIntValue() + "]";
 		}
 		return result;
 	}
@@ -194,33 +196,33 @@ class MyParser extends parser
 		{
 			return;
 		}
-
 		else if(arguments != null)
 		{
 			ArrayType head = null;
 			ArrayType pointer = null;
-
-			for(STO x : arguments)
-			{
-				if(x.isError())
+			ArrayType temp;
+			for(STO x : arguments) {
+				if (x.isError())
 					return;
 
 				x = DoDesignator2_Array(x);
 
-				if(x.isError())
+				if (x.isError())
 					return;
 
-				ArrayType temp = new ArrayType(t.getName() + GetType(arguments), ((ConstSTO)x).getIntValue());
-
-				if(head == null) {
-					head = temp;
-				}
-				else {
-					pointer = head;
-					while (pointer.hasNext()) {
-						pointer = (ArrayType) pointer.next();
+				if (x.isConst())
+				{
+					temp = new ArrayType(t.getName() + GetType(arguments), ((ConstSTO) x).getIntValue());
+					if(head == null) {
+						head = temp;
 					}
-					pointer.setChild(temp);
+					else {
+						pointer = head;
+						while (pointer.hasNext()) {
+							pointer = (ArrayType) pointer.next();
+						}
+						pointer.setChild(temp);
+					}
 				}
 
 				//arguments.remove(x);
@@ -233,7 +235,6 @@ class MyParser extends parser
 			pointer= head;
 			while(pointer.hasNext())
 			{
-				System.out.println(pointer.getName());
 				if(pointer.next().isArray())
 					pointer = (ArrayType)pointer.next();
 				else
@@ -243,7 +244,6 @@ class MyParser extends parser
 			sto.setIsModifiable(false);
 			m_symtab.insert(sto);
 		}
-
 		else if(expr != null && !t.isAssignableTo(expr.getType()))
 		{
 			if (expr.isError()) {
@@ -253,7 +253,7 @@ class MyParser extends parser
 				m_errors.print(Formatter.toString(ErrorMsg.error8_Assign, expr.getType().getName(), t.getName()));
 			}
 		}
-		if(expr != null && expr.isConst())
+		else if(expr != null && expr.isConst())
 		{
 			if (expr.getType().isInt()) {
 				VarSTO sto = new VarSTO(id, t, ((ConstSTO) expr).getIntValue());
@@ -865,6 +865,32 @@ class MyParser extends parser
 		return sto;
 	}
 
+	//----------------------------------------------------------------
+	//
+	//----------------------------------------------------------------
+	STO DoDesignator2_Arrays(STO des, STO expr)
+	{
+		//System.out.println(((ConstSTO)sto).getIntValue());
+		// Good place to do the array checks
+
+		//if the designator preceding [] is not array or pointer return error
+		if(des != null && (des.getType().isArray() || des.getType().isPointer()))
+		{
+			m_nNumErrors++;
+			m_errors.print(Formatter.toString(ErrorMsg.error11t_ArrExp, expr.getType().getName()));
+			return new ErrorSTO(expr.getName());
+		}
+		// else if the index expression is not equivalent to int
+		else if(!expr.getType().isInt())
+		{
+			m_nNumErrors++;
+			m_errors.print(Formatter.toString(ErrorMsg.error11i_ArrExp, expr.getType().getName()));
+			return new ErrorSTO(expr.getName());
+		}
+		else
+		return des;
+
+	}
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
