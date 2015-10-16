@@ -910,9 +910,9 @@ Designator ::=      T_STAR Designator:_1
                     {:
                         RESULT = _1;
                     :}
-    |               UnarySign Designator:_2
+    |               UnarySign Designator:_1
                     {:
-                        RESULT = _2;
+                        RESULT = ((MyParser) parser).DoUnaryExpr (_1, new MinusUnaryOp());
                     :}
     |               T_NOT Designator:_1
                     {:

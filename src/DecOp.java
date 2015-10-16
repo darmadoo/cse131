@@ -21,7 +21,7 @@ public class DecOp extends UnaryOp {
                 // Float++ = Float
                 // return ExprSTO of float type
                 if(a.isConst())
-                    return new ConstSTO(a.getName() + "++", new FloatType("int", 4), ((ConstSTO) a).getFloatValue() + 1 );
+                    return new ConstSTO(a.getName() + "--", new FloatType("int", 4), ((ConstSTO) a).getFloatValue() + 1 );
                 else
                     return new ExprSTO(a.getName() + "--", new FloatType("float", 4));
             }
