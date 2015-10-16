@@ -171,6 +171,15 @@ class MyParser extends parser
 		m_symtab.closeScope();
 	}
 
+
+	String GetType(Vector<STO> arguments)
+	{
+		String result = "";
+		for(STO x : arguments) {
+			result = result + "[" + ((ConstSTO)x).getIntValue() + "]";
+		}
+		return result;
+	}
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
@@ -188,25 +197,50 @@ class MyParser extends parser
 
 		else if(arguments != null)
 		{
-			ArrayType head = new ArrayType();
+			ArrayType head = null;
 			ArrayType pointer = null;
 
 			for(STO x : arguments)
 			{
 				if(x.isError())
 					return;
-				ArrayType temp = new ArrayType(id, ((ConstSTO)x).getIntValue());
-				pointer = head;
-				while(pointer.hasNext())
-				{
-					pointer = (ArrayType)pointer.next();
+
+				x = DoDesignator2_Array(x);
+
+				if(x.isError())
+					return;
+
+				ArrayType temp = new ArrayType(t.getName() + GetType(arguments), ((ConstSTO)x).getIntValue());
+
+				if(head == null) {
+					head = temp;
 				}
-				pointer.setChild(temp);
+				else {
+					pointer = head;
+					while (pointer.hasNext()) {
+						pointer = (ArrayType) pointer.next();
+					}
+					pointer.setChild(temp);
+				}
+
+				//arguments.remove(x);
+
 			}
 
-			pointer.setChild(t);
+			if(pointer != null)
+				pointer.setChild(t);
 
+			pointer= head;
+			while(pointer.hasNext())
+			{
+				System.out.println(pointer.getName());
+				if(pointer.next().isArray())
+					pointer = (ArrayType)pointer.next();
+				else
+					break;
+			}
 			VarSTO sto = new VarSTO(id, head);
+			sto.setIsModifiable(false);
 			m_symtab.insert(sto);
 		}
 

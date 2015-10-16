@@ -479,7 +479,7 @@ ArrayList ::=       Array:_1
 
 Array ::=           T_LBRACKET ConstExpr:_1 T_RBRACKET
                     {:
-                        RESULT = ((MyParser) parser).DoDesignator2_Array(_1);
+                        RESULT = _1;
                     :}
     ;
 

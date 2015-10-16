@@ -21,8 +21,9 @@ public class MinusUnaryOp extends UnaryOp {
         } else {
             // Float++ = Float
             // return ExprSTO of float type
-            if(a.isConst())
-                return new ConstSTO(a.getName() + "-", new FloatType("int", 4), 0.0 - ((ConstSTO) a).getFloatValue() );
+            if(a.isConst()) {
+                return new ConstSTO(a.getName() + "-", new FloatType("float", 4), 0.0 - ((ConstSTO) a).getFloatValue());
+            }
             else
                 return new ExprSTO(a.getName() + "-", new FloatType("float", 4));
         }
