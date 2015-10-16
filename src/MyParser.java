@@ -177,7 +177,7 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
-	void DoVarDecl(String id, Type t, STO expr, Vector<STO> arguments)
+	void DoVarDecl(String id, Type t, STO expr, Vector<STO> arguments, String rtType)
 	{
 		if (m_symtab.accessLocal(id) != null)
 		{
@@ -188,7 +188,6 @@ class MyParser extends parser
 		{
 			return;
 		}
-
 		else if(arguments != null)
 		{
 			ArrayType head = new ArrayType();
@@ -207,12 +206,15 @@ class MyParser extends parser
 				pointer.setChild(temp);
 			}
 
-			pointer.setChild(t);
+			if(pointer != null){
+				pointer.setChild(t);
+			}
+
+			//pointer.setChild(t);
 
 			VarSTO sto = new VarSTO(id, head);
 			m_symtab.insert(sto);
 		}
-
 		else if(expr != null && !t.isAssignableTo(expr.getType()))
 		{
 			if (expr.isError()) {
@@ -222,6 +224,7 @@ class MyParser extends parser
 				m_errors.print(Formatter.toString(ErrorMsg.error8_Assign, expr.getType().getName(), t.getName()));
 			}
 		}
+
 		if(expr != null && expr.isConst())
 		{
 			if (expr.getType().isInt()) {
