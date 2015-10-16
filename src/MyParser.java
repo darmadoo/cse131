@@ -9,7 +9,6 @@ import java_cup.runtime.*;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
-import java.util.*;
 
 class MyParser extends parser
 {
@@ -23,7 +22,7 @@ class MyParser extends parser
 
 	private SymbolTable m_symtab;
 
-	// Self-defined variables
+	// SELF-DEFINED VARIABLES
 	private HashMap<String, FuncSTO> map = new HashMap<String, FuncSTO>();
 	// Check 6.3
 	private boolean topLevelFlag = false;
@@ -552,7 +551,7 @@ class MyParser extends parser
 		Iterator<STO> itr = currParam.iterator();
 
 		while(itr.hasNext()){
-			params += ("." + itr.next().getType().getName());
+				params += ("." + itr.next().getType().getName());
 		}
 
 		return name + params;
@@ -803,6 +802,7 @@ class MyParser extends parser
 		Type returnType = temp.getReturnType();
 
 		if(temp.getLevel() == m_symtab.getLevel()){
+			// Check 6.3
 			topLevelFlag = true;
 		}
 
@@ -981,10 +981,28 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	// Check 12.2
 	//----------------------------------------------------------------
-	void DoContinueCheck(){
-		if(breakCounter == 0){
+	void DoContinueCheck() {
+		if (breakCounter == 0) {
 			m_nNumErrors++;
 			m_errors.print(ErrorMsg.error12_Continue);
+		}
+	}
+
+	//----------------------------------------------------------------
+	// Check 13.1
+	//----------------------------------------------------------------
+	void DoDuplicateCheck(Vector<STO> members){
+		Iterator<STO> itr = members.iterator();
+		Vector<String> tempVec = new Vector<>();
+
+		while(itr.hasNext()){
+			STO cur = itr.next();
+			if(tempVec.contains(cur.getName())){
+				m_nNumErrors++;
+				m_errors.print(Formatter.toString(ErrorMsg.error13a_Struct, cur.getName()));
+			} else {
+				tempVec.add(cur.getName());
+			}
 		}
 	}
 }
