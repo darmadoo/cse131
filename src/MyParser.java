@@ -9,6 +9,7 @@ import java_cup.runtime.*;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
+import java.util.*;
 
 class MyParser extends parser
 {
@@ -178,15 +179,40 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	void DoVarDecl(String id, Type t, STO expr, Vector<STO> arguments)
 	{
-		if(arguments != null)
-		{
-
-		}
 		if (m_symtab.accessLocal(id) != null)
 		{
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.redeclared_id, id));
 		}
+		else if(expr != null && expr.isError())
+		{
+			return;
+		}
+
+		else if(arguments != null)
+		{
+			ArrayType head = new ArrayType();
+			ArrayType pointer = null;
+
+			for(STO x : arguments)
+			{
+				if(x.isError())
+					return;
+				ArrayType temp = new ArrayType(id, ((ConstSTO)x).getIntValue());
+				pointer = head;
+				while(pointer.hasNext())
+				{
+					pointer = (ArrayType)pointer.next();
+				}
+				pointer.setChild(temp);
+			}
+
+			pointer.setChild(t);
+
+			VarSTO sto = new VarSTO(id, head);
+			m_symtab.insert(sto);
+		}
+
 		else if(expr != null && !t.isAssignableTo(expr.getType()))
 		{
 			if (expr.isError()) {
@@ -824,6 +850,7 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	STO DoDesignator2_Array(STO sto)
 	{
+		//System.out.println(((ConstSTO)sto).getIntValue());
 		// Good place to do the array checks
 		if(!sto.getType().isInt())
 		{
@@ -837,7 +864,7 @@ class MyParser extends parser
 			m_errors.print(ErrorMsg.error10c_Array);
 			return new ErrorSTO(sto.getName());
 		}
-		else if(((ConstSTO)sto).getIntValue() < 0 )
+		else if(((ConstSTO)sto).getIntValue() <= 0 )
 		{
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.error10z_Array, ((ConstSTO)sto).getIntValue()));

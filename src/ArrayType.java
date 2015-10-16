@@ -3,31 +3,43 @@
  */
 class ArrayType extends CompositeType {
     private int dimensions;
-    private Type next;
+    private Type child;
 
     public ArrayType()
     {
         super("array",0);
         dimensions = 0;
+        child = null;
     }
 
     public ArrayType(String strName, int size)
     {
         super(strName, size);
         dimensions = size;
-        next = null;
+        child = null;
     }
 
-    public void setDimension(int size)
+    public boolean hasNext()
     {
-        dimensions = size;
+        if(child != null)
+            return true;
+        else
+            return false;
     }
 
-    public int getDimension()
+    public void setChild(Type next)
+    {
+        child = next;
+    }
+
+    public Type next()
+    {
+        return child;
+    }
+    public int getDimensions()
     {
         return dimensions;
     }
-
     public Boolean isAssignableTo(Type t){
         if(t.isArray()){
             return true;
