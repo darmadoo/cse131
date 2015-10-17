@@ -203,7 +203,8 @@ class MyParser extends parser
 			ArrayType head = null;
 			ArrayType pointer = null;
 			ArrayType temp;
-			for(STO x : arguments) {
+			while(!arguments.isEmpty()) {
+				STO x = arguments.firstElement();
 				if (x.isError())
 					return;
 
@@ -227,10 +228,13 @@ class MyParser extends parser
 					}
 				}
 
-				//arguments.remove(x);
-
+				arguments.remove(x);
 			}
 
+			pointer = head;
+			while (pointer.hasNext()) {
+				pointer = (ArrayType) pointer.next();
+			}
 			if(pointer != null){
 				pointer.setChild(t);
 			}
@@ -889,9 +893,13 @@ class MyParser extends parser
 	{
 		//System.out.println(((ConstSTO)sto).getIntValue());
 		// Good place to do the array checks
-
+		//System.out.println(des.getType().getName());
+		if(des.isError())
+		{
+			return des;
+		}
 		//if the designator preceding [] is not array or pointer return error
-		if(des != null && (des.getType().isArray() || des.getType().isPointer()))
+		if(des != null && !des.getType().isArray() && !des.getType().isPointer())
 		{
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.error11t_ArrExp, expr.getType().getName()));
@@ -904,7 +912,17 @@ class MyParser extends parser
 			m_errors.print(Formatter.toString(ErrorMsg.error11i_ArrExp, expr.getType().getName()));
 			return new ErrorSTO(expr.getName());
 		}
-		else
+		else if(des.getType().isArray() && expr.isConst())
+		{
+			ArrayType temp = (ArrayType)des.getType();
+			if(((ConstSTO)expr).getIntValue() >= temp.getDimensions())
+			{
+				m_nNumErrors++;
+				m_errors.print(Formatter.toString(ErrorMsg.error11b_ArrExp,((ConstSTO)expr).getIntValue(),temp.getDimensions() - 1));
+				return new ErrorSTO(expr.getName());
+			}
+			return new VarSTO(temp.getName(), temp.next());
+		}
 		return des;
 
 	}
