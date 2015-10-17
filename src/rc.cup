@@ -555,15 +555,21 @@ ParamList ::=       ParamDecl:_2
     ;
 
 
-ParamDecl ::=       Type:_1 OptRef:_2 T_ID:_3 OptArrayList
+ParamDecl ::=       Type:_1 OptRef:_2 T_ID:_3 OptArrayList:_4
                     {:
-                        VarSTO temp = new VarSTO(_3, _1);
+                        VarSTO temp;
+                        if(_4 == null)
+                        {
+                            temp = new VarSTO(_3, _1);
+                        }
+                        else
+                            temp = ((MyParser) parser).DoDeclArray(_3, _1, _4);
 
                         if(_2 == "&"){
-                            temp.setPbr(true);
+                            ((VarSTO)temp).setPbr(true);
                         }
                         else{
-                            temp.setPbr(false);
+                            ((VarSTO)temp).setPbr(false);
                         }
 
                         RESULT = temp;
