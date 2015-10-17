@@ -6,6 +6,7 @@
 
 import java_cup.runtime.*;
 
+import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
@@ -184,7 +185,8 @@ class MyParser extends parser
 	{
 		String result = "";
 		for(STO x : arguments) {
-			result = result + "[" + ((ConstSTO)x).getIntValue() + "]";
+			if(x.isConst())
+				result = result + "[" + ((ConstSTO)x).getIntValue() + "]";
 		}
 		return result;
 	}
@@ -206,34 +208,39 @@ class MyParser extends parser
 		{
 			ArrayType head = null;
 			ArrayType pointer = null;
-
-			for(STO x : arguments)
-			{
-				if(x.isError())
+			ArrayType temp;
+			while(!arguments.isEmpty()) {
+				STO x = arguments.firstElement();
+				if (x.isError())
 					return;
 
 				x = DoDesignator2_Array(x);
 
-				if(x.isError())
+				if (x.isError())
 					return;
 
-				ArrayType temp = new ArrayType(t.getName() + GetType(arguments), ((ConstSTO)x).getIntValue());
-
-				if(head == null) {
-					head = temp;
-				}
-				else {
-					pointer = head;
-					while (pointer.hasNext()) {
-						pointer = (ArrayType) pointer.next();
+				if (x.isConst())
+				{
+					temp = new ArrayType(t.getName() + GetType(arguments), ((ConstSTO) x).getIntValue());
+					if(head == null) {
+						head = temp;
 					}
-					pointer.setChild(temp);
+					else {
+						pointer = head;
+						while (pointer.hasNext()) {
+							pointer = (ArrayType) pointer.next();
+						}
+						pointer.setChild(temp);
+					}
 				}
 
-				//arguments.remove(x);
-
+				arguments.remove(x);
 			}
 
+			pointer = head;
+			while (pointer.hasNext()) {
+				pointer = (ArrayType) pointer.next();
+			}
 			if(pointer != null){
 				pointer.setChild(t);
 			}
@@ -243,7 +250,6 @@ class MyParser extends parser
 			pointer= head;
 			while(pointer.hasNext())
 			{
-				System.out.println(pointer.getName());
 				if(pointer.next().isArray())
 					pointer = (ArrayType)pointer.next();
 				else
@@ -262,8 +268,7 @@ class MyParser extends parser
 				m_errors.print(Formatter.toString(ErrorMsg.error8_Assign, expr.getType().getName(), t.getName()));
 			}
 		}
-
-		if(expr != null && expr.isConst())
+		else if(expr != null && expr.isConst())
 		{
 			if (expr.getType().isInt()) {
 				VarSTO sto = new VarSTO(id, t, ((ConstSTO) expr).getIntValue());
@@ -956,6 +961,53 @@ class MyParser extends parser
 		return sto;
 	}
 
+	//----------------------------------------------------------------
+	// haven't do the pointer check
+	//----------------------------------------------------------------
+	STO DoDesignator2_Arrays(STO des, STO expr)
+	{
+		//System.out.println(((ConstSTO)sto).getIntValue());
+		// Good place to do the array checks
+		//System.out.println(des.getType().getName());
+		if(des.isError() || expr.isError())
+		{
+			return new ErrorSTO(expr.getName());
+		}
+		//if the designator preceding [] is not array or pointer return error
+		if(des != null && !des.getType().isArray() && !des.getType().isPointer())
+		{
+			m_nNumErrors++;
+			m_errors.print(Formatter.toString(ErrorMsg.error11t_ArrExp, expr.getType().getName()));
+			return new ErrorSTO(expr.getName());
+		}
+		// else if the index expression is not equivalent to int
+		else if(!expr.getType().isInt())
+		{
+			m_nNumErrors++;
+			m_errors.print(Formatter.toString(ErrorMsg.error11i_ArrExp, expr.getType().getName()));
+			return new ErrorSTO(expr.getName());
+		}
+		else if(des.getType().isArray() && expr.isConst())
+		{
+			ArrayType temp = (ArrayType)des.getType();
+			if(((ConstSTO)expr).getIntValue() >= temp.getDimensions() || ((ConstSTO)expr).getIntValue() < 0)
+			{
+				m_nNumErrors++;
+				m_errors.print(Formatter.toString(ErrorMsg.error11b_ArrExp,((ConstSTO)expr).getIntValue(),temp.getDimensions()));
+				return new ErrorSTO(expr.getName());
+			}
+			Type next = temp.next();
+			if(next.isArray()) {
+				VarSTO sto = new VarSTO(temp.getName(), next);
+				sto.setIsModifiable(false);
+				return sto;
+			}
+			else return new VarSTO(temp.getName(), next);
+
+		}
+		return des;
+
+	}
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
