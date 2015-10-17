@@ -918,7 +918,7 @@ class MyParser extends parser
 			if(((ConstSTO)expr).getIntValue() >= temp.getDimensions())
 			{
 				m_nNumErrors++;
-				m_errors.print(Formatter.toString(ErrorMsg.error11b_ArrExp,((ConstSTO)expr).getIntValue(),temp.getDimensions() - 1));
+				m_errors.print(Formatter.toString(ErrorMsg.error11b_ArrExp,((ConstSTO)expr).getIntValue(),temp.getDimensions()));
 				return new ErrorSTO(expr.getName());
 			}
 			return new VarSTO(temp.getName(), temp.next());
