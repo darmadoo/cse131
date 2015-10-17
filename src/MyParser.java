@@ -894,9 +894,9 @@ class MyParser extends parser
 		//System.out.println(((ConstSTO)sto).getIntValue());
 		// Good place to do the array checks
 		//System.out.println(des.getType().getName());
-		if(des.isError())
+		if(des.isError() || expr.isError())
 		{
-			return des;
+			return new ErrorSTO(expr.getName());
 		}
 		//if the designator preceding [] is not array or pointer return error
 		if(des != null && !des.getType().isArray() && !des.getType().isPointer())
@@ -915,7 +915,7 @@ class MyParser extends parser
 		else if(des.getType().isArray() && expr.isConst())
 		{
 			ArrayType temp = (ArrayType)des.getType();
-			if(((ConstSTO)expr).getIntValue() >= temp.getDimensions())
+			if(((ConstSTO)expr).getIntValue() >= temp.getDimensions() || ((ConstSTO)expr).getIntValue() < 0)
 			{
 				m_nNumErrors++;
 				m_errors.print(Formatter.toString(ErrorMsg.error11b_ArrExp,((ConstSTO)expr).getIntValue(),temp.getDimensions()));
