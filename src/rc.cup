@@ -113,9 +113,6 @@ non terminal
     DtorDef,
     CtorDtorList,
     CtorDtorDecl,
-    OptFieldFuncsList,
-    FieldFuncsList,
-    FieldFuncDecl,
     OptStmtList,
     StmtList,
     Stmt,
@@ -169,6 +166,7 @@ non terminal STO
     ParamDecl,
     Array,
     ConstExpr,
+    FieldFuncDecl,
     FieldVarDecl
     ;
 
@@ -189,7 +187,9 @@ non terminal Vector
     OptArrayList,
     ArrayList,
     FieldVarsList,
-    OptCtorDtorList
+    FieldFuncsList,
+    OptCtorDtorList,
+    OptFieldFuncsList
     ;
 
 //--------------------------------------------------------------------
@@ -273,17 +273,20 @@ OptStatic ::=       T_STATIC
 StructdefDecl ::=   T_STRUCTDEF T_ID_U:_1 T_LBRACE
                     {:
                         ((MyParser) parser).DoBlockOpen();
+                        ((MyParser) parser).SetStructFlag(true);
                     :}
                     FieldVarsList:_2
                     OptCtorDtorList:_3
                     {:
-                        ((MyParser) parser).DoDuplicateCheck(_2);
+                        ((MyParser) parser).DoDuplicateVarCheck(_2);
                         // Put logic here to create default ctor if needed
                     :}
-                    OptFieldFuncsList
+                    OptFieldFuncsList:_4
                     {:
+                        ((MyParser) parser).DoDuplicateFuncCheck(_4, _2);
                         ((MyParser) parser).DoBlockClose();
                         ((MyParser) parser).DoStructdefDecl (_1);
+                        ((MyParser) parser).SetStructFlag(false);
                     :}
                     T_RBRACE T_SEMI
     ;
@@ -353,17 +356,34 @@ DtorDef ::=         T_TILDE T_ID_U:_3
     ;
 
 
-OptFieldFuncsList ::= FieldFuncsList
+OptFieldFuncsList ::= FieldFuncsList:_1
+                      {:
+                           RESULT = _1;
+                      :}
     |               /* empty */
+                    {:
+                        RESULT = new Vector();
+                    :}
     ;
 
 
-FieldFuncsList ::=  FieldFuncDecl
-    |               FieldFuncsList FieldFuncDecl
+FieldFuncsList ::=  FieldFuncDecl:_1
+                    {:
+                        RESULT = new Vector();
+                        RESULT.addElement(_1);
+                    :}
+    |               FieldFuncsList:_1 FieldFuncDecl:_2
+                    {:
+                        RESULT = _1;
+                        RESULT.addElement (_2);
+                    :}
     ;
 
 
 FieldFuncDecl ::=   FuncDef
+                    {:
+                        RESULT = ((MyParser) parser).GetFunctSTO();
+                    :}
     ;
 
 
@@ -1004,8 +1024,7 @@ Designator2 ::=     Designator2:_1 T_DOT T_ID:_3
                     :}
     |               Designator2:_1 T_LPAREN OptExprList:_2 T_RPAREN
                     {:
-                        ((MyParser) parser).DoFuncCall (_1, _2);
-                        RESULT = _1;
+                        RESULT = ((MyParser) parser).DoFuncCall (_1, _2);
                     :}
     |               Designator3:_1
                     {:
