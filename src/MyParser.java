@@ -887,7 +887,7 @@ class MyParser extends parser
 	}
 
 	//----------------------------------------------------------------
-	//
+	// haven't do the pointer check
 	//----------------------------------------------------------------
 	STO DoDesignator2_Arrays(STO des, STO expr)
 	{
@@ -921,7 +921,14 @@ class MyParser extends parser
 				m_errors.print(Formatter.toString(ErrorMsg.error11b_ArrExp,((ConstSTO)expr).getIntValue(),temp.getDimensions()));
 				return new ErrorSTO(expr.getName());
 			}
-			return new VarSTO(temp.getName(), temp.next());
+			Type next = temp.next();
+			if(next.isArray()) {
+				VarSTO sto = new VarSTO(temp.getName(), next);
+				sto.setIsModifiable(false);
+				return sto;
+			}
+			else return new VarSTO(temp.getName(), next);
+
 		}
 		return des;
 
