@@ -193,6 +193,65 @@ class MyParser extends parser
 		}
 		return result;
 	}
+
+	//----------------------------------------------------------------
+	//
+	//----------------------------------------------------------------
+	VarSTO DoDeclArray(String id, Type t, Vector<STO> arguments)
+	{
+		ArrayType head = null;
+		ArrayType pointer = null;
+		ArrayType temp;
+		while(!arguments.isEmpty()) {
+			STO x = arguments.firstElement();
+			if (x.isError())
+				return new VarSTO(id);
+
+			x = DoDesignator2_Array(x);
+
+			if (x.isError())
+				return new VarSTO(id);
+
+			if (x.isConst())
+			{
+				temp = new ArrayType(t.getName() + GetType(arguments), ((ConstSTO) x).getIntValue());
+				if(head == null) {
+					head = temp;
+				}
+				else {
+					pointer = head;
+					while (pointer.hasNext()) {
+						pointer = (ArrayType) pointer.next();
+					}
+					pointer.setChild(temp);
+				}
+			}
+
+			arguments.remove(x);
+		}
+
+		pointer = head;
+		while (pointer.hasNext()) {
+			pointer = (ArrayType) pointer.next();
+		}
+		if(pointer != null){
+			pointer.setChild(t);
+		}
+
+		//pointer.setChild(t);
+
+		pointer= head;
+		while(pointer.hasNext())
+		{
+			if(pointer.next().isArray())
+				pointer = (ArrayType)pointer.next();
+			else
+				break;
+		}
+		VarSTO sto = new VarSTO(id, head);
+		//sto.setIsModifiable(false);
+		return sto;
+	}
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
@@ -203,10 +262,7 @@ class MyParser extends parser
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.redeclared_id, id));
 		}
-		else if(expr != null && expr.isError())
-		{
-			return;
-		}
+
 		else if(arguments != null)
 		{
 			ArrayType head = null;
@@ -259,7 +315,7 @@ class MyParser extends parser
 					break;
 			}
 			VarSTO sto = new VarSTO(id, head);
-			sto.setIsModifiable(false);
+
 			m_symtab.insert(sto);
 		}
 		else if(expr != null && !t.isAssignableTo(expr.getType()))
@@ -691,8 +747,8 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	STO DoAssignExpr(STO stoDes, STO expr)
 	{
-		//System.out.println("StoDes Type: " + stoDes.getType());
-		//System.out.println("Expr Type: " + expr.getType());
+		//System.out.println("StoDes Type: " + stoDes.getIsModifiable());
+		//System.out.println("Expr Type: " + expr.getName());
 		if(stoDes.isError())
 		{
 			return new ErrorSTO(stoDes.getName());
@@ -709,6 +765,7 @@ class MyParser extends parser
 		}
 		else if(!expr.isFunc() && !(stoDes.getType().isAssignableTo(expr.getType())))
 		{
+			//check if expression is array
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.error3b_Assign, expr.getType().getName(), stoDes.getType().getName()));
 			return new ErrorSTO(stoDes.getName());
@@ -981,7 +1038,7 @@ class MyParser extends parser
 	{
 		//System.out.println(((ConstSTO)sto).getIntValue());
 		// Good place to do the array checks
-		//System.out.println(des.getType().getName());
+		//System.out.println(expr.isExpr());
 		if(des.isError() || expr.isError())
 		{
 			return new ErrorSTO(expr.getName());
@@ -1000,26 +1057,37 @@ class MyParser extends parser
 			m_errors.print(Formatter.toString(ErrorMsg.error11i_ArrExp, expr.getType().getName()));
 			return new ErrorSTO(expr.getName());
 		}
-		else if(des.getType().isArray() && expr.isConst())
+		else if(des.getType().isArray())
 		{
-			ArrayType temp = (ArrayType)des.getType();
-			if(((ConstSTO)expr).getIntValue() >= temp.getDimensions() || ((ConstSTO)expr).getIntValue() < 0)
-			{
+
+			ArrayType temp = (ArrayType) des.getType();
+
+			if (expr.isConst() && (((ConstSTO) expr).getIntValue() >= temp.getDimensions() || ((ConstSTO) expr).getIntValue() < 0)) {
 				m_nNumErrors++;
-				m_errors.print(Formatter.toString(ErrorMsg.error11b_ArrExp,((ConstSTO)expr).getIntValue(),temp.getDimensions()));
+				m_errors.print(Formatter.toString(ErrorMsg.error11b_ArrExp, ((ConstSTO) expr).getIntValue(), temp.getDimensions()));
 				return new ErrorSTO(expr.getName());
 			}
-			Type next = temp.next();
-			if(next.isArray()) {
-				VarSTO sto = new VarSTO(temp.getName(), next);
-				sto.setIsModifiable(false);
-				return sto;
-			}
-			else return new VarSTO(temp.getName(), next);
 
+			Type next = temp.next();
+			if (next.isArray()) {
+				//System.out.println("1");
+				VarSTO sto = new VarSTO(next.getName(), (ArrayType)next);
+				return sto;
+			} else if(next.isInt()){
+				//System.out.println("2");
+				return new VarSTO(des.getName(), new IntType());
+			} else if(next.isBool())
+			{
+				//System.out.println("3");
+				return new VarSTO(des.getName(), new BoolType());
+			}
+			else {
+				//System.out.println("4");
+				return new VarSTO(des.getName(), new FloatType());
+
+			}
 		}
 		return des;
-
 	}
 	//----------------------------------------------------------------
 	//
