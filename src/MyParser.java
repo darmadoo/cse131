@@ -418,7 +418,7 @@ class MyParser extends parser
 	void DoAutoDecl(String id,STO expr){
 		//create a new STO and assign it the type of exp
 		// proceed as normal
-		if(expr != null)
+		if(expr != null && !expr.getType().isNullPointer())
 		{
 			VarSTO sto = new VarSTO(id, expr.getType());
 			m_symtab.insert(sto);
