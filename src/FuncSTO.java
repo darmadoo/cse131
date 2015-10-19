@@ -99,9 +99,9 @@ class FuncSTO extends STO
 		level = currentLevel;
 	}
 
-	// 9b
-	public void setOverloaded(boolean x){ overloaded = x; }
+	// 9.2
+	public void setOverloaded(boolean flag){ overloaded = flag; }
 
-	// 9b
+	// 9.2
 	public boolean getOverloaded() { return  overloaded; }
 }

@@ -109,9 +109,6 @@ non terminal
     ConstDecl,
     OptStatic,
     StructdefDecl,
-    CtorDef,
-    DtorDef,
-    CtorDtorList,
     CtorDtorDecl,
     OptStmtList,
     StmtList,
@@ -166,6 +163,8 @@ non terminal STO
     ParamDecl,
     Array,
     ConstExpr,
+    CtorDef,
+    DtorDef,
     FieldFuncDecl,
     FieldVarDecl
     ;
@@ -189,6 +188,7 @@ non terminal Vector
     FieldVarsList,
     FieldFuncsList,
     OptCtorDtorList,
+    CtorDtorList,
     OptFieldFuncsList
     ;
 
@@ -280,10 +280,11 @@ StructdefDecl ::=   T_STRUCTDEF T_ID_U:_1 T_LBRACE
                     {:
                         ((MyParser) parser).DoDuplicateVarCheck(_2);
                         // Put logic here to create default ctor if needed
+                        ((MyParser) parser).DoCtorDtorCheck(_3, _1);
                     :}
                     OptFieldFuncsList:_4
                     {:
-                        ((MyParser) parser).DoDuplicateFuncCheck(_4, _2);
+                        ((MyParser) parser).DoDuplicateFuncCheck(_4, _2, _3);
                         ((MyParser) parser).DoBlockClose();
                         ((MyParser) parser).DoStructdefDecl (_1);
                         ((MyParser) parser).SetStructFlag(false);
@@ -313,18 +314,38 @@ FieldVarDecl ::=    DecoratedType:_1 T_ID:_3 OptArrayList T_SEMI
     ;
 
 
-OptCtorDtorList ::= CtorDtorList
+OptCtorDtorList ::= CtorDtorList:_1
+                    {:
+                        RESULT = _1;
+                    :}
     |               /* empty */
+                    {:
+                        RESULT = new Vector();
+                    :}
     ;
 
 
-CtorDtorList ::=    CtorDtorDecl
-    |               CtorDtorList CtorDtorDecl
+CtorDtorList ::=    CtorDtorDecl:_1
+                    {:
+                        RESULT = new Vector();
+                        RESULT.addElement(_1);
+                    :}
+    |               CtorDtorList:_1 CtorDtorDecl:_2
+                    {:
+                        RESULT = _1;
+                        RESULT.addElement (_2);
+                    :}
     ;
 
 
-CtorDtorDecl ::=    CtorDef
-    |               DtorDef
+CtorDtorDecl ::=    CtorDef:_1
+                    {:
+                        RESULT = _1;
+                    :}
+    |               DtorDef:_1
+                    {:
+                        RESULT = _1;
+                    :}
     ;
 
 
@@ -340,6 +361,7 @@ CtorDef ::=         T_ID_U:_3
                     T_LBRACE OptStmtList T_RBRACE
                     {:
                         ((MyParser) parser).DoFuncDecl_2();
+                        RESULT = ((MyParser) parser).GetFunctSTO();
                     :}
     ;
 
@@ -348,10 +370,12 @@ DtorDef ::=         T_TILDE T_ID_U:_3
                     {:
                         ((MyParser) parser).SaveLineNum ();
                         ((MyParser) parser).DoFuncDecl_1("~" + _3);
+                        ((MyParser) parser).DoFormalParams(new Vector());
                     :}
                     T_LPAREN T_RPAREN T_LBRACE OptStmtList T_RBRACE
                     {:
                         ((MyParser) parser).DoFuncDecl_2();
+                        RESULT = ((MyParser) parser).GetFunctSTO();
                     :}
     ;
 

@@ -24,17 +24,20 @@ class MyParser extends parser
 	private SymbolTable m_symtab;
 
 	// SELF-DEFINED VARIABLES
-	private HashMap<String, FuncSTO> map = new HashMap<String, FuncSTO>();
+	//private HashMap<String, FuncSTO> map = new HashMap<String, FuncSTO>();
+	private HashMap<String, FuncSTO> map = new HashMap<>();
 	// Check 6.3
 	private boolean topLevelFlag = false;
+	// Check 9b
+	//private HashMap<String, Vector<FuncSTO>> funcMap = new HashMap<String, Vector<FuncSTO>();
+	private HashMap<String, Vector<FuncSTO>> funcMap = new HashMap<>();
 	// Check 12.2
 	private int breakCounter = 0;
 	// Check 13.1
-	private boolean isStuct = false;
+	private boolean isStruct = false;
 	private FuncSTO functionSTO;
-
-	// Check 9
-	private HashMap<String, Vector<FuncSTO>> mapOfFunc = new HashMap<String, Vector<FuncSTO>>();
+	// Check 13.2
+	Vector<String> tempVec = new Vector<>();
 
 	//----------------------------------------------------------------
 	//
@@ -507,13 +510,15 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	void DoFuncDecl_1(String id)
 	{
-		if (m_symtab.accessLocal(id) != null)
-		{
-			m_nNumErrors++;
-			m_errors.print(Formatter.toString(ErrorMsg.redeclared_id, id));
+		if (m_symtab.accessGlobal(id) != null) {
+			if (!funcMap.containsKey(id)) {
+				{
+					m_nNumErrors++;
+					m_errors.print(Formatter.toString(ErrorMsg.redeclared_id, id));
+				}
+			}
 		}
 
-	
 		FuncSTO sto = new FuncSTO(id);
 		m_symtab.insert(sto);
 
@@ -587,12 +592,12 @@ class MyParser extends parser
 		String hashKey = buildHashMap(temp, temp.getParams());
 
 		// Check 13.1
-		if(isStuct){
+		if(isStruct){
 			functionSTO = temp;
 		}
 
 		// Check 9.1
-		if(map.containsKey(hashKey)){
+		if(map.containsKey(hashKey) && !isStruct){
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.error9_Decl, temp.getName()));
 			return;
@@ -600,24 +605,30 @@ class MyParser extends parser
 
 		map.put(hashKey, m_symtab.getFunc());
 
-
 		// Check 9b
-		String name = temp.getName();
-		if(mapOfFunc.containsKey(name)){
-			Vector<FuncSTO> v = mapOfFunc.get(name);
+		// Get the name of the function
+		String funcName = temp.getName();
+		// Check if the function name exists inside the function hash map
+		if(funcMap.containsKey(funcName)){
+			// If Exists, retrieve from the hash map
+			Vector<FuncSTO> v = funcMap.get(funcName);
+			// Set the functions to overloaded
 			v.firstElement().setOverloaded(true);
 			temp.setOverloaded(true);
 			v.add(temp);
 
-			mapOfFunc.put(name, v);
+			// Put the function back into the map
+			funcMap.put(funcName, v);
 		} else {
+			// If does not exists, then create a new vector with the function name in it
 			Vector<FuncSTO> v = new Vector<>();
 			v.add(temp);
-			mapOfFunc.put(name, v);
+			funcMap.put(funcName, v);
 		}
 
 		// Check 6.3
-		if(!(temp.getReturnType() instanceof VoidType)) {
+		if(!(temp.getReturnType() instanceof VoidType) && !isStruct
+				) {
 			if (!topLevelFlag) {
 				m_nNumErrors++;
 				m_errors.print(ErrorMsg.error6c_Return_missing);
@@ -634,13 +645,13 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	// New helper function to generate the string for the hash map
 	//----------------------------------------------------------------
-	String buildHashMap(FuncSTO curr, Vector<STO> currParam){
-		String name = curr.getName();
+	String buildHashMap(STO curr, Vector<STO> currParam){
+		String name = curr.getName() + ".";
 		String params = "";
 		Iterator<STO> itr = currParam.iterator();
 
 		while(itr.hasNext()){
-				params += ("." + itr.next().getType().getName());
+				params += (itr.next().getType().getName() + ".");
 		}
 
 		return name + params;
@@ -827,60 +838,62 @@ class MyParser extends parser
 
 		// Check 9b
 		if(temp.getOverloaded()){
-			return DoOverloaded(temp, arguments, mapOfFunc.get(temp.getName()));
+			return DoOverloadedCheck(temp, arguments, funcMap.get(temp.getName()));
 		}
-
-		// Check 5.1
-		if(size != paramSize){
-			m_nNumErrors++;
-			m_errors.print(Formatter.toString(ErrorMsg.error5n_Call, paramSize, size));
-			return new ErrorSTO(sto.getName());
-		}
-
-		// Check if the function declared is in the hash map
-		if(!map.containsKey(hashKey)){
-			for(int i = 0; i < size; i++){
-				// Get the STO and the type
-				STO argumentSTO = arguments.get(i);
-				Type argumentType = argumentSTO.getType();
-
-				VarSTO parameterSTO = (VarSTO)temp.getParams().get(i);
-				Type parameterType = parameterSTO.getType();
-
-				if(parameterSTO.getPbr()){
-					// MAYBE NEED TO MAKE IT IS EQUIVALENT
-					if(!parameterType.isEquivalentTo(argumentType)){
-						m_nNumErrors++;
-						m_errors.print(Formatter.toString(ErrorMsg.error5r_Call, argumentType.getName(), parameterSTO.getName(), parameterType.getName()));
-					}
-					else if(!argumentSTO.isModLValue()){
-						m_nNumErrors++;
-						m_errors.print(Formatter.toString(ErrorMsg.error5c_Call, parameterSTO.getName(), parameterType.getName()));
-					}
-				}
-				else{
-					if(!parameterType.isAssignableTo(argumentType)){
-						m_nNumErrors++;
-						m_errors.print(Formatter.toString(ErrorMsg.error5a_Call, argumentType.getName(), parameterSTO.getName(), parameterType.getName()));
-					}
-				}
+		// Not overloaded
+		else{
+			// Check 5.1
+			if(size != paramSize){
+				m_nNumErrors++;
+				m_errors.print(Formatter.toString(ErrorMsg.error5n_Call, paramSize, size));
+				return new ErrorSTO(sto.getName());
 			}
 
-			return new ErrorSTO(sto.getName());
-		}
-		else{
-			for(int j = 0; j < size; j++){
-				// Get the STO and the type
-				STO argumentSTO = arguments.get(j);
+			// Check if the function declared is in the hash map
+			if(!map.containsKey(hashKey)){
+				for(int i = 0; i < size; i++){
+					// Get the STO and the type
+					STO argumentSTO = arguments.get(i);
+					Type argumentType = argumentSTO.getType();
 
-				VarSTO parameterSTO = (VarSTO)temp.getParams().get(j);
-				Type parameterType = parameterSTO.getType();
+					VarSTO parameterSTO = (VarSTO)temp.getParams().get(i);
+					Type parameterType = parameterSTO.getType();
 
-				if(parameterSTO.getPbr()){
-					if(!argumentSTO.isModLValue()){
-						m_nNumErrors++;
-						m_errors.print(Formatter.toString(ErrorMsg.error5c_Call, parameterSTO.getName(), parameterType.getName()));
-						sto = new ErrorSTO(sto.getName());
+					if(parameterSTO.getPbr()){
+						// MAYBE NEED TO MAKE IT IS EQUIVALENT
+						if(!parameterType.isEquivalentTo(argumentType)){
+							m_nNumErrors++;
+							m_errors.print(Formatter.toString(ErrorMsg.error5r_Call, argumentType.getName(), parameterSTO.getName(), parameterType.getName()));
+						}
+						else if(!argumentSTO.isModLValue()){
+							m_nNumErrors++;
+							m_errors.print(Formatter.toString(ErrorMsg.error5c_Call, parameterSTO.getName(), parameterType.getName()));
+						}
+					}
+					else{
+						if(!parameterType.isAssignableTo(argumentType)){
+							m_nNumErrors++;
+							m_errors.print(Formatter.toString(ErrorMsg.error5a_Call, argumentType.getName(), parameterSTO.getName(), parameterType.getName()));
+						}
+					}
+				}
+
+				return new ErrorSTO(sto.getName());
+			}
+			else{
+				for(int j = 0; j < size; j++){
+					// Get the STO and the type
+					STO argumentSTO = arguments.get(j);
+
+					VarSTO parameterSTO = (VarSTO)temp.getParams().get(j);
+					Type parameterType = parameterSTO.getType();
+
+					if(parameterSTO.getPbr()){
+						if(!argumentSTO.isModLValue()){
+							m_nNumErrors++;
+							m_errors.print(Formatter.toString(ErrorMsg.error5c_Call, parameterSTO.getName(), parameterType.getName()));
+							sto = new ErrorSTO(sto.getName());
+						}
 					}
 				}
 			}
@@ -890,7 +903,7 @@ class MyParser extends parser
 	}
 
 	// Check 9b
-	STO DoOverloaded(FuncSTO sto, Vector<STO> arguments, Vector<FuncSTO> functions){
+	STO DoOverloadedCheck(FuncSTO sto, Vector<STO> arguments, Vector<FuncSTO> functions){
 		int checkIndex = -1;
 		boolean foundCorrectValue = false;
 
@@ -1188,7 +1201,6 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	void DoDuplicateVarCheck(Vector<STO> members){
 		Iterator<STO> itr = members.iterator();
-		Vector<String> tempVec = new Vector<>();
 
 		while(itr.hasNext()){
 			STO cur = itr.next();
@@ -1199,32 +1211,36 @@ class MyParser extends parser
 				tempVec.add(cur.getName());
 			}
 		}
+
+		tempVec = null;
 	}
 
 	//----------------------------------------------------------------
 	// Check 13.1
 	//----------------------------------------------------------------
-	void DoDuplicateFuncCheck(Vector<STO> functionList, Vector<STO> varList){
-		Iterator<STO> itr = functionList.iterator();
-		Vector<String> tempVec = new Vector<>();
+	void DoDuplicateFuncCheck(Vector<STO> functionList, Vector<STO> varList, Vector<STO> ctorDtorList){
 		Iterator<STO> tempItr = varList.iterator();
-		// Vector that holds the string of all the name of the functions
-		Vector<String> funcTempVec = new Vector<>();
+		tempVec = new Vector<>();
 
-		// Insert all the variable names into a vector of strings
-		while(tempItr.hasNext()){
-			tempVec.add(tempItr.next().getName());
-		}
-
-		// Check if the function name exists as a variable
+		ctorDtorList.addAll(functionList);
+		// Check if the function name exists in the functionList
+		Iterator<STO> itr = ctorDtorList.iterator();
 		while(itr.hasNext()){
-			STO cur = itr.next();
-			if(tempVec.contains(cur.getName())){
+			STO curFunc = itr.next();
+			String hashKey = buildHashMap(curFunc, ((FuncSTO) curFunc).getParams());
+
+			if(tempVec.contains(curFunc.getName())){
 				m_nNumErrors++;
-				m_errors.print(Formatter.toString(ErrorMsg.error13a_Struct, cur.getName()));
+				m_errors.print(Formatter.toString(ErrorMsg.error13a_Struct, curFunc.getName()));
+			}
+			else if(tempVec.contains(hashKey)){
+				m_nNumErrors++;
+				m_errors.print(Formatter.toString(ErrorMsg.error9_Decl, curFunc.getName()));
+			}
+			else{
+				tempVec.add(hashKey);
 			}
 		}
-
 
 	}
 
@@ -1232,7 +1248,7 @@ class MyParser extends parser
 	// Check 13.1
 	//----------------------------------------------------------------
 	void SetStructFlag(boolean state){
-		isStuct = state;
+		isStruct = state;
 	}
 
 	//----------------------------------------------------------------
@@ -1243,6 +1259,31 @@ class MyParser extends parser
 		functionSTO = null;
 		return temp;
 	}
+
+	//----------------------------------------------------------------
+	// Check 13.2
+	//----------------------------------------------------------------
+	void DoCtorDtorCheck(Vector<STO> ctorDtorList, String curStructName){
+		Iterator<STO> tempItr = ctorDtorList.iterator();
+
+		while(tempItr.hasNext()){
+			STO cur= tempItr.next();
+
+			if((cur.getName().startsWith("~"))){
+				if(!("~" + curStructName).equals(cur.getName())){
+					m_nNumErrors++;
+					m_errors.print(Formatter.toString(ErrorMsg.error13b_Ctor, cur.getName(), curStructName));
+				}
+			}
+			else{
+				if(!curStructName.equals(cur.getName())){
+					m_nNumErrors++;
+					m_errors.print(Formatter.toString(ErrorMsg.error13b_Ctor, cur.getName(), curStructName));
+				}
+			}
+		}
+	}
+
 
 
 }
