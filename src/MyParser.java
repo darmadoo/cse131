@@ -1340,7 +1340,7 @@ class MyParser extends parser
 		// Check if there are not ctors
 		if(!ctorDetected){
 			FuncSTO emptyCtor = new FuncSTO(curStructName);
-			emptyCtor.setParams(new Vector<>());
+			emptyCtor.setParams(new Vector());
 			ctorDtorList.add(emptyCtor);
 		}
 
