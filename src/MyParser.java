@@ -493,14 +493,17 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
-	void DoStructdefDecl(String id)
+	void DoStructdefDecl(String id, Vector<STO> ctorDtorList)
 	{
 		if (m_symtab.accessLocal(id) != null)
 		{
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.redeclared_id, id));
 		}
-		
+
+		if(ctorDtorList == null){
+
+		}
 		StructdefSTO sto = new StructdefSTO(id);
 		m_symtab.insert(sto);
 	}
@@ -627,8 +630,7 @@ class MyParser extends parser
 		}
 
 		// Check 6.3
-		if(!(temp.getReturnType() instanceof VoidType) && !isStruct
-				) {
+		if(!(temp.getReturnType() instanceof VoidType) && !isStruct) {
 			if (!topLevelFlag) {
 				m_nNumErrors++;
 				m_errors.print(ErrorMsg.error6c_Return_missing);
@@ -859,6 +861,10 @@ class MyParser extends parser
 					VarSTO parameterSTO = (VarSTO)temp.getParams().get(i);
 					Type parameterType = parameterSTO.getType();
 
+					if(argumentSTO instanceof ErrorSTO){
+						continue;
+					}
+
 					if(parameterSTO.getPbr()){
 						// MAYBE NEED TO MAKE IT IS EQUIVALENT
 						if(!parameterType.isEquivalentTo(argumentType)){
@@ -917,15 +923,26 @@ class MyParser extends parser
 					break;
 				}
 
-				int y;
-				for(y = 0; y < paramaters.size(); y++){
-					if(!(paramaters.get(y).getType().isEquivalentTo(arguments.get(y).getType()))){
+				for(int j = 0; j < paramaters.size(); j++){
+					if(!(paramaters.get(j).getType().isEquivalentTo(arguments.get(j).getType()))){
 						break;
 					}
 
-					if((y + 1) == paramaters.size()){
-						foundCorrectValue = true;
-						checkIndex = x;
+					// After we validated that the no of params matches the arguments and the type
+					if((j + 1) == paramaters.size()){
+						// Check if the parameters is a pass by reference
+						if(((VarSTO)paramaters.get(j)).getPbr()){
+							// Check if it is L-modif
+							if(arguments.get(j).isModLValue()){
+								foundCorrectValue = true;
+								checkIndex = x;
+							}
+						}
+						// Pass by value
+						else{
+							foundCorrectValue = true;
+							checkIndex = x;
+						}
 					}
 				}
 
@@ -1199,6 +1216,22 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	// Check 13.1
 	//----------------------------------------------------------------
+	void SetStructFlag(boolean state){
+		isStruct = state;
+	}
+
+	//----------------------------------------------------------------
+	// Check 13.1
+	//----------------------------------------------------------------
+	STO GetFunctSTO(){
+		FuncSTO temp = functionSTO;
+		functionSTO = null;
+		return temp;
+	}
+
+	//----------------------------------------------------------------
+	// Check 13.1
+	//----------------------------------------------------------------
 	void DoDuplicateVarCheck(Vector<STO> members){
 		Iterator<STO> itr = members.iterator();
 
@@ -1211,20 +1244,72 @@ class MyParser extends parser
 				tempVec.add(cur.getName());
 			}
 		}
+	}
 
-		tempVec = null;
+	//----------------------------------------------------------------
+	// Check 13.2
+	//----------------------------------------------------------------
+	Vector<STO> DoCtorDtorCheck(Vector<STO> ctorDtorList, String curStructName){
+		boolean ctorDetected = false;
+		Iterator<STO> tempItr = ctorDtorList.iterator();
+
+		while(tempItr.hasNext()){
+			STO cur= tempItr.next();
+			String hashKey = buildHashMap(cur, ((FuncSTO) cur).getParams());
+
+			// Check if they are ctor or dtor
+			if((cur.getName().startsWith("~"))){
+				// Check if their names match the name of the structdef
+				if(!("~" + curStructName).equals(cur.getName())){
+					// Not equals invalid dtor
+					m_nNumErrors++;
+					m_errors.print(Formatter.toString(ErrorMsg.error13b_Dtor, cur.getName(), curStructName));
+				}
+				else{
+					if(tempVec.contains(hashKey)){
+						m_nNumErrors++;
+						m_errors.print(Formatter.toString(ErrorMsg.error9_Decl, cur.getName()));
+					}
+					else{
+						tempVec.add(hashKey);
+					}
+				}
+			}
+			else{
+				if(!curStructName.equals(cur.getName())){
+					// Invalid ctor
+					m_nNumErrors++;
+					m_errors.print(Formatter.toString(ErrorMsg.error13b_Ctor, cur.getName(), curStructName));
+				}
+				else{
+					ctorDetected = true;
+					if(tempVec.contains(hashKey)){
+						m_nNumErrors++;
+						m_errors.print(Formatter.toString(ErrorMsg.error9_Decl, cur.getName()));
+					}
+					else{
+						tempVec.add(hashKey);
+					}
+				}
+			}
+		}
+
+		// Check if there are not ctors
+		if(!ctorDetected){
+			FuncSTO emptyCtor = new FuncSTO(curStructName);
+			emptyCtor.setParams(new Vector<>());
+			ctorDtorList.add(emptyCtor);
+		}
+
+		return ctorDtorList;
 	}
 
 	//----------------------------------------------------------------
 	// Check 13.1
 	//----------------------------------------------------------------
-	void DoDuplicateFuncCheck(Vector<STO> functionList, Vector<STO> varList, Vector<STO> ctorDtorList){
-		Iterator<STO> tempItr = varList.iterator();
-		tempVec = new Vector<>();
-
-		ctorDtorList.addAll(functionList);
+	void DoDuplicateFuncCheck(Vector<STO> functionList){
 		// Check if the function name exists in the functionList
-		Iterator<STO> itr = ctorDtorList.iterator();
+		Iterator<STO> itr = functionList.iterator();
 		while(itr.hasNext()){
 			STO curFunc = itr.next();
 			String hashKey = buildHashMap(curFunc, ((FuncSTO) curFunc).getParams());
@@ -1242,48 +1327,7 @@ class MyParser extends parser
 			}
 		}
 
+		// Reset the namespace
+		tempVec = new Vector<>();
 	}
-
-	//----------------------------------------------------------------
-	// Check 13.1
-	//----------------------------------------------------------------
-	void SetStructFlag(boolean state){
-		isStruct = state;
-	}
-
-	//----------------------------------------------------------------
-	// Check 13.1
-	//----------------------------------------------------------------
-	STO GetFunctSTO(){
-		FuncSTO temp = functionSTO;
-		functionSTO = null;
-		return temp;
-	}
-
-	//----------------------------------------------------------------
-	// Check 13.2
-	//----------------------------------------------------------------
-	void DoCtorDtorCheck(Vector<STO> ctorDtorList, String curStructName){
-		Iterator<STO> tempItr = ctorDtorList.iterator();
-
-		while(tempItr.hasNext()){
-			STO cur= tempItr.next();
-
-			if((cur.getName().startsWith("~"))){
-				if(!("~" + curStructName).equals(cur.getName())){
-					m_nNumErrors++;
-					m_errors.print(Formatter.toString(ErrorMsg.error13b_Ctor, cur.getName(), curStructName));
-				}
-			}
-			else{
-				if(!curStructName.equals(cur.getName())){
-					m_nNumErrors++;
-					m_errors.print(Formatter.toString(ErrorMsg.error13b_Ctor, cur.getName(), curStructName));
-				}
-			}
-		}
-	}
-
-
-
 }
