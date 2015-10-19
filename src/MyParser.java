@@ -255,6 +255,49 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
+	void DoForEachVarDecl(String id, Type t, STO expr, String rtType)
+	{
+
+		if (m_symtab.accessLocal(id) != null)
+		{
+			m_nNumErrors++;
+			m_errors.print(Formatter.toString(ErrorMsg.redeclared_id, id));
+		}
+		if(expr != null)
+		{
+			if(expr.isError()) {
+				return;
+			}
+			//if it's not array
+			else if(!expr.getType().isArray())
+			{
+				m_nNumErrors++;
+				m_errors.print(ErrorMsg.error12a_Foreach);
+			}
+			//else it's array
+			else
+			{
+				//access the array element
+				ArrayType temp = (ArrayType) expr.getType();
+				Type next = temp.next();
+				if(rtType != "&" && !t.isAssignableTo(next))
+				{
+					m_nNumErrors++;
+					m_errors.print(Formatter.toString(ErrorMsg.error12v_Foreach, next.getName(), id, t.getName()));
+				}
+				else if(rtType == "&" && !t.isEquivalentTo(next))
+				{
+					m_nNumErrors++;
+					m_errors.print(Formatter.toString(ErrorMsg.error12r_Foreach, next.getName(), id, t.getName()));
+				}
+			}
+		}
+		VarSTO sto = new VarSTO(id, t);
+		m_symtab.insert(sto);
+	}
+	//----------------------------------------------------------------
+	//
+	//----------------------------------------------------------------
 	void DoVarDecl(String id, Type t, STO expr, Vector<STO> arguments, String rtType)
 	{
 		if (m_symtab.accessLocal(id) != null)

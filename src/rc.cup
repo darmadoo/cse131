@@ -677,7 +677,7 @@ ForeachStmt ::=     T_FOREACH T_LPAREN Type:_1 OptRef:_4 T_ID:_2 T_COLON Expr:_3
                     {:
                         ((MyParser) parser).DoBlockOpen();
                         ((MyParser) parser).incrementBreakCounter();
-                        ((MyParser) parser).DoVarDecl (_2, _1, _3, new Vector(), _4);
+                        ((MyParser) parser).DoForEachVarDecl (_2, _1, _3, _4);
                     :}
                     CodeBlock
                     {:
