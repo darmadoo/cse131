@@ -1120,10 +1120,18 @@ Designator3 ::=     T_LPAREN Expr:_2 T_RPAREN
                     :}
     ;
 
-NewStmt ::=         T_NEW Designator OptCtorCall T_SEMI
+NewStmt ::=         T_NEW Designator:_1 OptCtorCall T_SEMI
+                    {:
+                        ((MyParser) parser).DoNewStatement(_1);
+
+                    :}
     ;
 
-DeleteStmt ::=      T_DELETE Designator T_SEMI
+DeleteStmt ::=      T_DELETE Designator:_1 T_SEMI
+                    {:
+                        ((MyParser) parser).DoDeleteStatement(_1);
+
+                    :}
     ;
 
 UnarySign ::=       T_PLUS

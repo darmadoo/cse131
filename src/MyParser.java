@@ -197,6 +197,56 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
+	void DoNewStatement(STO des)
+	{
+		if(des.isError())
+		{
+			return;
+		}
+		//if it's modifiable l value
+		else if (des.getIsAddressable() && des.getIsModifiable())
+		{
+			if (!des.getType().isPointer())
+			{
+				m_nNumErrors++;
+				m_errors.print(Formatter.toString(ErrorMsg.error16_New, des.getType().getName()));
+			}
+		}
+		else
+		{
+			m_nNumErrors++;
+			m_errors.print(ErrorMsg.error16_New_var);
+		}
+
+	}
+
+	//----------------------------------------------------------------
+	//
+	//----------------------------------------------------------------
+	void DoDeleteStatement(STO des) {
+		if (des.isError()) {
+			return;
+		}
+		//if it's modifiable l value
+		else if (des.getIsAddressable() && des.getIsModifiable())
+		{
+			if (!des.getType().isPointer())
+			{
+				m_nNumErrors++;
+				m_errors.print(Formatter.toString(ErrorMsg.error16_Delete, des.getType().getName()));
+			}
+		}
+		else
+		{
+			m_nNumErrors++;
+			m_errors.print(ErrorMsg.error16_Delete_var);
+		}
+
+	}
+
+	//----------------------------------------------------------------
+	//
+	//----------------------------------------------------------------
 	VarSTO DoDeclArray(String id, Type t, Vector<STO> arguments)
 	{
 		ArrayType head = null;
