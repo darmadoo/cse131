@@ -280,14 +280,14 @@ StructdefDecl ::=   T_STRUCTDEF T_ID_U:_1 T_LBRACE
                     {:
                         ((MyParser) parser).DoDuplicateVarCheck(_2);
                         // Put logic here to create default ctor if needed
-                        ((MyParser) parser).DoCtorDtorCheck(_3, _1);
+                        _3 = ((MyParser) parser).DoCtorDtorCheck(_3, _1);
                     :}
                     OptFieldFuncsList:_4
                     {:
-                        ((MyParser) parser).DoDuplicateFuncCheck(_4, _2, _3);
-                        ((MyParser) parser).DoBlockClose();
-                        ((MyParser) parser).DoStructdefDecl (_1);
+                        ((MyParser) parser).DoDuplicateFuncCheck(_4);
                         ((MyParser) parser).SetStructFlag(false);
+                        ((MyParser) parser).DoBlockClose();
+                        ((MyParser) parser).DoStructdefDecl (_1, _3);
                     :}
                     T_RBRACE T_SEMI
     ;

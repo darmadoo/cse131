@@ -27,7 +27,7 @@ class ConstSTO extends STO
 		m_value = null; // fix this
 		// You may want to change the isModifiable and isAddressable
 		// fields as necessary
-		super.setIsAddressable(true);
+		super.setIsAddressable(false);
 		super.setIsModifiable(false);
 	}
 
