@@ -3,6 +3,10 @@
  */
 class StructType extends CompositeType{
 
+    public StructType(String strName){
+        super(strName, 4);
+    }
+
     public StructType(String strName, int size)
     {
         super(strName, size);
