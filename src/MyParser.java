@@ -197,6 +197,56 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
+	void DoNewStatement(STO des)
+	{
+		if(des.isError())
+		{
+			return;
+		}
+		//if it's modifiable l value
+		else if (des.getIsAddressable() && des.getIsModifiable())
+		{
+			if (!des.getType().isPointer())
+			{
+				m_nNumErrors++;
+				m_errors.print(Formatter.toString(ErrorMsg.error16_New, des.getType().getName()));
+			}
+		}
+		else
+		{
+			m_nNumErrors++;
+			m_errors.print(ErrorMsg.error16_New_var);
+		}
+
+	}
+
+	//----------------------------------------------------------------
+	//
+	//----------------------------------------------------------------
+	void DoDeleteStatement(STO des) {
+		if (des.isError()) {
+			return;
+		}
+		//if it's modifiable l value
+		else if (des.getIsAddressable() && des.getIsModifiable())
+		{
+			if (!des.getType().isPointer())
+			{
+				m_nNumErrors++;
+				m_errors.print(Formatter.toString(ErrorMsg.error16_Delete, des.getType().getName()));
+			}
+		}
+		else
+		{
+			m_nNumErrors++;
+			m_errors.print(ErrorMsg.error16_Delete_var);
+		}
+
+	}
+
+	//----------------------------------------------------------------
+	//
+	//----------------------------------------------------------------
 	VarSTO DoDeclArray(String id, Type t, Vector<STO> arguments)
 	{
 		ArrayType head = null;
@@ -370,6 +420,13 @@ class MyParser extends parser
 				m_errors.print(Formatter.toString(ErrorMsg.error8_Assign, expr.getType().getName(), t.getName()));
 			}
 		}
+		//TO-DO address of operation
+		//check 15c here
+		else if(expr != null && t.isPointer() && (expr.getName() != "nullptr" || !expr.getType().isPointer()))
+		{
+			m_nNumErrors++;
+			m_errors.print(Formatter.toString(ErrorMsg.error8_Assign, expr.getType().getName(), t.getName()));
+		}
 		else if(expr != null && expr.isConst())
 		{
 			if (expr.getType().isInt()) {
@@ -411,7 +468,7 @@ class MyParser extends parser
 	void DoAutoDecl(String id,STO expr){
 		//create a new STO and assign it the type of exp
 		// proceed as normal
-		if(expr != null)
+		if(expr != null && !expr.getType().isNullPointer())
 		{
 			VarSTO sto = new VarSTO(id, expr.getType());
 			m_symtab.insert(sto);
@@ -1175,6 +1232,7 @@ class MyParser extends parser
 
 			}
 		}
+		//else it's a pointer no need to do anything lah
 		return des;
 	}
 	//----------------------------------------------------------------
@@ -1239,6 +1297,63 @@ class MyParser extends parser
 		return sto;
 	}
 
+	//----------------------------------------------------------------
+	//
+	//----------------------------------------------------------------
+	String GetPointerType(Vector<String> arguments)
+	{
+		String result = "";
+		for(int i = 0; i < arguments.size(); i++) {
+			result = result + "*";
+		}
+		return result;
+	}
+
+	Type DoPointerType(Type t, Vector<String> arguments)
+	{
+		PointerType head = null;
+		PointerType pointer = null;
+		PointerType temp;
+		while(!arguments.isEmpty()) {
+			String x = arguments.firstElement();
+			if (x == "*")
+			{
+				temp = new PointerType(t.getName() + GetPointerType(arguments), 4);
+				if(head == null) {
+					head = temp;
+				}
+				else {
+					pointer = head;
+					while (pointer.hasNext()) {
+						pointer = (PointerType) pointer.next();
+					}
+					pointer.setChild(temp);
+				}
+			}
+
+			arguments.remove(x);
+		}
+
+		pointer = head;
+		while (pointer.hasNext()) {
+			pointer = (PointerType) pointer.next();
+		}
+		if(pointer != null){
+			pointer.setChild(t);
+		}
+
+		//pointer.setChild(t);
+
+		pointer = head;
+		while(pointer.hasNext())
+		{
+			if(pointer.next().isPointer())
+				pointer = (PointerType)pointer.next();
+			else
+				break;
+		}
+		return head;
+	}
 
 	//----------------------------------------------------------------
 	//

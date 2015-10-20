@@ -132,9 +132,6 @@ non terminal
     OptInit,
     OptCtorCall,
     CtorCall,
-    OptPointerList,
-    PointerList,
-    Pointer,
     NewStmt,
     DeleteStmt
     ;
@@ -143,7 +140,8 @@ non terminal String
     AddOp,
     MulOp,
     IncDecOp,
-    OptRef
+    OptRef,
+    Pointer
     ;
 
 non terminal STO
@@ -185,6 +183,8 @@ non terminal Vector
     ExprList,
     OptArrayList,
     ArrayList,
+    OptPointerList,
+    PointerList,
     FieldVarsList,
     FieldFuncsList,
     OptCtorDtorList,
@@ -465,7 +465,14 @@ DecoratedType ::=   DecoratedBasicType:_1
 
 DecoratedBasicType ::= BasicType:_1 OptPointerList:_2
                     {:
-                        RESULT = _1;    // gotta do something here!
+                        if(_2 == null)
+                        {
+                            RESULT = _1;    // gotta do something here!
+                        }
+                        else
+                        {
+                            RESULT = ((MyParser) parser).DoPointerType (_1, _2);
+                        }
                     :}
     ;
 
@@ -503,16 +510,30 @@ ReturnType ::=      Type:_1
     ;
 
 
-OptPointerList ::=  PointerList
+OptPointerList ::=  PointerList:_1
+                    {:
+                        RESULT = _1;
+                    :}
     |               /* empty */
     ;
 
-PointerList ::=     Pointer
-    |               PointerList Pointer
+PointerList ::=     Pointer:_1
+                    {:
+                        RESULT = new Vector();
+                        RESULT.addElement(_1);
+                    :}
+    |               PointerList:_1 Pointer:_2
+                    {:
+                        RESULT = _1;
+                        RESULT.addElement (_2);
+                    :}
     ;
 
 
 Pointer ::=         T_STAR
+                    {:
+                        RESULT = "*";
+                    :}
     ;
 
 
@@ -1083,7 +1104,7 @@ Designator3 ::=     T_LPAREN Expr:_2 T_RPAREN
                     :}
     |               T_NULLPTR
                     {:
-                        RESULT = new ExprSTO ("nullptr", null);     // fix me!
+                        RESULT = new ExprSTO ("nullptr", new NullPointerType("nullptr", 4));     // fix me!
                     :}
     |               T_THIS
                     {:
@@ -1099,10 +1120,18 @@ Designator3 ::=     T_LPAREN Expr:_2 T_RPAREN
                     :}
     ;
 
-NewStmt ::=         T_NEW Designator OptCtorCall T_SEMI
+NewStmt ::=         T_NEW Designator:_1 OptCtorCall T_SEMI
+                    {:
+                        ((MyParser) parser).DoNewStatement(_1);
+
+                    :}
     ;
 
-DeleteStmt ::=      T_DELETE Designator T_SEMI
+DeleteStmt ::=      T_DELETE Designator:_1 T_SEMI
+                    {:
+                        ((MyParser) parser).DoDeleteStatement(_1);
+
+                    :}
     ;
 
 UnarySign ::=       T_PLUS
