@@ -11,16 +11,15 @@ public class NotEqualOp extends ComparisonOp {
             // error when one of them is not numeric
             if((aType instanceof PointerType) || (bType instanceof PointerType))
             {
+                if((aType.isNullPointer() && bType.isPointer()) || (aType.isPointer() && bType.isNullPointer()))
+                    return new ExprSTO(a.getName() + " != " + b.getName(), new BoolType("bool", 4));
                 if(!(aType.getName()).equals(bType.getName()))
-                    if(!aType.isNullPointer() && !bType.isNullPointer())
-                        return new ErrorSTO(Formatter.toString(ErrorMsg.error17_Expr, "==", aType.getName(), bType.getName()));
-                    else
-                        return new ExprSTO(a.getName() + " == " + b.getName(), new BoolType("bool", 4));
+                    return new ErrorSTO(Formatter.toString(ErrorMsg.error17_Expr, "!=", aType.getName(), bType.getName()));
                 else
-                    return new ExprSTO(a.getName() + " == " + b.getName(), new BoolType("bool", 4));
+                    return new ExprSTO(a.getName() + " != " + b.getName(), new BoolType("bool", 4));
             }
             else
-                return new ErrorSTO(Formatter.toString(ErrorMsg.error1b_Expr, aType.getName(), "==", bType.getName()));
+                return new ErrorSTO(Formatter.toString(ErrorMsg.error1b_Expr, aType.getName(), "!=", bType.getName()));
         }
         else if ((aType instanceof NumericType) && (bType instanceof BoolType)) {
             // error when one of them is not Bool

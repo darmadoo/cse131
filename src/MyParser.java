@@ -1467,6 +1467,7 @@ class MyParser extends parser
 
 		if ((sto = m_symtab.access(strID)) == null)
 		{
+			//System.out.println(strID);
 			m_nNumErrors++;
 		 	m_errors.print(Formatter.toString(ErrorMsg.undeclared_id, strID));
 			return new ErrorType();
