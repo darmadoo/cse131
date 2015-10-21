@@ -33,7 +33,6 @@ class MyParser extends parser
 	// Check 13.1
 	private boolean isStruct = false;
 	private FuncSTO functionSTO;
-	//Check 14.2
 	private String currentStructName;
 
 	//----------------------------------------------------------------
@@ -446,6 +445,22 @@ class MyParser extends parser
 		}
 	}
 
+	VarSTO VarTypeDec(Type typ, String id, Vector<STO> arrayList){
+		VarSTO temp;
+
+		if (arrayList != null)
+		{
+			// construct array
+			temp = DoDeclArray(id, typ, arrayList);
+		}
+		else{
+			// Construct variable
+			temp = new VarSTO(id, typ);
+		}
+
+		return temp;
+	}
+
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
@@ -711,7 +726,7 @@ class MyParser extends parser
 	void DoFuncDecl_2()
 	{
 		FuncSTO temp = m_symtab.getFunc();
-		String hashKey = buildHashMap(temp, temp.getParams());
+		String hashKey = generateUniqueKey(temp, temp.getParams());
 
 		// Check 13.1
 		if(isStruct){
@@ -733,14 +748,14 @@ class MyParser extends parser
 			// Get the name of the function
 			String funcName = temp.getName();
 			buildOverloadedHashMap(temp, funcName);
-		}
 
-		// Check 6.3
-		if(!(temp.getReturnType() instanceof VoidType) && !isStruct) {
-			if (!topLevelFlag) {
-				m_nNumErrors++;
-				m_errors.print(ErrorMsg.error6c_Return_missing);
-				return;
+			// Check 6.3
+			if(!(temp.getReturnType() instanceof VoidType)) {
+				if (!topLevelFlag) {
+					m_nNumErrors++;
+					m_errors.print(ErrorMsg.error6c_Return_missing);
+					return;
+				}
 			}
 		}
 
@@ -753,8 +768,7 @@ class MyParser extends parser
 	}
 
 	//----------------------------------------------------------------
-	// New helper function to generate the string for the overloaded hash map
-	// TODO CHANGE THIS SOMEOHOW
+	// New helper function to add functions into hashmap
 	//----------------------------------------------------------------
 	void buildOverloadedHashMap(FuncSTO cur, String curName){
 		// Check if the function name exists inside the function hash map
@@ -770,7 +784,7 @@ class MyParser extends parser
 			funcMap.put(curName, v);
 		} else {
 			// If does not exists, then create a new vector with the function name in it
-			Vector<FuncSTO> v = new Vector<>();
+			Vector<FuncSTO> v = new Vector();
 			v.add(cur);
 			funcMap.put(curName, v);
 		}
@@ -778,13 +792,12 @@ class MyParser extends parser
 
 	//----------------------------------------------------------------
 	// New helper function to generate the string for the hash map
-	// TODO MAYBE CHANGE THE NAME ?
 	//----------------------------------------------------------------
-	String buildHashMap(STO curr, Vector<STO> currParam){
+	String generateUniqueKey(STO curr, Vector<STO> currParam){
 		String name = curr.getName() + ".";
 		String params = "";
-		Iterator<STO> itr = currParam.iterator();
 
+		Iterator<STO> itr = currParam.iterator();
 		while(itr.hasNext()){
 				params += (itr.next().getType().getName() + ".");
 		}
@@ -805,7 +818,7 @@ class MyParser extends parser
 
 		// insert parameters here
 		if(params == null){
-			params = new Vector<STO>();
+			params = new Vector();
 		}
 
 		m_symtab.getFunc().setParams(params);
@@ -912,7 +925,6 @@ class MyParser extends parser
 			m_errors.print(Formatter.toString(ErrorMsg.error3b_Assign, expr.getType().getName(), stoDes.getType().getName()));
 			return new ErrorSTO(stoDes.getName());
 		}
-		//else if(expr.isFunc() && !(stoDes.getType().isAssignableTo(expr.getType()))
 
 		return stoDes;
 	}
@@ -978,7 +990,7 @@ class MyParser extends parser
 		// Get the function
 		FuncSTO temp = (FuncSTO) sto;
 		// Build the name mingling
-		String hashKey = buildHashMap(temp, arguments);
+		String hashKey = generateUniqueKey(temp, arguments);
 		// Store the size of the argument and the parameters
 		int size = temp.getParamSize();
 		int paramSize = arguments.size();
@@ -997,60 +1009,61 @@ class MyParser extends parser
 				m_errors.print(Formatter.toString(ErrorMsg.error5n_Call, paramSize, size));
 				return new ErrorSTO(sto.getName());
 			}
-
-			// Check if the function declared is in the hash map
-			if(!map.containsKey(hashKey)){
-				for(int i = 0; i < size; i++){
-					// Store the arguments and the type of the arguments
-					STO argumentSTO = arguments.get(i);
-					Type argumentType = argumentSTO.getType();
-
-					// Store the parameters and the type of the parameters
-					VarSTO parameterSTO = (VarSTO)temp.getParams().get(i);
-					Type parameterType = parameterSTO.getType();
-
-					// Make sure that the argument is valid
-					if(argumentSTO instanceof ErrorSTO){
-						continue;
-					}
-
-					// Check for pass by reference
-					if(parameterSTO.getPbr()){
-						// Check for equivalence
-						if(!parameterType.isEquivalentTo(argumentType)){
-							m_nNumErrors++;
-							m_errors.print(Formatter.toString(ErrorMsg.error5r_Call, argumentType.getName(), parameterSTO.getName(), parameterType.getName()));
-						}
-						// Check for Modifiable L value
-						else if(!argumentSTO.isModLValue()){
-							m_nNumErrors++;
-							m_errors.print(Formatter.toString(ErrorMsg.error5c_Call, parameterSTO.getName(), parameterType.getName()));
-						}
-					}
-					else{
-						// Pass by value, so check for assignability (Type promotion)
-						if(!parameterType.isAssignableTo(argumentType)){
-							m_nNumErrors++;
-							m_errors.print(Formatter.toString(ErrorMsg.error5a_Call, argumentType.getName(), parameterSTO.getName(), parameterType.getName()));
-						}
-					}
-				}
-				return new ErrorSTO(sto.getName());
-			}
-			// Already inside the namespace
 			else{
-				for(int j = 0; j < size; j++){
-					// Get the STO and the type
-					STO argumentSTO = arguments.get(j);
+				// Check if the function declared is in the hash map
+				if(!map.containsKey(hashKey)){
+					for(int i = 0; i < size; i++){
+						// Store the arguments and the type of the arguments
+						STO argumentSTO = arguments.get(i);
+						Type argumentType = argumentSTO.getType();
 
-					VarSTO parameterSTO = (VarSTO)temp.getParams().get(j);
-					Type parameterType = parameterSTO.getType();
+						// Store the parameters and the type of the parameters
+						VarSTO parameterSTO = (VarSTO)temp.getParams().get(i);
+						Type parameterType = parameterSTO.getType();
 
-					if(parameterSTO.getPbr()){
-						if(!argumentSTO.isModLValue()){
-							m_nNumErrors++;
-							m_errors.print(Formatter.toString(ErrorMsg.error5c_Call, parameterSTO.getName(), parameterType.getName()));
-							sto = new ErrorSTO(sto.getName());
+						// Make sure that the argument is valid
+						if(argumentSTO instanceof ErrorSTO){
+							continue;
+						}
+
+						// Check for pass by reference
+						if(parameterSTO.getPbr()){
+							// Check for equivalence
+							if(!parameterType.isEquivalentTo(argumentType)){
+								m_nNumErrors++;
+								m_errors.print(Formatter.toString(ErrorMsg.error5r_Call, argumentType.getName(), parameterSTO.getName(), parameterType.getName()));
+							}
+							// Check for Modifiable L value
+							else if(!argumentSTO.isModLValue()){
+								m_nNumErrors++;
+								m_errors.print(Formatter.toString(ErrorMsg.error5c_Call, parameterSTO.getName(), parameterType.getName()));
+							}
+						}
+						else{
+							// Pass by value, so check for assignability (Type promotion)
+							if(!parameterType.isAssignableTo(argumentType)){
+								m_nNumErrors++;
+								m_errors.print(Formatter.toString(ErrorMsg.error5a_Call, argumentType.getName(), parameterSTO.getName(), parameterType.getName()));
+							}
+						}
+					}
+					return new ErrorSTO(sto.getName());
+				}
+				// Already inside the namespace
+				else{
+					for(int j = 0; j < size; j++){
+						// Get the STO and the type
+						STO argumentSTO = arguments.get(j);
+
+						VarSTO parameterSTO = (VarSTO)temp.getParams().get(j);
+						Type parameterType = parameterSTO.getType();
+
+						if(parameterSTO.getPbr()){
+							if(!argumentSTO.isModLValue()){
+								m_nNumErrors++;
+								m_errors.print(Formatter.toString(ErrorMsg.error5c_Call, parameterSTO.getName(), parameterType.getName()));
+								sto = new ErrorSTO(sto.getName());
+							}
 						}
 					}
 				}
@@ -1062,48 +1075,54 @@ class MyParser extends parser
 
 	// Check 9b
 	STO DoOverloadedCheck(FuncSTO curSTO, Vector<STO> arguments, Vector<FuncSTO> functions){
-		int checkIndex = -1;
+		int found = -1;
 		boolean foundCorrectValue = false;
 
-		for(int x = 0; x < functions.size(); x++){
-			Vector<STO> paramaters = functions.get(x).getParams();
+		for(int i = 0; i < functions.size(); i++){
+			Vector<STO> parameters = functions.get(i).getParams();
 
 			// Check if the number of parameters matches the number of arguments
-			if(paramaters.size() == arguments.size()){
-				if(paramaters.size() == 0){
+			if(parameters.size() == arguments.size()){
+				if(parameters.size() == 0){
 					foundCorrectValue = true;
-					checkIndex = x;
-					break;
+					found = i;
 				}
 
-				// Loop through all the parametesrs
-				for(int j = 0; j < paramaters.size(); j++){
-					// Make sure that the types do match, else break out of the function
-					if(!(paramaters.get(j).getType().isEquivalentTo(arguments.get(j).getType()))){
-						break;
-					}
-
-					// After we validated that the no of params matches the arguments and the type
-					if((j + 1) == paramaters.size()){
-						// Check if the parameters is a pass by reference
-						if(((VarSTO)paramaters.get(j)).getPbr()){
-							// Check if it is L-modif
-							if(arguments.get(j).isModLValue()){
-								foundCorrectValue = true;
-								checkIndex = x;
-							}
-						}
-						// Pass by value
-						else{
-							foundCorrectValue = true;
-							checkIndex = x;
-						}
-					}
-				}
-
-				// As soon we find a suitable function to call we stop looking further
 				if(foundCorrectValue){
 					break;
+				}
+				else{
+					// Loop through all the parameters
+					for(int j = 0; j < parameters.size(); j++){
+
+						// Make sure that the types do match, else break out of the function
+						if(!(parameters.get(j).getType().isEquivalentTo(arguments.get(j).getType()))){
+							break;
+						}
+
+						int argSize = j + 1;
+
+						// After we validated that the no of params matches the arguments and the type
+						if(argSize == parameters.size()){
+							// Check if the parameters is a pass by reference
+							if(((VarSTO)parameters.get(j)).getPbr()){
+								// Check if it is L-modif
+								if(arguments.get(j).isModLValue()){
+									foundCorrectValue = true;
+									found = i;
+								}
+							}
+							// Pass by value
+							else{
+								foundCorrectValue = true;
+								found = i;
+							}
+						}
+					}
+					// As soon we find a suitable function to call we stop looking further
+					if(foundCorrectValue){
+						break;
+					}
 				}
 			}
 		}
@@ -1115,7 +1134,7 @@ class MyParser extends parser
 			return new ErrorSTO(curSTO.getName());
 		}
 
-		return new ExprSTO("", functions.get(checkIndex).getReturnType());
+		return new ExprSTO("", functions.get(found).getReturnType());
 	}
 
 	//----------------------------------------------------------------
@@ -1501,7 +1520,7 @@ class MyParser extends parser
 	}
 
 	//----------------------------------------------------------------
-	// Check 13.1
+	// Check 13.1 TODO change parameter to STO
 	//----------------------------------------------------------------
 	void DoDuplicateVarCheck(VarSTO curVar){
 		String structName = currentStructName + "." + curVar.getName();
@@ -1519,7 +1538,7 @@ class MyParser extends parser
 	// Check 13.2
 	//----------------------------------------------------------------
 	STO DoCtorDtorCheck(){
-		String hashKey = buildHashMap(functionSTO, functionSTO.getParams());
+		String hashKey = generateUniqueKey(functionSTO, functionSTO.getParams());
 
 		// ctor
 		if(!(functionSTO.getName()).startsWith("~")){
@@ -1562,10 +1581,33 @@ class MyParser extends parser
 	}
 
 	//----------------------------------------------------------------
+	// Check 13.2
+	//----------------------------------------------------------------
+	Vector CtorCheck(Vector<STO> ctorDtorList, String structName){
+		if(ctorDtorList.isEmpty()){
+			FuncSTO emptyCtor = new FuncSTO(structName);
+			emptyCtor.setParams(new Vector());
+			ctorDtorList.add(emptyCtor);
+		}
+		else if (ctorDtorList.size() == 1){
+			if((ctorDtorList.firstElement().getName()).equals("~" + structName)){
+				FuncSTO emptyCtor = new FuncSTO(structName);
+				emptyCtor.setParams(new Vector());
+				ctorDtorList.add(emptyCtor);
+			}
+		}
+		else{
+			// Do nothing
+		}
+
+		return ctorDtorList;
+	}
+
+	//----------------------------------------------------------------
 	// Check 13.1
 	//----------------------------------------------------------------
 	STO DoDuplicateFuncCheck(){
-		String hashKey = currentStructName + "." + buildHashMap(functionSTO, functionSTO.getParams());
+		String hashKey = currentStructName + "." + generateUniqueKey(functionSTO, functionSTO.getParams());
 
 		if(map.containsKey(currentStructName + "." + functionSTO.getName())){
 			m_nNumErrors++;
