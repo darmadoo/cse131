@@ -273,20 +273,22 @@ OptStatic ::=       T_STATIC
 StructdefDecl ::=   T_STRUCTDEF T_ID_U:_1 T_LBRACE
                     {:
                         ((MyParser) parser).DoBlockOpen();
-                        ((MyParser) parser).SetStructFlag(true);
+                        ((MyParser) parser).SetStructFlagAndLoad(_1);
                     :}
                     FieldVarsList:_2
                     OptCtorDtorList:_3
                     {:
-                        ((MyParser) parser).DoDuplicateVarCheck(_2, _1);
                         // Put logic here to create default ctor if needed
-                        _3 = ((MyParser) parser).DoCtorDtorCheck(_3, _1);
+                        if(_3.isEmpty()){
+                            FuncSTO emptyCtor = new FuncSTO(_1);
+                            emptyCtor.setParams(new Vector());
+                            _3.add(emptyCtor);
+                        }
                     :}
                     OptFieldFuncsList:_4
                     {:
-                        ((MyParser) parser).DoDuplicateFuncCheck(_4, _1);
-                        ((MyParser) parser).SetStructFlag(false);
                         ((MyParser) parser).DoBlockClose();
+                        ((MyParser) parser).ResetStruct();
                         ((MyParser) parser).DoStructdefDecl (_1, _2, _4, _3);
                     :}
                     T_RBRACE T_SEMI
@@ -309,6 +311,7 @@ FieldVarsList ::=   FieldVarDecl:_1
 FieldVarDecl ::=    DecoratedType:_1 T_ID:_3 OptArrayList T_SEMI
                     {:
                         VarSTO temp = new VarSTO(_3, _1);
+                        ((MyParser) parser).DoDuplicateVarCheck(temp);
                         RESULT = temp;
                     :}
     ;
@@ -361,7 +364,7 @@ CtorDef ::=         T_ID_U:_3
                     T_LBRACE OptStmtList T_RBRACE
                     {:
                         ((MyParser) parser).DoFuncDecl_2();
-                        RESULT = ((MyParser) parser).GetFunctSTO();
+                        RESULT = ((MyParser) parser).DoCtorDtorCheck();
                     :}
     ;
 
@@ -375,7 +378,7 @@ DtorDef ::=         T_TILDE T_ID_U:_3
                     T_LPAREN T_RPAREN T_LBRACE OptStmtList T_RBRACE
                     {:
                         ((MyParser) parser).DoFuncDecl_2();
-                        RESULT = ((MyParser) parser).GetFunctSTO();
+                        RESULT = ((MyParser) parser).DoCtorDtorCheck();
                     :}
     ;
 
@@ -406,7 +409,7 @@ FieldFuncsList ::=  FieldFuncDecl:_1
 
 FieldFuncDecl ::=   FuncDef
                     {:
-                        RESULT = ((MyParser) parser).GetFunctSTO();
+                        RESULT = ((MyParser) parser).DoDuplicateFuncCheck();
                     :}
     ;
 
@@ -1028,10 +1031,12 @@ Designator ::=      T_STAR Designator:_1
                     :}
     |               T_SIZEOF T_LPAREN Designator:_2 T_RPAREN
                     {:
+                        ((MyParser) parser).DoSizeCheck (_2);
                         RESULT = new ConstSTO("sizeof variable - fix me", null, 0);
                     :}
-    |               T_SIZEOF T_LPAREN Type:_2 OptArrayList T_RPAREN
+    |               T_SIZEOF T_LPAREN Type:_2 OptArrayList:_1 T_RPAREN
                     {:
+                        ((MyParser) parser).DoSizeCheck (_2, _1);
                         RESULT = new ConstSTO("sizeof type - fix me", null, 0);
                     :}
     |               T_LPAREN DecoratedType T_RPAREN Designator:_2
@@ -1095,6 +1100,7 @@ Designator3 ::=     T_LPAREN Expr:_2 T_RPAREN
                     :}
     |               T_INT_LITERAL:_1
                     {:
+                        // RESULT = new ConstSTO (_1, new IntType(), Integer.parseInt(_1, 10), true);    // fix me!
                         RESULT = new ConstSTO (_1, new IntType(), Integer.parseInt(_1, 10));    // fix me!
                     :}
     |               T_FLOAT_LITERAL:_1
