@@ -344,6 +344,8 @@ class MyParser extends parser
 	}
 	//----------------------------------------------------------------
 	// TODO DAISY make sure cannot assign nullptr to anything
+	// I think we are good sih.. basic type variables cannot be initialized to nullptr
+	// but pointer variables can be initialize to nullptr -> part of check 15c
 	//----------------------------------------------------------------
 	void DoVarDecl(String id, Type t, STO expr, Vector<STO> arguments, String rtType)
 	{
@@ -1608,23 +1610,36 @@ class MyParser extends parser
 	}
 
 	// Check 15.1
-	void DoStarCheck(STO sto){
+	STO DoStarCheck(STO sto){
 		// Make sure the sto coming in is not an ERRORSTO
 		if(sto instanceof ErrorSTO){
-			return;
+			return sto;
 		}
 
 		// Check if we trying to derefrenece nullptr
 		if(sto.getType() instanceof NullPointerType){
 			m_nNumErrors++;
 			m_errors.print(ErrorMsg.error15_Nullptr);
+			return new ErrorSTO(sto.getName());
 		}
 
 		// Check if the refrenced var is a pointer type
 		if(!(sto.getType() instanceof PointerType)){
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.error15_Receiver, sto.getType().getName()));
+			return new ErrorSTO(sto.getName());
 		}
+		//else it's a pointer type
+		else
+		{
+			Type newType;
+			PointerType temp = (PointerType) sto.getType();
+			if(temp.hasNext()) {
+				newType = temp.next();
+				return new VarSTO(newType.getName(), newType);
+			}
+		}
+		return sto;
 	}
 
 	void DoSizeCheck(STO sto){

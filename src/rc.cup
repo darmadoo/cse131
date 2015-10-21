@@ -1014,8 +1014,8 @@ IncDecOp ::=        T_PLUSPLUS
 
 Designator ::=      T_STAR Designator:_1
                     {:
-                        ((MyParser) parser).DoStarCheck (_1);
-                        RESULT = _1;
+                        RESULT = ((MyParser) parser).DoStarCheck (_1);
+                        //RESULT = _1;
                     :}
     |               T_AMPERSAND Designator:_1
                     {:
