@@ -279,11 +279,7 @@ StructdefDecl ::=   T_STRUCTDEF T_ID_U:_1 T_LBRACE
                     OptCtorDtorList:_3
                     {:
                         // Put logic here to create default ctor if needed
-                        if(_3.isEmpty()){
-                            FuncSTO emptyCtor = new FuncSTO(_1);
-                            emptyCtor.setParams(new Vector());
-                            _3.add(emptyCtor);
-                        }
+                        _3 = ((MyParser) parser).CtorCheck(_3, _1);
                     :}
                     OptFieldFuncsList:_4
                     {:
@@ -308,9 +304,10 @@ FieldVarsList ::=   FieldVarDecl:_1
     ;
 
 
-FieldVarDecl ::=    DecoratedType:_1 T_ID:_3 OptArrayList T_SEMI
+FieldVarDecl ::=    DecoratedType:_1 T_ID:_3 OptArrayList:_4 T_SEMI
                     {:
-                        VarSTO temp = new VarSTO(_3, _1);
+                        VarSTO temp = ((MyParser) parser).VarTypeDec(_1, _3, _4);
+
                         ((MyParser) parser).DoDuplicateVarCheck(temp);
                         RESULT = temp;
                     :}
@@ -697,10 +694,10 @@ OptElse ::=         T_ELSE CodeBlock
 WhileStmt ::=       T_WHILE Expr:_1
                     {:
                         ((MyParser) parser).incrementBreakCounter();
+                        RESULT = ((MyParser) parser).DoBoolCheck(_1);
                     :}
                     CodeBlock
                     {:
-                        RESULT = ((MyParser) parser).DoBoolCheck(_1);
                         ((MyParser) parser).decrementBreakCounter();
                     :}
     ;
