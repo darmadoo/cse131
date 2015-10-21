@@ -13,8 +13,11 @@ public class EqualOp extends ComparisonOp {
             // error when one of them is not numeric
             if((aType instanceof PointerType) || (bType instanceof PointerType))
             {
-                if(!(aType.getName()).equals(bType.getName()) && !(aType.isNullPointer()) && !(bType.isNullPointer()))
-                    return new ErrorSTO(Formatter.toString(ErrorMsg.error17_Expr, "==", aType.getName(), bType.getName()));
+                if(!(aType.getName()).equals(bType.getName()))
+                    if(!aType.isNullPointer() && !bType.isNullPointer())
+                        return new ErrorSTO(Formatter.toString(ErrorMsg.error17_Expr, "==", aType.getName(), bType.getName()));
+                    else
+                        return new ExprSTO(a.getName() + " == " + b.getName(), new BoolType("bool", 4));
                 else
                     return new ExprSTO(a.getName() + " == " + b.getName(), new BoolType("bool", 4));
             }
