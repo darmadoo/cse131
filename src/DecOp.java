@@ -3,8 +3,7 @@ public class DecOp extends UnaryOp {
     @Override
     STO checkOperands(STO a) {
         Type aType = a.getType();
-
-        if (!(aType instanceof NumericType)) {
+        if (!(aType instanceof NumericType) && !(aType instanceof PointerType)) {
             // error when one of them is not numeric
             return new ErrorSTO(Formatter.toString(ErrorMsg.error2_Type, aType.getName(), "--"));
         }

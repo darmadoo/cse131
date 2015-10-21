@@ -9,7 +9,16 @@ public class EqualOp extends ComparisonOp {
         Type bType = b.getType();
         if (!(aType instanceof BasicType) || !(bType instanceof BasicType)) {
             // error when one of them is not numeric
-            return new ErrorSTO(Formatter.toString(ErrorMsg.error1b_Expr, aType.getName(), "==", bType.getName()));
+            if((!(aType instanceof PointerType) && (bType instanceof PointerType)) || ((aType instanceof PointerType) && !(bType instanceof PointerType)))
+            {
+                return new ErrorSTO(Formatter.toString(ErrorMsg.error17_Expr, "==", aType.getName(), bType.getName()));
+            }
+            else if ((aType instanceof PointerType) && (bType instanceof PointerType))
+            {
+                return new ExprSTO(a.getName() + " == " + b.getName(), new BoolType("bool", 4));
+            }
+            else
+                return new ErrorSTO(Formatter.toString(ErrorMsg.error1b_Expr, aType.getName(), "==", bType.getName()));
         }
         else if ((aType instanceof NumericType) && (bType instanceof BoolType)) {
             // error when one of them is not Bool

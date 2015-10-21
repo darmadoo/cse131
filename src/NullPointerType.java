@@ -12,6 +12,10 @@ class NullPointerType extends PointerType{
         if(t.isNullPointer()){
             return true;
         }
+        if(t.isPointer())
+        {
+            return true;
+        }
 
         return false;
     }
