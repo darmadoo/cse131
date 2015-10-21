@@ -27,10 +27,21 @@ class ConstSTO extends STO
 		m_value = null; // fix this
 		// You may want to change the isModifiable and isAddressable
 		// fields as necessary
-		super.setIsAddressable(true);
+		super.setIsAddressable(false);
 		super.setIsModifiable(false);
 	}
 
+	/*
+	// Set R Type
+	public ConstSTO(String strName, Type typ, int val, boolean rtype){
+		super(strName);
+		m_value = null; // fix this
+		// You may want to change the isModifiable and isAddressable
+		// fields as necessary
+		super.setIsAddressable(false);
+		super.setIsModifiable(false);
+	}
+*/
 	public ConstSTO(String strName, Type typ)
 	{
 		super(strName, typ);
