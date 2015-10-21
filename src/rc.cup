@@ -130,8 +130,6 @@ non terminal
     Equality,
     Relation,
     OptInit,
-    OptCtorCall,
-    CtorCall,
     NewStmt,
     DeleteStmt
     ;
@@ -189,6 +187,8 @@ non terminal Vector
     FieldFuncsList,
     OptCtorDtorList,
     CtorDtorList,
+    OptCtorCall,
+    CtorCall,
     OptFieldFuncsList
     ;
 
@@ -245,7 +245,7 @@ VarDecl ::=         OptStatic:_1 DecoratedType:_2 T_ID:_3 OptArrayList:_4 OptIni
                     T_SEMI
     |               OptStatic:_1 StructType:_2 T_ID:_3 OptArrayList:_4 OptCtorCall:_5
                     {:
-                        ((MyParser) parser).DoVarDecl (_3);
+                        ((MyParser) parser).DoVarDecl (_3, _2, _5);
                     :}
                     T_SEMI
     ;
@@ -661,12 +661,21 @@ OptInit ::=         T_ASSIGN Expr:_1
     ;
 
 
-OptCtorCall ::=     CtorCall
+OptCtorCall ::=     CtorCall:_1
+                    {:
+                        RESULT = _1;
+                    :}
     |               /* empty */
+                    {:
+                        RESULT = new Vector();
+                    :}
     ;
 
 
-CtorCall ::=        T_COLON T_LPAREN OptExprList T_RPAREN
+CtorCall ::=        T_COLON T_LPAREN OptExprList:_1 T_RPAREN
+                    {:
+                        RESULT = _1;
+                    :}
     ;
 
 
@@ -1002,6 +1011,7 @@ IncDecOp ::=        T_PLUSPLUS
 
 Designator ::=      T_STAR Designator:_1
                     {:
+                        ((MyParser) parser).DoStarCheck (_1);
                         RESULT = _1;
                     :}
     |               T_AMPERSAND Designator:_1
@@ -1053,8 +1063,9 @@ Designator2 ::=     Designator2:_1 T_DOT T_ID:_3
                     {:
                         RESULT = ((MyParser) parser).DoDesignator2_Arrays (_1, _2);
                     :}
-    |               Designator2:_1 T_ARROW T_ID
+    |               Designator2:_1 T_ARROW T_ID:_2
                     {:
+                        ((MyParser) parser).DoArrowCheck (_1, _2);
                         RESULT = _1;
                     :}
     |               Designator2:_1 IncDecOp:_2
