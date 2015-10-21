@@ -193,7 +193,7 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
-	void DoNewStatement(STO des)
+	void DoNewStatement(STO des, Vector<STO> temp)
 	{
 		if(des.isError())
 		{
@@ -351,7 +351,6 @@ class MyParser extends parser
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.redeclared_id, id));
 		}
-
 		else if(arguments != null)
 		{
 			ArrayType head = null;
@@ -393,8 +392,6 @@ class MyParser extends parser
 				pointer.setChild(t);
 			}
 
-			//pointer.setChild(t);
-
 			pointer= head;
 			while(pointer.hasNext())
 			{
@@ -414,6 +411,8 @@ class MyParser extends parser
 			} else {
 				m_nNumErrors++;
 				m_errors.print(Formatter.toString(ErrorMsg.error8_Assign, expr.getType().getName(), t.getName()));
+				VarSTO sto = new VarSTO(id, t);
+				m_symtab.insert(sto);
 			}
 		}
 		//TO-DO address of operation
@@ -422,6 +421,8 @@ class MyParser extends parser
 		{
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.error8_Assign, expr.getType().getName(), t.getName()));
+			VarSTO sto = new VarSTO(id, t);
+			m_symtab.insert(sto);
 		}
 		else if(expr != null && expr.isConst())
 		{
@@ -1627,7 +1628,6 @@ class MyParser extends parser
 
 	//Check 15.1
 	void DoArrowCheck(STO sto, String id){
-
 		// Make sure the sto coming in is not an error sto
 		if(sto instanceof ErrorSTO){
 			return;
@@ -1669,15 +1669,34 @@ class MyParser extends parser
 		}
 	}
 
-	void DoSizeCheck(STO sto){
-		sto.getName();
+	ConstSTO DoSizeCheck(STO sto){
+
+		if(!(sto.getType() instanceof Type)){
+			m_nNumErrors++;
+			m_errors.print(ErrorMsg.error19_Sizeof);
+			return (ConstSTO)sto;
+		}
+
 		if(!sto.getIsAddressable()){
 			m_nNumErrors++;
 			m_errors.print(ErrorMsg.error19_Sizeof);
+			return (ConstSTO)sto;
 		}
+
+		// Make an R val constant
+		ConstSTO size = new ConstSTO(sto.getName(), sto.getType().getSize());
+		size.setIsAddressable(false);
+		size.setIsModifiable(false);
+
+		return size;
+
 	}
-	void DoSizeCheck(Type typ, Vector<STO> list){
-		typ.getName();
-		list.size();
+	ConstSTO DoSizeCheck(Type typ, Vector<STO> list){
+		// Make an R val constant
+		ConstSTO size = new ConstSTO(typ.getName(), typ.getSize());
+		size.setIsAddressable(false);
+		size.setIsModifiable(false);
+
+		return size;
 	}
 }
