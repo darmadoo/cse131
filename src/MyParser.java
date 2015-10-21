@@ -888,7 +888,7 @@ class MyParser extends parser
 	STO DoAssignExpr(STO stoDes, STO expr)
 	{
 		//System.out.println("StoDes Type: " + stoDes.getIsModifiable());
-		//System.out.println("Expr Type: " + expr.getName());
+		//System.out.println("Expr Type: " + expr.getType());
 		if(stoDes.isError())
 		{
 			return new ErrorSTO(stoDes.getName());
@@ -903,13 +903,14 @@ class MyParser extends parser
 			m_errors.print(ErrorMsg.error3a_Assign);
 			return new ErrorSTO(stoDes.getName());
 		}
-		else if(!expr.isFunc() && !(stoDes.getType().isAssignableTo(expr.getType())))
+		else if(!(stoDes.getType().isAssignableTo(expr.getType())))
 		{
 			//check if expression is array
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.error3b_Assign, expr.getType().getName(), stoDes.getType().getName()));
 			return new ErrorSTO(stoDes.getName());
 		}
+		//else if(expr.isFunc() && !(stoDes.getType().isAssignableTo(expr.getType()))
 
 		return stoDes;
 	}
