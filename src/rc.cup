@@ -1023,7 +1023,8 @@ Designator ::=      T_STAR Designator:_1
                     :}
     |               T_AMPERSAND Designator:_1
                     {:
-                        RESULT = _1;
+                        RESULT = ((MyParser) parser).DoAmpersand (_1);
+                        //RESULT = _1;
                     :}
     |               UnarySign Designator:_1
                     {:

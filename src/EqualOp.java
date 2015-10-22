@@ -14,7 +14,7 @@ public class EqualOp extends ComparisonOp {
             {
                 if((aType.isNullPointer() && bType.isPointer()) || (aType.isPointer() && bType.isNullPointer()))
                     return new ExprSTO(a.getName() + " == " + b.getName(), new BoolType("bool", 4));
-                if(!(aType.getName()).equals(bType.getName()))
+                if(!(aType.isAssignableTo(bType)))
                     return new ErrorSTO(Formatter.toString(ErrorMsg.error17_Expr, "==", aType.getName(), bType.getName()));
                 else
                     return new ExprSTO(a.getName() + " == " + b.getName(), new BoolType("bool", 4));

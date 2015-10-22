@@ -1652,6 +1652,20 @@ class MyParser extends parser
 
 	}
 
+	STO DoAmpersand(STO sto) {
+		if (sto.getIsAddressable() == false) {
+			m_nNumErrors++;
+			m_errors.print(Formatter.toString(ErrorMsg.error18_AddressOf, sto.getType().getName()));
+			return new ErrorSTO(sto.getName());
+		}
+		Type t = sto.getType();
+
+		PointerType temp = new PointerType(t.getName() + '*', t.getSize());
+		temp.setChild(t);
+
+		return new ExprSTO(sto.getName(), temp);
+
+	}
 	// Check 15.1
 	STO DoStarCheck(STO sto){
 		// Make sure the sto coming in is not an ERRORSTO

@@ -28,9 +28,11 @@ class PointerType extends CompositeType{
     }
 
     public Boolean isAssignableTo(Type t){
-        if(t.isPointer()){
+        if(t.getName().equals(this.getName())){
             return true;
         }
+        if(t.isNullPointer())
+            return true;
 
         return false;
     }
