@@ -190,6 +190,16 @@ class MyParser extends parser
 		return result;
 	}
 
+	int GetSize(Vector<STO> arguments)
+	{
+		int result = 0;
+		for(STO x : arguments) {
+			if(x.isConst())
+				result = result * ((ConstSTO)x).getIntValue();
+		}
+		return result;
+	}
+
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
@@ -260,7 +270,7 @@ class MyParser extends parser
 
 			if (x.isConst())
 			{
-				temp = new ArrayType(t.getName() + GetType(arguments), ((ConstSTO) x).getIntValue());
+				temp = new ArrayType(t.getName() + GetType(arguments), GetSize(arguments), ((ConstSTO) x).getIntValue());
 				if(head == null) {
 					head = temp;
 				}
@@ -371,7 +381,7 @@ class MyParser extends parser
 
 				if (x.isConst())
 				{
-					temp = new ArrayType(t.getName() + GetType(arguments), ((ConstSTO) x).getIntValue());
+					temp = new ArrayType(t.getName() + GetType(arguments), GetSize(arguments), ((ConstSTO) x).getIntValue());
 					if(head == null) {
 						head = temp;
 					}

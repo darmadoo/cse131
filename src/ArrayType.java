@@ -12,10 +12,10 @@ class ArrayType extends CompositeType {
         child = null;
     }
 
-    public ArrayType(String strName, int size)
+    public ArrayType(String strName, int size, int dimensions)
     {
         super(strName, size);
-        dimensions = size;
+        this.dimensions = dimensions;
         child = null;
     }
 
