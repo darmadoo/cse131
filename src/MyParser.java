@@ -438,13 +438,13 @@ class MyParser extends parser
 		}
 		//TO-DO address of operation
 		//check 15c here
-		else if(expr != null && t.isPointer() && (expr.getName() != "nullptr" || !expr.getType().isPointer()))
-		{
-			m_nNumErrors++;
-			m_errors.print(Formatter.toString(ErrorMsg.error8_Assign, expr.getType().getName(), t.getName()));
-			VarSTO sto = new VarSTO(id, t);
-			m_symtab.insert(sto);
-		}
+		//else if(expr != null && t.isPointer() && (expr.getName() != "nullptr" || !expr.getType().isPointer()))
+		//{
+		//	m_nNumErrors++;
+		//	m_errors.print(Formatter.toString(ErrorMsg.error8_Assign, expr.getType().getName(), t.getName()));
+		//	VarSTO sto = new VarSTO(id, t);
+		//	m_symtab.insert(sto);
+		//}
 		else if(expr != null && expr.isConst())
 		{
 			if (expr.getType().isInt()) {
@@ -1844,18 +1844,18 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	//Check 19
 	//----------------------------------------------------------------
-	ConstSTO DoSizeCheck(STO sto){
+	STO DoSizeCheck(STO sto){
 
 		if(!(sto.getType() instanceof Type)){
 			m_nNumErrors++;
 			m_errors.print(ErrorMsg.error19_Sizeof);
-			return (ConstSTO)sto;
+			return new ErrorSTO(sto.getName());
 		}
 
 		if(!sto.getIsAddressable()){
 			m_nNumErrors++;
 			m_errors.print(ErrorMsg.error19_Sizeof);
-			return (ConstSTO)sto;
+			return new ErrorSTO(sto.getName());
 		}
 
 		// Make an R val constant
@@ -1959,6 +1959,11 @@ class MyParser extends parser
 			return new ExprSTO(sto.getName(), t);
 		}
 		//sto is not basic type and not pointer type.
+		//sto basic type, t pointer type
+		else if (sto.getType().isBasic() && !t.isNullPointer() && t.isPointer())
+		{
+			return new ExprSTO(sto.getName(), t);
+		}
 
 		m_nNumErrors++;
 		m_errors.print(Formatter.toString(ErrorMsg.error20_Cast, sto.getType().getName(), t.getName()));
