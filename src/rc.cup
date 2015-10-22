@@ -1046,9 +1046,9 @@ Designator ::=      T_STAR Designator:_1
                         //RESULT = new ConstSTO("sizeof type - fix me", null, 0);
                         RESULT = ((MyParser) parser).DoSizeCheck (_2, _1);
                     :}
-    |               T_LPAREN DecoratedType T_RPAREN Designator:_2
+    |               T_LPAREN DecoratedType:_1 T_RPAREN Designator:_2
                     {:
-                        RESULT = _2;
+                        RESULT = ((MyParser) parser).DoTypeCast (_1, _2);
                     :}
     |               IncDecOp:_1 Designator:_2
                     {:

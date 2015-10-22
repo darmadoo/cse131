@@ -194,7 +194,7 @@ class MyParser extends parser
 
 	int GetSize(Vector<STO> arguments)
 	{
-		int result = 0;
+		int result = 1;
 		for(STO x : arguments) {
 			if(x.isConst())
 				result = result * ((ConstSTO)x).getIntValue();
@@ -1780,12 +1780,101 @@ class MyParser extends parser
 		return size;
 
 	}
-	ConstSTO DoSizeCheck(Type typ, Vector<STO> list){
+
+	ConstSTO DoSizeCheck(Type typ, Vector<STO> list) {
 		// Make an R val constant
 		ConstSTO size = new ConstSTO(typ.getName(), typ.getSize());
 		size.setIsAddressable(false);
 		size.setIsModifiable(false);
 
 		return size;
+	}
+		/*
+	void DoSizeCheck(Type typ, Vector<STO> arguments){
+		int size = GetSize(arguments);
+		System.out.println(size);
+
+	}
+	*/
+
+	STO DoTypeCast(Type t, STO sto)
+	{
+
+		//basic types
+		if(sto.getType().isBasic() && t.isBasic())
+		{
+			//bool -> int / float
+			if(sto.getType().isBool() && t.isNumeric())
+			{
+				if(sto.isConst())
+				{
+					//if false
+					if (((ConstSTO)sto).getBoolValue() == false)
+						return new ConstSTO(sto.getName(), t, 0);
+					//else true
+					else
+						return new ConstSTO(sto.getName(), t, 1);
+				}
+				//not constant
+				else
+					return new ExprSTO(sto.getName(), t);
+			}
+			//float / int -> bool
+			else if(sto.getType().isNumeric() && t.isBool())
+			{
+				if(sto.isConst())
+				{
+					//float -> bool
+					if(sto.getType().isFloat())
+					{
+						if(((ConstSTO)sto).getFloatValue() == 0.0)
+							return new ConstSTO(sto.getName(), t, false);
+						else
+							return new ConstSTO(sto.getName(), t, true);
+					}
+					//int -> bool
+					else
+					{
+						if(((ConstSTO)sto).getIntValue() == 0)
+							return new ConstSTO(sto.getName(), t, false);
+						else
+							return new ConstSTO(sto.getName(), t, true);
+					}
+				}
+				else
+					return new ExprSTO(sto.getName(), t);
+			}
+			else if(sto.getType().isInt() && t.isFloat())
+			{
+				if(sto.isConst())
+					return new ConstSTO(sto.getName(), t, (float) ((ConstSTO)sto).getIntValue());
+				//not constant
+				else
+					return new ExprSTO(sto.getName(), t);
+			}
+			else if(sto.getType().isFloat() && t.isInt())
+			{
+				if(sto.isConst())
+					return new ConstSTO(sto.getName(), t, (int) ((ConstSTO)sto).getFloatValue());
+					//not constant
+				else
+					return new ExprSTO(sto.getName(), t);
+			}
+			// int -> int
+			// float -> float
+			return new ExprSTO(sto.getName(), t);
+		}
+		//pointers can be cast to any type except nullpointer
+		//make sure sto is pointer AND not nullptr
+		// make sure t is not nullptr
+		else if(sto.getType().isPointer() && !sto.getType().isNullPointer() && !t.isNullPointer())
+		{
+			return new ExprSTO(sto.getName(), t);
+		}
+		//sto is not basic type and not pointer type.
+
+		m_nNumErrors++;
+		m_errors.print(Formatter.toString(ErrorMsg.error20_Cast, sto.getType().getName(), t.getName()));
+		return new ErrorSTO(sto.getName());
 	}
 }
