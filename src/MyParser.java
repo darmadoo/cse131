@@ -1735,10 +1735,15 @@ class MyParser extends parser
 			m_errors.print(ErrorMsg.error19_Sizeof);
 		}
 	}
-	void DoSizeCheck(Type typ, Vector<STO> arguments){
-		int size = GetSize(arguments);
-		System.out.println(size);
+	STO DoSizeCheck(Type typ, Vector<STO> arguments){
+		int size = 1;
+		if (arguments != null)
+			size = GetSize(arguments);
+		//System.out.println(arguments);
 
+		//if the type is pointer get the size of what it's pointing to
+		//if( typ.is)
+		return new ConstSTO("sizeof", new IntType(), size * typ.getSize());
 	}
 
 	STO DoTypeCast(Type t, STO sto)

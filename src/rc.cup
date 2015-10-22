@@ -1041,8 +1041,8 @@ Designator ::=      T_STAR Designator:_1
                     :}
     |               T_SIZEOF T_LPAREN Type:_2 OptArrayList:_1 T_RPAREN
                     {:
-                        ((MyParser) parser).DoSizeCheck (_2, _1);
-                        RESULT = new ConstSTO("sizeof type - fix me", null, 0);
+                        RESULT = ((MyParser) parser).DoSizeCheck (_2, _1);
+                        //RESULT = new ConstSTO("sizeof type - fix me", null, 0);
                     :}
     |               T_LPAREN DecoratedType:_1 T_RPAREN Designator:_2
                     {:
