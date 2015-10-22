@@ -34,6 +34,8 @@ class MyParser extends parser
 	private boolean isStruct = false;
 	private FuncSTO functionSTO;
 	private String currentStructName;
+	// Check 14.2
+	private boolean recursiveFunc = false;
 
 	//----------------------------------------------------------------
 	//
@@ -824,6 +826,11 @@ class MyParser extends parser
 
 		m_symtab.getFunc().setParams(params);
 
+		if(isStruct && recursiveFunc){
+			functionSTO = m_symtab.getFunc();
+			DoDuplicateFuncCheck();
+		}
+
 		for(int i = 0;i < params.size(); i++){
 			m_symtab.insert(params.get(i));
 		}
@@ -1225,14 +1232,16 @@ class MyParser extends parser
 	STO DoDesignator2_Dot(STO sto, String strID)
 	{
 		if((sto.getName()).equals("this")){
-			if(!map.containsKey(currentStructName + "." + strID)){
+			if(map.containsKey(currentStructName + "." + strID)){
+				return map.get(currentStructName + "." + strID);
+			}
+			else if(funcMap.containsKey(currentStructName + "." + strID)){
+				return funcMap.get(currentStructName + "." + strID).firstElement();
+			}
+			else{
 				m_nNumErrors++;
 				m_errors.print(Formatter.toString(ErrorMsg.error14c_StructExpThis, strID));
 				return sto;
-
-			}
-			else{
-				return map.get(currentStructName + "." + strID);
 			}
 		}
 
@@ -1503,6 +1512,14 @@ class MyParser extends parser
 		}
 	}
 
+	void setRecursiveFuncFalse(){
+		recursiveFunc = false;
+	}
+
+	void setRecursiveFuncTrue(){
+		recursiveFunc = true;
+	}
+
 	//----------------------------------------------------------------
 	// Check 13.1
 	//----------------------------------------------------------------
@@ -1604,6 +1621,12 @@ class MyParser extends parser
 		return ctorDtorList;
 	}
 
+	FuncSTO getStruct(){
+		FuncSTO temp = functionSTO;
+		functionSTO = null;
+		return temp;
+	}
+
 	//----------------------------------------------------------------
 	// Check 13.1
 	//----------------------------------------------------------------
@@ -1620,7 +1643,7 @@ class MyParser extends parser
 		}
 		else{
 			map.put(hashKey, functionSTO);
-			buildOverloadedHashMap(functionSTO, functionSTO.getName());
+			buildOverloadedHashMap(functionSTO, currentStructName + "." + functionSTO.getName());
 		}
 
 		FuncSTO temp = functionSTO;

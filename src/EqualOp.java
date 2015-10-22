@@ -7,8 +7,19 @@ public class EqualOp extends ComparisonOp {
     STO checkOperands(STO a, STO b) {
         Type aType = a.getType();
         Type bType = b.getType();
-        //System.out.println((aType.getName()).equals(bType.getName()));
-        //System.out.println(bType.getName());
+
+        if((aType instanceof StructType) || (bType instanceof StructType)){
+            return new ErrorSTO(Formatter.toString(ErrorMsg.error1b_Expr, aType.getName(), "==", bType.getName()));
+        }
+        if((aType instanceof  PointerType) || (bType instanceof PointerType)) {
+            if (aType.isEquivalentTo(bType)) {
+                return new ExprSTO(Formatter.toString(ErrorMsg.error1b_Expr, aType.getName(), "==", bType.getName()), new BoolType());
+            } else if (aType.isNullPointer() && bType.isPointer() || bType.isNullPointer() && aType.isPointer()) {
+                return new ExprSTO(Formatter.toString(ErrorMsg.error1b_Expr, aType.getName(), "==", bType.getName()), new BoolType());
+            }
+            return new ErrorSTO(Formatter.toString(ErrorMsg.error17_Expr, "==", aType.getName(), bType.getName()));
+        }
+
         if (!(aType instanceof BasicType) || !(bType instanceof BasicType)) {
             // error when one of them is not numeric
             if((aType instanceof PointerType) || (bType instanceof PointerType))

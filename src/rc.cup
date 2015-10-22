@@ -280,10 +280,12 @@ StructdefDecl ::=   T_STRUCTDEF T_ID_U:_1 T_LBRACE
                     {:
                         // Put logic here to create default ctor if needed
                         _3 = ((MyParser) parser).CtorCheck(_3, _1);
+                        ((MyParser) parser).setRecursiveFuncTrue();
                     :}
                     OptFieldFuncsList:_4
                     {:
                         ((MyParser) parser).DoBlockClose();
+                        ((MyParser) parser).setRecursiveFuncFalse();
                         ((MyParser) parser).ResetStruct();
                         ((MyParser) parser).DoStructdefDecl (_1, _2, _4, _3);
                     :}
@@ -406,7 +408,7 @@ FieldFuncsList ::=  FieldFuncDecl:_1
 
 FieldFuncDecl ::=   FuncDef
                     {:
-                        RESULT = ((MyParser) parser).DoDuplicateFuncCheck();
+                        RESULT = ((MyParser) parser).getStruct();
                     :}
     ;
 
@@ -1122,7 +1124,7 @@ Designator3 ::=     T_LPAREN Expr:_2 T_RPAREN
                     :}
     |               T_THIS
                     {:
-                        RESULT = new ExprSTO ("this");              // fix me!
+                        RESULT = new ExprSTO ("this", new StructType("this"));              // fix me!
                     :}
     |               T_COLONCOLON T_ID:_1
                     {:
