@@ -17,13 +17,15 @@ public class IncOp extends UnaryOp {
                     return new ConstSTO(a.getName() + "++", new IntType("int", 4), ((ConstSTO) a).getIntValue() + 1 );
                 else
                     return new ExprSTO(a.getName() + "++", new IntType("int", 4));
-            } else {
+            } else if(aType instanceof FloatType) {
                 // Float++ = Float
                 // return ExprSTO of float type
                 if(a.isConst())
                     return new ConstSTO(a.getName() + "++", new FloatType("float", 4), ((ConstSTO) a).getFloatValue() + 1 );
                 else
                     return new ExprSTO(a.getName() + "++", new FloatType("float", 4));
+            } else { // else it's pointer type
+                return new ExprSTO(a.getName() + "++", aType);
             }
         }
         else
