@@ -34,6 +34,8 @@ class MyParser extends parser
 	private boolean isStruct = false;
 	private FuncSTO functionSTO;
 	private String currentStructName;
+	// Check 14.2
+	private boolean recursiveFunc = false;
 
 	//----------------------------------------------------------------
 	//
@@ -203,7 +205,7 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
-	void DoNewStatement(STO des)
+	void DoNewStatement(STO des, Vector<STO> temp)
 	{
 		if(des.isError())
 		{
@@ -270,7 +272,7 @@ class MyParser extends parser
 
 			if (x.isConst())
 			{
-				temp = new ArrayType(t.getName() + GetType(arguments), GetSize(arguments), ((ConstSTO) x).getIntValue());
+				temp = new ArrayType(t.getName() + GetType(arguments), GetSize(arguments) * t.getSize(), ((ConstSTO) x).getIntValue());
 				if(head == null) {
 					head = temp;
 				}
@@ -363,7 +365,6 @@ class MyParser extends parser
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.redeclared_id, id));
 		}
-
 		else if(arguments != null)
 		{
 			ArrayType head = null;
@@ -381,7 +382,7 @@ class MyParser extends parser
 
 				if (x.isConst())
 				{
-					temp = new ArrayType(t.getName() + GetType(arguments), GetSize(arguments), ((ConstSTO) x).getIntValue());
+					temp = new ArrayType(t.getName() + GetType(arguments), GetSize(arguments) * t.getSize(), ((ConstSTO) x).getIntValue());
 					if(head == null) {
 						head = temp;
 					}
@@ -405,8 +406,6 @@ class MyParser extends parser
 				pointer.setChild(t);
 			}
 
-			//pointer.setChild(t);
-
 			pointer= head;
 			while(pointer.hasNext())
 			{
@@ -416,7 +415,6 @@ class MyParser extends parser
 					break;
 			}
 			VarSTO sto = new VarSTO(id, head);
-
 			m_symtab.insert(sto);
 		}
 		else if(expr != null && !t.isAssignableTo(expr.getType()))
@@ -426,7 +424,18 @@ class MyParser extends parser
 			} else {
 				m_nNumErrors++;
 				m_errors.print(Formatter.toString(ErrorMsg.error8_Assign, expr.getType().getName(), t.getName()));
+				VarSTO sto = new VarSTO(id, t);
+				m_symtab.insert(sto);
 			}
+		}
+		//TO-DO address of operation
+		//check 15c here
+		else if(expr != null && t.isPointer() && (expr.getName() != "nullptr" || !expr.getType().isPointer()))
+		{
+			m_nNumErrors++;
+			m_errors.print(Formatter.toString(ErrorMsg.error8_Assign, expr.getType().getName(), t.getName()));
+			VarSTO sto = new VarSTO(id, t);
+			m_symtab.insert(sto);
 		}
 		else if(expr != null && expr.isConst())
 		{
@@ -825,6 +834,11 @@ class MyParser extends parser
 		}
 
 		m_symtab.getFunc().setParams(params);
+
+		if(isStruct && recursiveFunc){
+			functionSTO = m_symtab.getFunc();
+			DoDuplicateFuncCheck();
+		}
 
 		for(int i = 0;i < params.size(); i++){
 			m_symtab.insert(params.get(i));
@@ -1227,14 +1241,16 @@ class MyParser extends parser
 	STO DoDesignator2_Dot(STO sto, String strID)
 	{
 		if((sto.getName()).equals("this")){
-			if(!map.containsKey(currentStructName + "." + strID)){
+			if(map.containsKey(currentStructName + "." + strID)){
+				return map.get(currentStructName + "." + strID);
+			}
+			else if(funcMap.containsKey(currentStructName + "." + strID)){
+				return funcMap.get(currentStructName + "." + strID).firstElement();
+			}
+			else{
 				m_nNumErrors++;
 				m_errors.print(Formatter.toString(ErrorMsg.error14c_StructExpThis, strID));
 				return sto;
-
-			}
-			else{
-				return map.get(currentStructName + "." + strID);
 			}
 		}
 
@@ -1512,6 +1528,14 @@ class MyParser extends parser
 		}
 	}
 
+	void setRecursiveFuncFalse(){
+		recursiveFunc = false;
+	}
+
+	void setRecursiveFuncTrue(){
+		recursiveFunc = true;
+	}
+
 	//----------------------------------------------------------------
 	// Check 13.1
 	//----------------------------------------------------------------
@@ -1613,6 +1637,12 @@ class MyParser extends parser
 		return ctorDtorList;
 	}
 
+	FuncSTO getStruct(){
+		FuncSTO temp = functionSTO;
+		functionSTO = null;
+		return temp;
+	}
+
 	//----------------------------------------------------------------
 	// Check 13.1
 	//----------------------------------------------------------------
@@ -1629,7 +1659,7 @@ class MyParser extends parser
 		}
 		else{
 			map.put(hashKey, functionSTO);
-			buildOverloadedHashMap(functionSTO, functionSTO.getName());
+			buildOverloadedHashMap(functionSTO, currentStructName + "." + functionSTO.getName());
 		}
 
 		FuncSTO temp = functionSTO;
@@ -1639,7 +1669,6 @@ class MyParser extends parser
 
 	//Check 15.1
 	void DoArrowCheck(STO sto, String id){
-
 		// Make sure the sto coming in is not an error sto
 		if(sto instanceof ErrorSTO){
 			return;
@@ -1728,23 +1757,50 @@ class MyParser extends parser
 		return sto;
 	}
 
-	void DoSizeCheck(STO sto){
-		sto.getName();
+	ConstSTO DoSizeCheck(STO sto){
+
+		if(!(sto.getType() instanceof Type)){
+			m_nNumErrors++;
+			m_errors.print(ErrorMsg.error19_Sizeof);
+			return (ConstSTO)sto;
+		}
+
 		if(!sto.getIsAddressable()){
 			m_nNumErrors++;
 			m_errors.print(ErrorMsg.error19_Sizeof);
+			return (ConstSTO)sto;
 		}
+
+		// Make an R val constant
+		ConstSTO size = new ConstSTO(sto.getName(), sto.getType().getSize());
+		size.setIsAddressable(false);
+		size.setIsModifiable(false);
+
+		return size;
+
 	}
-	STO DoSizeCheck(Type typ, Vector<STO> arguments){
+
+	STO DoSizeCheck(Type typ, Vector<STO> arguments) {
 		int size = 1;
 		if (arguments != null)
 			size = GetSize(arguments);
-		//System.out.println(arguments);
 
 		//if the type is pointer get the size of what it's pointing to
 		//if( typ.is)
-		return new ConstSTO("sizeof", new IntType(), size * typ.getSize());
+		ConstSTO sto = new ConstSTO("sizeof", new IntType(), size * typ.getSize());
+		sto.setIsAddressable(false);
+		return sto;
 	}
+ 	/*
+	ConstSTO DoSizeCheck(Type typ, Vector<STO> list) {
+		// Make an R val constant
+		ConstSTO size = new ConstSTO(typ.getName(), typ.getSize());
+		size.setIsAddressable(false);
+		size.setIsModifiable(false);
+
+		return size;
+	}
+	*/
 
 	STO DoTypeCast(Type t, STO sto)
 	{
@@ -1825,6 +1881,5 @@ class MyParser extends parser
 		m_nNumErrors++;
 		m_errors.print(Formatter.toString(ErrorMsg.error20_Cast, sto.getType().getName(), t.getName()));
 		return new ErrorSTO(sto.getName());
-
 	}
 }

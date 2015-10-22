@@ -280,10 +280,12 @@ StructdefDecl ::=   T_STRUCTDEF T_ID_U:_1 T_LBRACE
                     {:
                         // Put logic here to create default ctor if needed
                         _3 = ((MyParser) parser).CtorCheck(_3, _1);
+                        ((MyParser) parser).setRecursiveFuncTrue();
                     :}
                     OptFieldFuncsList:_4
                     {:
                         ((MyParser) parser).DoBlockClose();
+                        ((MyParser) parser).setRecursiveFuncFalse();
                         ((MyParser) parser).ResetStruct();
                         ((MyParser) parser).DoStructdefDecl (_1, _2, _4, _3);
                     :}
@@ -406,7 +408,7 @@ FieldFuncsList ::=  FieldFuncDecl:_1
 
 FieldFuncDecl ::=   FuncDef
                     {:
-                        RESULT = ((MyParser) parser).DoDuplicateFuncCheck();
+                        RESULT = ((MyParser) parser).getStruct();
                     :}
     ;
 
@@ -1036,13 +1038,14 @@ Designator ::=      T_STAR Designator:_1
                     :}
     |               T_SIZEOF T_LPAREN Designator:_2 T_RPAREN
                     {:
-                        ((MyParser) parser).DoSizeCheck (_2);
-                        RESULT = new ConstSTO("sizeof variable - fix me", null, 0);
+                        //RESULT = new ConstSTO("sizeof variable - fix me", null, 0);
+                        RESULT = ((MyParser) parser).DoSizeCheck (_2);
                     :}
     |               T_SIZEOF T_LPAREN Type:_2 OptArrayList:_1 T_RPAREN
                     {:
                         RESULT = ((MyParser) parser).DoSizeCheck (_2, _1);
                         //RESULT = new ConstSTO("sizeof type - fix me", null, 0);
+
                     :}
     |               T_LPAREN DecoratedType:_1 T_RPAREN Designator:_2
                     {:
@@ -1130,7 +1133,7 @@ Designator3 ::=     T_LPAREN Expr:_2 T_RPAREN
                     :}
     |               T_THIS
                     {:
-                        RESULT = new ExprSTO ("this");              // fix me!
+                        RESULT = new ExprSTO ("this", new StructType("this"));              // fix me!
                     :}
     |               T_COLONCOLON T_ID:_1
                     {:
@@ -1142,9 +1145,9 @@ Designator3 ::=     T_LPAREN Expr:_2 T_RPAREN
                     :}
     ;
 
-NewStmt ::=         T_NEW Designator:_1 OptCtorCall T_SEMI
+NewStmt ::=         T_NEW Designator:_1 OptCtorCall:_2 T_SEMI
                     {:
-                        ((MyParser) parser).DoNewStatement(_1);
+                        ((MyParser) parser).DoNewStatement(_1, _2);
 
                     :}
     ;
