@@ -460,7 +460,14 @@ DecoratedType ::=   DecoratedBasicType:_1
                     :}
     |               StructType:_1 PointerList:_2
                     {:
-                        RESULT = _1;    // gotta do something here!
+                        if(_2 == null)
+                        {
+                            RESULT = _1;    // gotta do something here!
+                        }
+                        else
+                        {
+                            RESULT = ((MyParser) parser).DoPointerType (_1, _2);
+                        }
                     :}
     ;
 
@@ -1018,7 +1025,8 @@ Designator ::=      T_STAR Designator:_1
                     :}
     |               T_AMPERSAND Designator:_1
                     {:
-                        RESULT = _1;
+                        RESULT = ((MyParser) parser).DoAmpersand (_1);
+                        //RESULT = _1;
                     :}
     |               UnarySign Designator:_1
                     {:
