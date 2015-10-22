@@ -309,7 +309,6 @@ FieldVarsList ::=   FieldVarDecl:_1
 FieldVarDecl ::=    DecoratedType:_1 T_ID:_3 OptArrayList:_4 T_SEMI
                     {:
                         VarSTO temp = ((MyParser) parser).VarTypeDec(_1, _3, _4);
-
                         ((MyParser) parser).DoDuplicateVarCheck(temp);
                         RESULT = temp;
                     :}

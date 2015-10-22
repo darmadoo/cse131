@@ -40,7 +40,6 @@ class StructdefSTO extends STO
 	// Check 14.1
 	void parseDtor(Vector<STO> ctorDtors, String curStrucName){
 		Iterator<STO> tempItr = ctorDtors.iterator();
-		Vector<String> tempVec = new Vector();
 		ctors = new Vector<>();
 
 		while(tempItr.hasNext()){

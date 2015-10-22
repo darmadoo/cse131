@@ -23,6 +23,7 @@ class MyParser extends parser
 	private SymbolTable m_symtab;
 
 	// SELF-DEFINED VARIABLES
+	private String delimiter = ".";
 	private HashMap<String, STO> map = new HashMap<>();
 	// Check 6.3
 	private boolean topLevelFlag = false;
@@ -181,7 +182,9 @@ class MyParser extends parser
 		m_symtab.closeScope();
 	}
 
-
+	//----------------------------------------------------------------
+	// TODO DAISY TARO BUAT CHECK BRP
+	//----------------------------------------------------------------
 	String GetType(Vector<STO> arguments)
 	{
 		String result = "";
@@ -192,6 +195,9 @@ class MyParser extends parser
 		return result;
 	}
 
+	//----------------------------------------------------------------
+	//TODO DAISY TARO BUAT CHECK BRP
+	//----------------------------------------------------------------
 	int GetSize(Vector<STO> arguments)
 	{
 		int result = 1;
@@ -310,6 +316,7 @@ class MyParser extends parser
 		//sto.setIsModifiable(false);
 		return sto;
 	}
+
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
@@ -353,6 +360,7 @@ class MyParser extends parser
 		VarSTO sto = new VarSTO(id, t);
 		m_symtab.insert(sto);
 	}
+
 	//----------------------------------------------------------------
 	// TODO DAISY make sure cannot assign nullptr to anything
 	// I think we are good sih.. basic type variables cannot be initialized to nullptr
@@ -457,6 +465,10 @@ class MyParser extends parser
 		}
 	}
 
+
+	//----------------------------------------------------------------
+	// CHECK 14.1
+	//----------------------------------------------------------------
 	VarSTO VarTypeDec(Type typ, String id, Vector<STO> arrayList){
 		VarSTO temp;
 
@@ -649,6 +661,7 @@ class MyParser extends parser
 		Type type = new StructType(id);
 		StructdefSTO sto = new StructdefSTO(id, type, varList, funcList, ctorDtorList);
 
+		// TODO REMOVE
 		map.size();
 		m_symtab.insert(sto);
 	}
@@ -781,6 +794,7 @@ class MyParser extends parser
 
 	//----------------------------------------------------------------
 	// New helper function to add functions into hashmap
+	// CHECK 9.2
 	//----------------------------------------------------------------
 	void buildOverloadedHashMap(FuncSTO cur, String curName){
 		// Check if the function name exists inside the function hash map
@@ -804,14 +818,15 @@ class MyParser extends parser
 
 	//----------------------------------------------------------------
 	// New helper function to generate the string for the hash map
+	// CHECK 5.1
 	//----------------------------------------------------------------
 	String generateUniqueKey(STO curr, Vector<STO> currParam){
-		String name = curr.getName() + ".";
+		String name = curr.getName() + delimiter;
 		String params = "";
 
 		Iterator<STO> itr = currParam.iterator();
 		while(itr.hasNext()){
-				params += (itr.next().getType().getName() + ".");
+				params += (itr.next().getType().getName() + delimiter);
 		}
 
 		return name + params;
@@ -835,6 +850,7 @@ class MyParser extends parser
 
 		m_symtab.getFunc().setParams(params);
 
+		// Check 14.1
 		if(isStruct && recursiveFunc){
 			functionSTO = m_symtab.getFunc();
 			DoDuplicateFuncCheck();
@@ -863,21 +879,7 @@ class MyParser extends parser
 	}
 
 	//----------------------------------------------------------------
-	// Check 12.2
-	//----------------------------------------------------------------
-	void incrementBreakCounter(){
-		breakCounter++;
-	}
-
-	//----------------------------------------------------------------
-	// Check 12.2
-	//----------------------------------------------------------------
-	void decrementBreakCounter(){
-		breakCounter--;
-	}
-
-	//----------------------------------------------------------------
-	//
+	// Check 4
 	//----------------------------------------------------------------
 	STO DoBoolCheck(STO expr){
 
@@ -947,7 +949,7 @@ class MyParser extends parser
 	}
 
 	//----------------------------------------------------------------
-	//
+	// Check 1
 	//----------------------------------------------------------------
 	STO DoBinaryExpr(STO a, BinaryOp o, STO b) {
 
@@ -970,7 +972,7 @@ class MyParser extends parser
 	}
 
 	//----------------------------------------------------------------
-	//
+	// Check 1
 	//----------------------------------------------------------------
 	STO DoUnaryExpr(STO a, UnaryOp o){
 		if(a instanceof ErrorSTO){
@@ -1234,70 +1236,6 @@ class MyParser extends parser
 		return a;
 	}
 
-
-	//----------------------------------------------------------------
-	// Check 14.2
-	//----------------------------------------------------------------
-	STO DoDesignator2_Dot(STO sto, String strID)
-	{
-		if((sto.getName()).equals("this")){
-			if(map.containsKey(currentStructName + "." + strID)){
-				return map.get(currentStructName + "." + strID);
-			}
-			else if(funcMap.containsKey(currentStructName + "." + strID)){
-				return funcMap.get(currentStructName + "." + strID).firstElement();
-			}
-			else{
-				m_nNumErrors++;
-				m_errors.print(Formatter.toString(ErrorMsg.error14c_StructExpThis, strID));
-				return sto;
-			}
-		}
-
-		// Check if the variable is a struct type
-		if(!(sto.getType() instanceof StructType)){
-			m_nNumErrors++;
-			m_errors.print(Formatter.toString(ErrorMsg.error14t_StructExp, strID));
-			return new ExprSTO(sto.getName());
-		}
-		// It is a struct type
-		else{
-			boolean found = false;
-			StructdefSTO tempSTO = (StructdefSTO) m_symtab.accessGlobal(sto.getType().getName());
-			Vector<STO> vars = tempSTO.getVarList();
-			Vector<STO> funcs = tempSTO.getFuncList();
-
-			// Iterate the variables
-			for(int i = 0; i < vars.size(); i++){
-				String varName = vars.get(i).getName();
-				if(varName.equals(strID)){
-					sto = vars.get(i);
-					found = true;
-				}
-			}
-
-			if(found){
-				return sto;
-			}
-			else{
-				// Loop through the method
-				for(int j = 0; j < funcs.size(); j++){
-					String funcName = funcs.get(j).getName();
-					if(funcName.equals(strID)){
-						sto = funcs.get(j);
-						found = true;
-					}
-				}
-
-				if(!found){
-					m_nNumErrors++;
-					m_errors.print(Formatter.toString(ErrorMsg.error14f_StructExp, strID, sto.getType().getName()));
-				}
-			}
-		}
-		return sto;
-	}
-
 	//----------------------------------------------------------------
 	// haven't do the pointer check
 	//----------------------------------------------------------------
@@ -1437,6 +1375,9 @@ class MyParser extends parser
 		return result;
 	}
 
+	//----------------------------------------------------------------
+	//
+	//----------------------------------------------------------------
 	Type DoPointerType(Type t, Vector<String> arguments)
 	{
 		PointerType head = null;
@@ -1484,7 +1425,7 @@ class MyParser extends parser
 	}
 
 	//----------------------------------------------------------------
-	//
+	// Check 14
 	//----------------------------------------------------------------
 	Type DoStructType_ID(String strID)
 	{
@@ -1511,6 +1452,20 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	// Check 12.2
 	//----------------------------------------------------------------
+	void incrementBreakCounter(){
+		breakCounter++;
+	}
+
+	//----------------------------------------------------------------
+	// Check 12.2
+	//----------------------------------------------------------------
+	void decrementBreakCounter(){
+		breakCounter--;
+	}
+
+	//----------------------------------------------------------------
+	// Check 12.2
+	//----------------------------------------------------------------
 	void DoBreakCheck(){
 		if(breakCounter == 0){
 			m_nNumErrors++;
@@ -1526,14 +1481,6 @@ class MyParser extends parser
 			m_nNumErrors++;
 			m_errors.print(ErrorMsg.error12_Continue);
 		}
-	}
-
-	void setRecursiveFuncFalse(){
-		recursiveFunc = false;
-	}
-
-	void setRecursiveFuncTrue(){
-		recursiveFunc = true;
 	}
 
 	//----------------------------------------------------------------
@@ -1557,7 +1504,7 @@ class MyParser extends parser
 	// Check 13.1 TODO change parameter to STO
 	//----------------------------------------------------------------
 	void DoDuplicateVarCheck(VarSTO curVar){
-		String structName = currentStructName + "." + curVar.getName();
+		String structName = currentStructName + delimiter + curVar.getName();
 
 		if(map.containsKey(structName)){
 			m_nNumErrors++;
@@ -1637,19 +1584,13 @@ class MyParser extends parser
 		return ctorDtorList;
 	}
 
-	FuncSTO getStruct(){
-		FuncSTO temp = functionSTO;
-		functionSTO = null;
-		return temp;
-	}
-
 	//----------------------------------------------------------------
 	// Check 13.1
 	//----------------------------------------------------------------
 	STO DoDuplicateFuncCheck(){
-		String hashKey = currentStructName + "." + generateUniqueKey(functionSTO, functionSTO.getParams());
+		String hashKey = currentStructName + delimiter + generateUniqueKey(functionSTO, functionSTO.getParams());
 
-		if(map.containsKey(currentStructName + "." + functionSTO.getName())){
+		if(map.containsKey(currentStructName + delimiter + functionSTO.getName())){
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.error13a_Struct, functionSTO.getName()));
 		}
@@ -1659,7 +1600,7 @@ class MyParser extends parser
 		}
 		else{
 			map.put(hashKey, functionSTO);
-			buildOverloadedHashMap(functionSTO, currentStructName + "." + functionSTO.getName());
+			buildOverloadedHashMap(functionSTO, currentStructName + delimiter + functionSTO.getName());
 		}
 
 		FuncSTO temp = functionSTO;
@@ -1667,7 +1608,111 @@ class MyParser extends parser
 		return temp;
 	}
 
+	//----------------------------------------------------------------
+	//Check 14.2
+	//----------------------------------------------------------------
+	FuncSTO getStruct(){
+		FuncSTO temp = functionSTO;
+		functionSTO = null;
+		return temp;
+	}
+
+	//----------------------------------------------------------------
+	// Check 14.2 | 14.3
+	//----------------------------------------------------------------
+	STO DoDesignator2_Dot(STO sto, String strID)
+	{
+		if(sto instanceof ErrorSTO){
+			return sto;
+		}
+
+		// Check 14.3
+		// Check if the keyword is equals to "this" keyword
+		if((sto.getName()).equals("this")){
+			// Check the hashmap
+			if(map.containsKey(currentStructName + delimiter + strID)){
+				return map.get(currentStructName + delimiter + strID);
+			}
+			// Check the overloaded hash map for functions
+			else if(funcMap.containsKey(currentStructName + delimiter + strID)){
+				return funcMap.get(currentStructName + delimiter + strID).firstElement();
+			}
+			else{
+				// error
+				m_nNumErrors++;
+				m_errors.print(Formatter.toString(ErrorMsg.error14c_StructExpThis, strID));
+				return sto;
+			}
+		}
+		// Not this
+		else{
+			// Check 14.2
+			// Check if the variable is a struct type
+			if(!(sto.getType() instanceof StructType)){
+				m_nNumErrors++;
+				m_errors.print(Formatter.toString(ErrorMsg.error14t_StructExp, strID));
+				return new ExprSTO(sto.getName());
+			}
+			// It is a struct type
+			else{
+				boolean found = false;
+				// Retrieve the current struct
+				StructdefSTO tempSTO = (StructdefSTO) m_symtab.accessGlobal(sto.getType().getName());
+
+				Vector<STO> vars = tempSTO.getVarList();
+				// Iterate the variables
+				Iterator<STO> itr = vars.iterator();
+				while (itr.hasNext()){
+					STO var = itr.next();
+					if((var.getName()).equals(strID)){
+						sto = var;
+						found = true;
+					}
+				}
+
+				if(found){
+					return sto;
+				}
+				else{
+					Vector<STO> funcs = tempSTO.getFuncList();
+					// Loop through the method
+					itr = funcs.iterator();
+					while(itr.hasNext()){
+						STO func = itr.next();
+						if((func.getName()).equals(strID)){
+							sto = func;
+							found = true;
+						}
+					}
+
+					if(!found){
+						m_nNumErrors++;
+						m_errors.print(Formatter.toString(ErrorMsg.error14f_StructExp, strID, sto.getType().getName()));
+					}
+				}
+			}
+		}
+
+		return sto;
+	}
+
+	//----------------------------------------------------------------
+	//Check 14.2
+	//----------------------------------------------------------------
+	void setRecursiveFuncFalse(){
+		recursiveFunc = false;
+	}
+
+	//----------------------------------------------------------------
+	//Check 14.2
+	//----------------------------------------------------------------
+	void setRecursiveFuncTrue(){
+		recursiveFunc = true;
+	}
+
+	//----------------------------------------------------------------
 	//Check 15.1
+	//----------------------------------------------------------------
 	void DoArrowCheck(STO sto, String id){
 		// Make sure the sto coming in is not an error sto
 		if(sto instanceof ErrorSTO){
@@ -1680,12 +1725,44 @@ class MyParser extends parser
 			m_errors.print(ErrorMsg.error15_Nullptr);
 		}
 
+		// If the sto passed in is a struct
+		if(sto.getType() instanceof StructType){
+			StructdefSTO struct = (StructdefSTO) m_symtab.accessGlobal(sto.getType().getName());
+			Vector<STO> varList = struct.getVarList();
+			Vector<STO> funcList = struct.getFuncList();
+			boolean found = false;
+
+			for(int i = 0; i < varList.size(); i++){
+				STO curVar = varList.get(i);
+				if((curVar.getName()).equals(id)){
+					found = true;
+				}
+			}
+
+			if(found){
+				return;
+			}
+			else{
+				for(int j = 0; j < funcList.size(); j++){
+					STO curFunc = funcList.get(j);
+					if((curFunc.getName()).equals(id)){
+						found = true;
+					}
+				}
+
+				if(!found) {
+					m_nNumErrors++;
+					m_errors.print(Formatter.toString(ErrorMsg.error14f_StructExp, id, struct.getName()));
+				}
+			}
+
+		}
+
 		// Check if the sto is a struct type. The left side
 		if(!(sto.getType().isPointer())){
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.error15_ReceiverArrow, sto.getType().getName()));
 		}
-
 		// Need to check for variables inside the struct
 		//else it's a pointer
 		else
@@ -1705,11 +1782,15 @@ class MyParser extends parser
 
 				//nextType is struct
 				//access the variable somewhere around here??
+				map.size();
 			}
 
 		}
 	}
 
+	//----------------------------------------------------------------
+	//Check 15.1
+	//----------------------------------------------------------------
 	STO DoAmpersand(STO sto) {
 		if (sto.getIsAddressable() == false) {
 			m_nNumErrors++;
@@ -1724,7 +1805,10 @@ class MyParser extends parser
 		return new ExprSTO(sto.getName(), temp);
 
 	}
-	// Check 15.1
+
+	//----------------------------------------------------------------
+	//Check 15.1
+	//----------------------------------------------------------------
 	STO DoStarCheck(STO sto){
 		// Make sure the sto coming in is not an ERRORSTO
 		if(sto instanceof ErrorSTO){
@@ -1757,6 +1841,9 @@ class MyParser extends parser
 		return sto;
 	}
 
+	//----------------------------------------------------------------
+	//Check 19
+	//----------------------------------------------------------------
 	ConstSTO DoSizeCheck(STO sto){
 
 		if(!(sto.getType() instanceof Type)){
@@ -1780,6 +1867,9 @@ class MyParser extends parser
 
 	}
 
+	//----------------------------------------------------------------
+	//Check 19
+	//----------------------------------------------------------------
 	STO DoSizeCheck(Type typ, Vector<STO> arguments) {
 		int size = 1;
 		if (arguments != null)
@@ -1791,20 +1881,12 @@ class MyParser extends parser
 		sto.setIsAddressable(false);
 		return sto;
 	}
- 	/*
-	ConstSTO DoSizeCheck(Type typ, Vector<STO> list) {
-		// Make an R val constant
-		ConstSTO size = new ConstSTO(typ.getName(), typ.getSize());
-		size.setIsAddressable(false);
-		size.setIsModifiable(false);
 
-		return size;
-	}
-	*/
-
+	//----------------------------------------------------------------
+	//Check 20
+	//----------------------------------------------------------------
 	STO DoTypeCast(Type t, STO sto)
 	{
-
 		//basic types
 		if(sto.getType().isBasic() && t.isBasic())
 		{
