@@ -418,13 +418,6 @@ class MyParser extends parser
 				m_errors.print(Formatter.toString(ErrorMsg.error8_Assign, expr.getType().getName(), t.getName()));
 			}
 		}
-		//TO-DO address of operation
-		//check 15c here
-		else if(expr != null && t.isPointer() && (expr.getName() != "nullptr" || !expr.getType().isPointer()))
-		{
-			m_nNumErrors++;
-			m_errors.print(Formatter.toString(ErrorMsg.error8_Assign, expr.getType().getName(), t.getName()));
-		}
 		else if(expr != null && expr.isConst())
 		{
 			if (expr.getType().isInt()) {
@@ -1291,6 +1284,12 @@ class MyParser extends parser
 		{
 			return new ErrorSTO(expr.getName());
 		}
+		if(des.getType().isNullPointer())
+		{
+			m_nNumErrors++;
+			m_errors.print(ErrorMsg.error15_Nullptr);
+			return new ErrorSTO(des.getName());
+		}
 		//if the designator preceding [] is not array or pointer return error
 		if(des != null && !des.getType().isArray() && !des.getType().isPointer())
 		{
@@ -1643,13 +1642,33 @@ class MyParser extends parser
 		}
 
 		// Check if the sto is a struct type. The left side
-		if(!(sto.getType() instanceof StructType)){
+		if(!(sto.getType().isPointer())){
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.error15_ReceiverArrow, sto.getType().getName()));
 		}
 
 		// Need to check for variables inside the struct
+		//else it's a pointer
+		else
+		{
+			Type nextType;
+			//check whether it's pointer to a struct
+			PointerType temp = (PointerType)sto.getType();
+			if(temp.hasNext())
+			{
+				nextType = temp.next();
+				// if the pointer is not pointing to a struct
+				if (!nextType.isStruct())
+				{
+					m_nNumErrors++;
+					m_errors.print(Formatter.toString(ErrorMsg.error15_ReceiverArrow, sto.getType().getName()));
+				}
 
+				//nextType is struct
+				//access the variable somewhere around here??
+			}
+
+		}
 	}
 
 	STO DoAmpersand(STO sto) {
