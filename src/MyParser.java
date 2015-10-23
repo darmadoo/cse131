@@ -468,7 +468,8 @@ class MyParser extends parser
 		else if(expr != null && !t.isAssignableTo(expr.getType()))
 		{
 			if (expr.isError()) {
-				return;
+				VarSTO sto = new VarSTO(id, t);
+				m_symtab.insert(sto);
 			} else {
 				m_nNumErrors++;
 				m_errors.print(Formatter.toString(ErrorMsg.error8_Assign, expr.getType().getName(), t.getName()));
