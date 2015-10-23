@@ -19,7 +19,7 @@ class FuncSTO extends STO
 	public FuncSTO(String strName)
 	{
 		super (strName);
-		setReturnType(null);
+		setReturnType(new VoidType());
 		// You may want to change the isModifiable and isAddressable
 		// fields as necessary
 		super.setIsAddressable(true);
