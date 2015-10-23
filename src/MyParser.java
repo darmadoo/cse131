@@ -476,15 +476,6 @@ class MyParser extends parser
 				m_symtab.insert(sto);
 			}
 		}
-		//TO-DO address of operation
-		//check 15c here
-		//else if(expr != null && t.isPointer() && (expr.getName() != "nullptr" || !expr.getType().isPointer()))
-		//{
-		//	m_nNumErrors++;
-		//	m_errors.print(Formatter.toString(ErrorMsg.error8_Assign, expr.getType().getName(), t.getName()));
-		//	VarSTO sto = new VarSTO(id, t);
-		//	m_symtab.insert(sto);
-		//}
 		else if(expr != null && expr.isConst())
 		{
 			if (expr.getType().isInt()) {
@@ -1739,7 +1730,7 @@ class MyParser extends parser
 			if(!(sto.getType() instanceof StructType)){
 				m_nNumErrors++;
 				m_errors.print(Formatter.toString(ErrorMsg.error14t_StructExp, sto.getType().getName()));
-				return new ExprSTO(sto.getName());
+				return new ExprSTO(sto.getName(), sto.getType());
 			}
 			// It is a struct type
 			else{
@@ -1776,6 +1767,7 @@ class MyParser extends parser
 					if(!found){
 						m_nNumErrors++;
 						m_errors.print(Formatter.toString(ErrorMsg.error14f_StructExp, strID, sto.getType().getName()));
+						return new ErrorSTO(sto.getName());
 					}
 				}
 			}
