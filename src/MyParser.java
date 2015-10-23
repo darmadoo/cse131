@@ -951,7 +951,7 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	STO DoAssignExpr(STO stoDes, STO expr)
 	{
-		//System.out.println("StoDes Type: " + stoDes.getIsModifiable());
+		//System.out.println("StoDes Type: " + stoDes.getType());
 		//System.out.println("Expr Type: " + expr.getType());
 		if(stoDes.isError() || stoDes.getType().isError())
 		{
