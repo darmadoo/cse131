@@ -474,7 +474,8 @@ class MyParser extends parser
 		else if(expr != null && !t.isAssignableTo(expr.getType()))
 		{
 			if (expr.isError()) {
-				return;
+				VarSTO sto = new VarSTO(id, t);
+				m_symtab.insert(sto);
 			} else {
 				m_nNumErrors++;
 				m_errors.print(Formatter.toString(ErrorMsg.error8_Assign, expr.getType().getName(), t.getName()));
@@ -776,6 +777,8 @@ class MyParser extends parser
 		}
 		else{
 			sto.setRbr(false);
+			sto.setIsAddressable(false);
+			sto.setIsModifiable(false);
 		}
 
 		m_symtab.insert(sto);
@@ -970,7 +973,7 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	STO DoAssignExpr(STO stoDes, STO expr)
 	{
-		//System.out.println("StoDes Type: " + stoDes.getIsModifiable());
+		//System.out.println("StoDes Type: " + stoDes.getType());
 		//System.out.println("Expr Type: " + expr.getType());
 		if(stoDes.isError() || stoDes.getType().isError())
 		{
@@ -1827,6 +1830,7 @@ class MyParser extends parser
 		if(sto.getType() instanceof NullPointerType){
 			m_nNumErrors++;
 			m_errors.print(ErrorMsg.error15_Nullptr);
+			return new ErrorSTO(sto.getName());
 		}
 
 		// Check if the sto is a struct type. The left side
