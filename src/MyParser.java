@@ -467,7 +467,7 @@ class MyParser extends parser
 		}
 		else if(expr != null && !t.isAssignableTo(expr.getType()))
 		{
-			if (expr.isError()) {
+			if (expr.isError() || expr.getType().isError()) {
 				VarSTO sto = new VarSTO(id, t);
 				m_symtab.insert(sto);
 			} else {
