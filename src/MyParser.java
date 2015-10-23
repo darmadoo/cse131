@@ -977,6 +977,13 @@ class MyParser extends parser
 			m_errors.print(ErrorMsg.error3a_Assign);
 			return new ErrorSTO(stoDes.getName());
 		}
+		else if(expr.getType() instanceof  PointerType){
+			if(!(((PointerType) expr.getType()).next()).isAssignableTo(stoDes.getType())){
+				m_nNumErrors++;
+				m_errors.print(Formatter.toString(ErrorMsg.error3b_Assign, expr.getType().getName(), stoDes.getType().getName()));
+				return new ErrorSTO(stoDes.getName());
+			}
+		}
 		else if(!(stoDes.getType().isAssignableTo(expr.getType())))
 		{
 			if((expr.getName()).equals("this")){
