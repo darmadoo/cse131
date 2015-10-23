@@ -14,7 +14,9 @@ class StructType extends CompositeType{
 
     public Boolean isAssignableTo(Type t){
         if(t.isStruct()){
-            return true;
+            if((this.getName()).equals(t.getName())){
+                return true;
+            }
         }
 
         return false;
@@ -22,7 +24,9 @@ class StructType extends CompositeType{
 
     public Boolean isEquivalentTo(Type t){
         if(t.isStruct()){
-            return true;
+            if((this.getName()).equals(t.getName())){
+                return true;
+            }
         }
 
         return false;

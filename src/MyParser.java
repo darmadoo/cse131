@@ -686,7 +686,13 @@ class MyParser extends parser
 			m_errors.print(Formatter.toString(ErrorMsg.redeclared_id, id));
 		}
 
-		Type type = new StructType(id);
+		int count = 0;
+
+		for(int i = 0; i < varList.size(); i++){
+			count += varList.get(i).getType().getSize();
+		}
+
+		Type type = new StructType(id, count);
 		StructdefSTO sto = new StructdefSTO(id, type, varList, funcList, ctorDtorList);
 
 		// TODO REMOVE
@@ -764,6 +770,8 @@ class MyParser extends parser
 		}
 		else{
 			sto.setRbr(false);
+			sto.setIsAddressable(false);
+			sto.setIsModifiable(false);
 		}
 
 		m_symtab.insert(sto);
@@ -967,15 +975,6 @@ class MyParser extends parser
 			m_errors.print(ErrorMsg.error3a_Assign);
 			return new ErrorSTO(stoDes.getName());
 		}
-		/*
-		else if(expr.getType() instanceof  PointerType){
-			if(!(((PointerType) expr.getType()).next()).isAssignableTo(stoDes.getType())){
-				m_nNumErrors++;
-				m_errors.print(Formatter.toString(ErrorMsg.error3b_Assign, expr.getType().getName(), stoDes.getType().getName()));
-				return new ErrorSTO(stoDes.getName());
-			}
-		}
-		*/
 		else if(!(stoDes.getType().isAssignableTo(expr.getType())))
 		{
 			if((expr.getName()).equals("this")){
@@ -1063,8 +1062,11 @@ class MyParser extends parser
 
 		// Check 9b
 		if(temp.getOverloaded()){
-			// Do error checking for overloaded function
-			return DoOverloadedCheck(temp, arguments, funcMap.get(temp.getName()));
+			Vector<FuncSTO> func = funcMap.get(temp.getName());
+			if(!(func == null)){
+				// Do error checking for overloaded function
+				return DoOverloadedCheck(temp, arguments, funcMap.get(temp.getName()));
+			}
 		}
 		// Not overloaded
 		else{
@@ -1530,7 +1532,7 @@ class MyParser extends parser
 		}
 
 		// prob wrong
-		return new PointerType(strID, 4);
+		return new StructType(strID);
 
 	}
 
@@ -1708,7 +1710,7 @@ class MyParser extends parser
 	STO DoDesignator2_Dot(STO sto, String strID)
 	{
 		if(sto instanceof ErrorSTO){
-			return sto;
+			return new ErrorSTO(sto.getName());
 		}
 
 		// Check 14.3
@@ -1726,7 +1728,7 @@ class MyParser extends parser
 				// error
 				m_nNumErrors++;
 				m_errors.print(Formatter.toString(ErrorMsg.error14c_StructExpThis, strID));
-				return sto;
+				return new ErrorSTO(sto.getName());
 			}
 		}
 		// Not this
@@ -1736,7 +1738,7 @@ class MyParser extends parser
 			if(!(sto.getType() instanceof StructType)){
 				m_nNumErrors++;
 				m_errors.print(Formatter.toString(ErrorMsg.error14t_StructExp, sto.getType().getName()));
-				return new ExprSTO(sto.getName(), sto.getType());
+				return new ErrorSTO(sto.getName());
 			}
 			// It is a struct type
 			else{
@@ -1799,22 +1801,24 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	//Check 15.1
 	//----------------------------------------------------------------
-	void DoArrowCheck(STO sto, String id){
+	STO DoArrowCheck(STO sto, String id){
 		// Make sure the sto coming in is not an error sto
 		if(sto instanceof ErrorSTO){
-			return;
+			return sto;
 		}
 
 		// Check 15.1
 		if(sto.getType() instanceof NullPointerType){
 			m_nNumErrors++;
 			m_errors.print(ErrorMsg.error15_Nullptr);
+			return new ErrorSTO(sto.getName());
 		}
 
 		// Check if the sto is a struct type. The left side
 		if(!(sto.getType().isPointer())){
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.error15_ReceiverArrow, sto.getType().getName()));
+			return new ErrorSTO(sto.getName());
 		}
 		// Need to check for variables inside the struct
 		//else it's a pointer
@@ -1831,6 +1835,7 @@ class MyParser extends parser
 				{
 					m_nNumErrors++;
 					m_errors.print(Formatter.toString(ErrorMsg.error15_ReceiverArrow, sto.getType().getName()));
+					return new ErrorSTO(sto.getName());
 				}
 				// Is a structure
 				else{
@@ -1838,34 +1843,39 @@ class MyParser extends parser
 					Vector<STO> varList = struct.getVarList();
 					Vector<STO> funcList = struct.getFuncList();
 					boolean found = false;
+					int index = -1;
 
 					for(int i = 0; i < varList.size(); i++){
 						STO curVar = varList.get(i);
 						if((curVar.getName()).equals(id)){
 							found = true;
+							index = i;
 						}
 					}
 
 					if(found){
-						return;
+						return varList.get(index);
 					}
 					else{
 						for(int j = 0; j < funcList.size(); j++){
 							STO curFunc = funcList.get(j);
 							if((curFunc.getName()).equals(id)){
 								found = true;
+								index = j;
 							}
 						}
 
 						if(!found) {
 							m_nNumErrors++;
 							m_errors.print(Formatter.toString(ErrorMsg.error14f_StructExp, id, struct.getName()));
+							return new ErrorSTO(sto.getName());
 						}
 					}
 				}
 			}
 
 		}
+		return sto;
 	}
 
 	//----------------------------------------------------------------
@@ -1961,7 +1971,6 @@ class MyParser extends parser
 			size = GetSize(arguments);
 
 		//if the type is pointer get the size of what it's pointing to
-		//if( typ.is)
 		ConstSTO sto = new ConstSTO("sizeof", new IntType(), size * typ.getSize());
 		sto.setIsAddressable(false);
 		return sto;

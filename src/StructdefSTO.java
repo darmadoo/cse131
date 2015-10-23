@@ -80,7 +80,7 @@ class StructdefSTO extends STO
 		return ctors;
 	}
 
-	int getStructSize(){
+	int getSize(){
 		return size;
 	}
 
