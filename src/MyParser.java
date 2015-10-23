@@ -209,7 +209,7 @@ class MyParser extends parser
 	}
 
 	//----------------------------------------------------------------
-	// TODO MARK
+	//
 	//----------------------------------------------------------------
 	void DoNewStatement(STO des, Vector<STO> temp)
 	{
@@ -702,8 +702,6 @@ class MyParser extends parser
 		Type type = new StructType(id, count);
 		StructdefSTO sto = new StructdefSTO(id, type, varList, funcList, ctorDtorList);
 
-		// TODO REMOVE
-		map.size();
 		m_symtab.insert(sto);
 	}
 
