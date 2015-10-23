@@ -209,7 +209,7 @@ class MyParser extends parser
 	}
 
 	//----------------------------------------------------------------
-	// TODO MARK
+	//
 	//----------------------------------------------------------------
 	void DoNewStatement(STO des, Vector<STO> temp)
 	{
@@ -221,10 +221,17 @@ class MyParser extends parser
 		if(temp.isEmpty()){
 			if(des.getType() instanceof PointerType && !des.getType().isNullPointer()){
 				if(((PointerType) des.getType()).next() instanceof StructType){
+					map.size();
 					// Find the struct
 					StructType struct = (StructType)((PointerType) des.getType()).next();
 					StructdefSTO findStruct =(StructdefSTO) m_symtab.accessGlobal(struct.getName());
 					DoFuncCall(findStruct.getCtorDtorsList().firstElement(), temp);
+				}
+				else {
+					if(!(des.getIsAddressable() && des.getIsModifiable())){
+						m_nNumErrors++;
+						m_errors.print(ErrorMsg.error16_New_var);
+					}
 				}
 			}
 			//if it's modifiable l value
@@ -401,7 +408,6 @@ class MyParser extends parser
 	}
 
 	//----------------------------------------------------------------
-	// TODO DAISY make sure cannot assign nullptr to anything
 	// I think we are good sih.. basic type variables cannot be initialized to nullptr
 	// but pointer variables can be initialize to nullptr -> part of check 15c
 	//----------------------------------------------------------------
@@ -696,8 +702,6 @@ class MyParser extends parser
 		Type type = new StructType(id, count);
 		StructdefSTO sto = new StructdefSTO(id, type, varList, funcList, ctorDtorList);
 
-		// TODO REMOVE
-		map.size();
 		m_symtab.insert(sto);
 	}
 
@@ -796,6 +800,13 @@ class MyParser extends parser
 		if(isStruct){
 			// Save the structure when it is a struct
 			functionSTO = temp;
+			if(!(temp.getReturnType() instanceof VoidType)) {
+				if (!topLevelFlag) {
+					m_nNumErrors++;
+					m_errors.print(ErrorMsg.error6c_Return_missing);
+					return;
+				}
+			}
 		}
 		else{
 			// Check 9.1
@@ -1081,6 +1092,7 @@ class MyParser extends parser
 			else{
 				// Check if the function declared is in the hash map
 				if(!map.containsKey(hashKey)){
+					boolean flag = false;
 					for(int i = 0; i < size; i++){
 						// Store the arguments and the type of the arguments
 						STO argumentSTO = arguments.get(i);
@@ -1101,12 +1113,14 @@ class MyParser extends parser
 							if(!parameterType.isEquivalentTo(argumentType)){
 								m_nNumErrors++;
 								m_errors.print(Formatter.toString(ErrorMsg.error5r_Call, argumentType.getName(), parameterSTO.getName(), parameterType.getName()));
+								flag = true;
 							}
 							// Check for Modifiable L value
 							// exception to array that is passed by references
 							else if(!argumentSTO.isModLValue() && !argumentSTO.getType().isArray()){
 								m_nNumErrors++;
 								m_errors.print(Formatter.toString(ErrorMsg.error5c_Call, parameterSTO.getName(), parameterType.getName()));
+								flag = true;
 							}
 						}
 						else{
@@ -1114,11 +1128,13 @@ class MyParser extends parser
 							if(!parameterType.isAssignableTo(argumentType)){
 								m_nNumErrors++;
 								m_errors.print(Formatter.toString(ErrorMsg.error5a_Call, argumentType.getName(), parameterSTO.getName(), parameterType.getName()));
+								flag = true;
 							}
 						}
 					}
-					// TODO HAVE FLAG SO WHEN DOES NOT HAVE ANY ERROR, DONT RETURN
-					return new ErrorSTO(sto.getName());
+					if(flag){
+						return new ErrorSTO(sto.getName());
+					}
 				}
 				// Already inside the namespace
 				else{
