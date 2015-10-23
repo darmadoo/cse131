@@ -209,7 +209,7 @@ class MyParser extends parser
 	}
 
 	//----------------------------------------------------------------
-	//
+	// TODO MARK
 	//----------------------------------------------------------------
 	void DoNewStatement(STO des, Vector<STO> temp)
 	{
@@ -217,20 +217,60 @@ class MyParser extends parser
 		{
 			return;
 		}
-		//if it's modifiable l value
-		else if (des.getIsAddressable() && des.getIsModifiable())
-		{
-			if (!des.getType().isPointer())
+
+		if(temp.isEmpty()){
+			if(des.getType() instanceof PointerType){
+				if(((PointerType) des.getType()).next() instanceof StructType){
+					// Find the struct
+					StructType struct = (StructType)((PointerType) des.getType()).next();
+					StructdefSTO findStruct =(StructdefSTO) m_symtab.accessGlobal(struct.getName());
+					DoFuncCall(findStruct.getCtorDtorsList().firstElement(), temp);
+				}
+			}
+			//if it's modifiable l value
+			else if (des.getIsAddressable() && des.getIsModifiable())
+			{
+				if (!des.getType().isPointer())
+				{
+					m_nNumErrors++;
+					m_errors.print(Formatter.toString(ErrorMsg.error16_New, des.getType().getName()));
+				}
+			}
+			else
 			{
 				m_nNumErrors++;
-				m_errors.print(Formatter.toString(ErrorMsg.error16_New, des.getType().getName()));
+				m_errors.print(ErrorMsg.error16_New_var);
 			}
 		}
-		else
-		{
-			m_nNumErrors++;
-			m_errors.print(ErrorMsg.error16_New_var);
+		else{
+			if(des.getType() instanceof PointerType){
+				if(((PointerType) des.getType()).next() instanceof StructType){
+					// Find the struct
+					StructType struct = (StructType)((PointerType) des.getType()).next();
+					StructdefSTO findStruct =(StructdefSTO) m_symtab.accessGlobal(struct.getName());
+					DoFuncCall(findStruct.getCtorDtorsList().firstElement(), temp);
+				}
+				else{
+					m_nNumErrors++;
+					m_errors.print(Formatter.toString(ErrorMsg.error16b_NonStructCtorCall, des.getType().getName()));
+				}
+			}
+			//if it's modifiable l value
+			else if (des.getIsAddressable() && des.getIsModifiable())
+			{
+				if (!des.getType().isPointer())
+				{
+					m_nNumErrors++;
+					m_errors.print(Formatter.toString(ErrorMsg.error16_New, des.getType().getName()));
+				}
+			}
+			else
+			{
+				m_nNumErrors++;
+				m_errors.print(ErrorMsg.error16_New_var);
+			}
 		}
+
 
 	}
 
@@ -939,10 +979,18 @@ class MyParser extends parser
 		}
 		else if(!(stoDes.getType().isAssignableTo(expr.getType())))
 		{
-			//check if expression is array
-			m_nNumErrors++;
-			m_errors.print(Formatter.toString(ErrorMsg.error3b_Assign, expr.getType().getName(), stoDes.getType().getName()));
-			return new ErrorSTO(stoDes.getName());
+			if((expr.getName()).equals("this")){
+				//check if expression is this
+				m_nNumErrors++;
+				m_errors.print(Formatter.toString(ErrorMsg.error3b_Assign, currentStructName, stoDes.getType().getName()));
+				return new ErrorSTO(stoDes.getName());
+			}
+			else{
+				//check if expression is array
+				m_nNumErrors++;
+				m_errors.print(Formatter.toString(ErrorMsg.error3b_Assign, expr.getType().getName(), stoDes.getType().getName()));
+				return new ErrorSTO(stoDes.getName());
+			}
 		}
 
 		return stoDes;
@@ -1066,6 +1114,7 @@ class MyParser extends parser
 							}
 						}
 					}
+					// TODO HAVE FLAG SO WHEN DOES NOT HAVE ANY ERROR, DONT RETURN
 					return new ErrorSTO(sto.getName());
 				}
 				// Already inside the namespace
@@ -1089,7 +1138,11 @@ class MyParser extends parser
 			}
 		}
 
-		return sto;
+		// Solving pass by reference issue where functions are non modif L val
+		ExprSTO exprSTO = new ExprSTO(sto.getName(), sto.getType());
+		exprSTO.setIsAddressable(sto.getIsAddressable());
+		exprSTO.setIsModifiable(sto.getIsModifiable());
+		return exprSTO;
 	}
 
 	// Check 9b
@@ -1153,7 +1206,11 @@ class MyParser extends parser
 			return new ErrorSTO(curSTO.getName());
 		}
 
-		return new ExprSTO("", functions.get(found).getReturnType());
+		// Solving pass by reference issue where functions are non modif L val
+		ExprSTO exprSTO = new ExprSTO(functions.get(found).getName(), functions.get(found).getReturnType());
+		exprSTO.setIsAddressable(functions.get(found).getIsAddressable());
+		exprSTO.setIsModifiable(functions.get(found).getIsModifiable());
+		return exprSTO;
 	}
 
 	//----------------------------------------------------------------
@@ -1431,22 +1488,35 @@ class MyParser extends parser
 	{
 		STO sto;
 
-		if ((sto = m_symtab.access(strID)) == null)
-		{
-			//System.out.println(strID);
-			m_nNumErrors++;
-		 	m_errors.print(Formatter.toString(ErrorMsg.undeclared_id, strID));
-			return new ErrorType();
+		if(!strID.equals(currentStructName)){
+			if ((sto = m_symtab.access(strID)) == null)
+			{
+				//System.out.println(strID);
+				m_nNumErrors++;
+				m_errors.print(Formatter.toString(ErrorMsg.undeclared_id, strID));
+				return new ErrorType();
+			}
+
+			if (!sto.isStructdef())
+			{
+				m_nNumErrors++;
+				m_errors.print(Formatter.toString(ErrorMsg.not_type, sto.getName()));
+				return new ErrorType();
+			}
+			return sto.getType();
+		}
+		// Calls within itself
+		else{
+			m_symtab.getLevel();
+			funcMap.size();
+			//Vector<STO> ctorList = map.
+			map.size();
+			//return new StructType(strID, )
 		}
 
-		if (!sto.isStructdef())
-		{
-			m_nNumErrors++;
-			m_errors.print(Formatter.toString(ErrorMsg.not_type, sto.getName()));
-			return new ErrorType();
-		}
+		// prob wrong
+		return new PointerType(strID, 4);
 
-		return sto.getType();
 	}
 
 	//----------------------------------------------------------------
@@ -1501,7 +1571,7 @@ class MyParser extends parser
 	}
 
 	//----------------------------------------------------------------
-	// Check 13.1 TODO change parameter to STO
+	// Check 13.1
 	//----------------------------------------------------------------
 	void DoDuplicateVarCheck(VarSTO curVar){
 		String structName = currentStructName + delimiter + curVar.getName();
@@ -1650,7 +1720,7 @@ class MyParser extends parser
 			// Check if the variable is a struct type
 			if(!(sto.getType() instanceof StructType)){
 				m_nNumErrors++;
-				m_errors.print(Formatter.toString(ErrorMsg.error14t_StructExp, strID));
+				m_errors.print(Formatter.toString(ErrorMsg.error14t_StructExp, sto.getType().getName()));
 				return new ExprSTO(sto.getName());
 			}
 			// It is a struct type
@@ -1725,39 +1795,6 @@ class MyParser extends parser
 			m_errors.print(ErrorMsg.error15_Nullptr);
 		}
 
-		// If the sto passed in is a struct
-		if(sto.getType() instanceof StructType){
-			StructdefSTO struct = (StructdefSTO) m_symtab.accessGlobal(sto.getType().getName());
-			Vector<STO> varList = struct.getVarList();
-			Vector<STO> funcList = struct.getFuncList();
-			boolean found = false;
-
-			for(int i = 0; i < varList.size(); i++){
-				STO curVar = varList.get(i);
-				if((curVar.getName()).equals(id)){
-					found = true;
-				}
-			}
-
-			if(found){
-				return;
-			}
-			else{
-				for(int j = 0; j < funcList.size(); j++){
-					STO curFunc = funcList.get(j);
-					if((curFunc.getName()).equals(id)){
-						found = true;
-					}
-				}
-
-				if(!found) {
-					m_nNumErrors++;
-					m_errors.print(Formatter.toString(ErrorMsg.error14f_StructExp, id, struct.getName()));
-				}
-			}
-
-		}
-
 		// Check if the sto is a struct type. The left side
 		if(!(sto.getType().isPointer())){
 			m_nNumErrors++;
@@ -1779,10 +1816,37 @@ class MyParser extends parser
 					m_nNumErrors++;
 					m_errors.print(Formatter.toString(ErrorMsg.error15_ReceiverArrow, sto.getType().getName()));
 				}
+				// Is a structure
+				else{
+					StructdefSTO struct = (StructdefSTO) m_symtab.accessGlobal(((PointerType) sto.getType()).next().getName());
+					Vector<STO> varList = struct.getVarList();
+					Vector<STO> funcList = struct.getFuncList();
+					boolean found = false;
 
-				//nextType is struct
-				//access the variable somewhere around here??
-				map.size();
+					for(int i = 0; i < varList.size(); i++){
+						STO curVar = varList.get(i);
+						if((curVar.getName()).equals(id)){
+							found = true;
+						}
+					}
+
+					if(found){
+						return;
+					}
+					else{
+						for(int j = 0; j < funcList.size(); j++){
+							STO curFunc = funcList.get(j);
+							if((curFunc.getName()).equals(id)){
+								found = true;
+							}
+						}
+
+						if(!found) {
+							m_nNumErrors++;
+							m_errors.print(Formatter.toString(ErrorMsg.error14f_StructExp, id, struct.getName()));
+						}
+					}
+				}
 			}
 
 		}

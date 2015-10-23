@@ -16,6 +16,7 @@ class StructdefSTO extends STO
 	// Check 14.1
 	private Vector<STO> vars, funcs, ctors;
 	private FuncSTO dtor;
+	private int size;
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
@@ -31,10 +32,19 @@ class StructdefSTO extends STO
 		super(strName, typ);
 		vars = varList;
 		funcs = funcList;
+		size = getStructSize(varList);
 		// Check 14.1
 		parseDtor(ctorDtorList, strName);
 		super.setIsModifiable(true);
 		super.setIsAddressable(true);
+	}
+
+	int getStructSize(Vector<STO> var){
+		int count = 0;
+		for(int i = 0; i < var.size(); i++){
+			count += var.get(i).getType().getSize();
+		}
+		return count;
 	}
 
 	// Check 14.1
@@ -68,6 +78,10 @@ class StructdefSTO extends STO
 
 	Vector<STO> getCtorDtorsList(){
 		return ctors;
+	}
+
+	int getStructSize(){
+		return size;
 	}
 
 	//----------------------------------------------------------------
