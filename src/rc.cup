@@ -1108,11 +1108,15 @@ Designator3 ::=     T_LPAREN Expr:_2 T_RPAREN
     |               T_INT_LITERAL:_1
                     {:
                         // RESULT = new ConstSTO (_1, new IntType(), Integer.parseInt(_1, 10), true);    // fix me!
-                        RESULT = new ConstSTO (_1, new IntType(), Integer.parseInt(_1, 10));    // fix me!
+                        ConstSTO sto = new ConstSTO (_1, new IntType(), Integer.parseInt(_1, 10));    // fix me!
+                        sto.setIsAddressable(false);
+                        RESULT = sto;
                     :}
     |               T_FLOAT_LITERAL:_1
                     {:
-                        RESULT = new ConstSTO (_1, new FloatType(), Float.parseFloat(_1));  // fix me!
+                        ConstSTO sto = new ConstSTO (_1, new FloatType(), Float.parseFloat(_1));  // fix me!
+                        sto.setIsAddressable(false);
+                        RESULT = sto;
                     :}
     |               T_STR_LITERAL:_1
                     {:
@@ -1120,11 +1124,15 @@ Designator3 ::=     T_LPAREN Expr:_2 T_RPAREN
                     :}
     |               T_TRUE
                     {:
-                        RESULT = new ConstSTO ("true", new BoolType(), 1);    // fix me!
+                        ConstSTO sto = new ConstSTO ("true", new BoolType(), 1);    // fix me!
+                        sto.setIsAddressable(false);
+                        RESULT = sto;
                     :}
     |               T_FALSE
                     {:
-                        RESULT = new ConstSTO ("false", new BoolType(), 0);   // fix me!
+                        ConstSTO sto = new ConstSTO ("false", new BoolType(), 0);   // fix me!
+                        sto.setIsAddressable(false);
+                        RESULT = sto;
                     :}
     |               T_NULLPTR
                     {:

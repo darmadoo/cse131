@@ -8,16 +8,19 @@ public class EqualOp extends ComparisonOp {
         Type aType = a.getType();
         Type bType = b.getType();
 
-        if((aType instanceof StructType) || (bType instanceof StructType)){
-            return new ErrorSTO(Formatter.toString(ErrorMsg.error1b_Expr, aType.getName(), "==", bType.getName()));
-        }
-        if((aType instanceof  PointerType) || (bType instanceof PointerType)) {
-            if (aType.isEquivalentTo(bType)) {
-                return new ExprSTO(Formatter.toString(ErrorMsg.error1b_Expr, aType.getName(), "==", bType.getName()), new BoolType());
-            } else if (aType.isNullPointer() && bType.isPointer() || bType.isNullPointer() && aType.isPointer()) {
-                return new ExprSTO(Formatter.toString(ErrorMsg.error1b_Expr, aType.getName(), "==", bType.getName()), new BoolType());
+        if (!(aType instanceof BasicType) || !(bType instanceof BasicType)) {
+            // error when one of them is not numeric
+            if((aType instanceof PointerType) || (bType instanceof PointerType))
+            {
+                if((aType.isNullPointer() && bType.isPointer()) || (aType.isPointer() && bType.isNullPointer()))
+                    return new ExprSTO(a.getName() + " == " + b.getName(), new BoolType("bool", 4));
+                if(!(aType.isAssignableTo(bType)))
+                    return new ErrorSTO(Formatter.toString(ErrorMsg.error17_Expr, "==", aType.getName(), bType.getName()));
+                else
+                    return new ExprSTO(a.getName() + " == " + b.getName(), new BoolType("bool", 4));
             }
-            return new ErrorSTO(Formatter.toString(ErrorMsg.error17_Expr, "==", aType.getName(), bType.getName()));
+            else
+                return new ErrorSTO(Formatter.toString(ErrorMsg.error1b_Expr, aType.getName(), "==", bType.getName()));
         }
 
         if (!(aType instanceof BasicType) || !(bType instanceof BasicType)) {
