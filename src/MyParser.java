@@ -219,7 +219,7 @@ class MyParser extends parser
 		}
 
 		if(temp.isEmpty()){
-			if(des.getType() instanceof PointerType){
+			if(des.getType() instanceof PointerType && !des.getType().isNullPointer()){
 				if(((PointerType) des.getType()).next() instanceof StructType){
 					// Find the struct
 					StructType struct = (StructType)((PointerType) des.getType()).next();
@@ -243,7 +243,7 @@ class MyParser extends parser
 			}
 		}
 		else{
-			if(des.getType() instanceof PointerType){
+			if(des.getType() instanceof PointerType && !des.getType().isNullPointer()){
 				if(((PointerType) des.getType()).next() instanceof StructType){
 					// Find the struct
 					StructType struct = (StructType)((PointerType) des.getType()).next();
@@ -271,7 +271,6 @@ class MyParser extends parser
 			}
 		}
 
-
 	}
 
 	//----------------------------------------------------------------
@@ -282,7 +281,7 @@ class MyParser extends parser
 			return;
 		}
 		//if it's modifiable l value
-		else if (des.getIsAddressable() && des.getIsModifiable())
+		if (des.getIsAddressable() && des.getIsModifiable())
 		{
 			if (!des.getType().isPointer())
 			{
@@ -499,11 +498,8 @@ class MyParser extends parser
 				m_symtab.insert(sto);
 			}
 		}
-		else
-		{
-			VarSTO sto = new VarSTO(id, t);
-			m_symtab.insert(sto);
-		}
+		VarSTO sto = new VarSTO(id, t);
+		m_symtab.insert(sto);
 	}
 
 
@@ -603,6 +599,11 @@ class MyParser extends parser
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.redeclared_id, id));
 		}
+		else if(!expr.isConst() && expr != null)
+		{
+			m_nNumErrors++;
+			m_errors.print(Formatter.toString(ErrorMsg.error8_CompileTime, id));
+		}
 		else if(expr != null && !t.isAssignableTo(expr.getType()))
 		{
 			if (expr.isError()) {
@@ -611,11 +612,6 @@ class MyParser extends parser
 				m_nNumErrors++;
 				m_errors.print(Formatter.toString(ErrorMsg.error8_Assign, expr.getType().getName(), t.getName()));
 			}
-		}
-		else if(!expr.isConst() && expr != null)
-		{
-			m_nNumErrors++;
-			m_errors.print(Formatter.toString(ErrorMsg.error8_CompileTime, id));
 		}
 		else if(expr !=null)
 		{
@@ -772,6 +768,8 @@ class MyParser extends parser
 		// Check 6.2
 		if(rtType == "&"){
 			sto.setRbr(true);
+			//passed by references, so the returned stuff is modifiable
+			sto.setIsModifiable(true);
 		}
 		else{
 			sto.setRbr(false);
@@ -924,7 +922,7 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	STO DoBoolCheck(STO expr){
 
-		if(expr instanceof ErrorSTO){
+		if(expr instanceof ErrorSTO || expr.getType().isError()){
 			return expr;
 		}
 		Type varType = expr.getType();
@@ -1250,7 +1248,6 @@ class MyParser extends parser
 	// Check 6.2
 	//----------------------------------------------------------------
 	STO DoReturnCheck(STO a){
-
 		if(a instanceof ErrorSTO){
 			// Check 6.3
 			topLevelFlag = true;
@@ -1271,12 +1268,14 @@ class MyParser extends parser
 		}
 
 		// Need to look up the variable if it is not a constant
-		if(a instanceof ConstSTO){
+		if(a instanceof ConstSTO || a instanceof ExprSTO){
 			var = a;
 		}
 		else{
+			//this thing always return VarSTO......
 			var = m_symtab.access(a.getName());
 		}
+
 
 		// Is passByRef
 		if(temp.getRbr()){
@@ -1287,7 +1286,7 @@ class MyParser extends parser
 				return new ErrorSTO(a.getName());
 			}
 			// Check if the return type is a modifiable L-value
-			else if(!var.isModLValue()){
+			else if(var != null && !var.isModLValue()){
 				m_nNumErrors++;
 				m_errors.print(ErrorMsg.error6b_Return_modlval);
 				return new ErrorSTO(a.getName());
@@ -1313,7 +1312,6 @@ class MyParser extends parser
 		//System.out.println(((ConstSTO)sto).getIntValue());
 		// Good place to do the array checks
 		//System.out.println(expr.isExpr());
-
 		if(des.isError() || des.getType().isError() || expr.getType().isError() || expr.isError())
 		{
 			return new ErrorSTO(des.getName());
@@ -1328,7 +1326,7 @@ class MyParser extends parser
 		if(des != null && !des.getType().isArray() && !des.getType().isPointer())
 		{
 			m_nNumErrors++;
-			m_errors.print(Formatter.toString(ErrorMsg.error11t_ArrExp, expr.getType().getName()));
+			m_errors.print(Formatter.toString(ErrorMsg.error11t_ArrExp, des.getType().getName()));
 			return new ErrorSTO(expr.getName());
 		}
 		// else if the index expression is not equivalent to int
@@ -1356,6 +1354,7 @@ class MyParser extends parser
 				return sto;
 			} else if (next.isPointer()){
 				VarSTO sto = new VarSTO(next.getName(), (PointerType)next);
+				return sto;
 			}
 			else if(next.isInt()){
 				//System.out.println("2");
@@ -1881,11 +1880,16 @@ class MyParser extends parser
 	//Check 15.1
 	//----------------------------------------------------------------
 	STO DoAmpersand(STO sto) {
+		if(sto.getType().isError() || sto.isError())
+		{
+			return sto;
+		}
 		if (sto.getIsAddressable() == false) {
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.error18_AddressOf, sto.getType().getName()));
 			return new ErrorSTO(sto.getName());
 		}
+
 		Type t = sto.getType();
 
 		PointerType temp = new PointerType(t.getName() + '*', t.getSize());
