@@ -963,11 +963,11 @@ class MyParser extends parser
 	{
 		//System.out.println("StoDes Type: " + stoDes.getIsModifiable());
 		//System.out.println("Expr Type: " + expr.getType());
-		if(stoDes.isError())
+		if(stoDes.isError() || stoDes.getType().isError())
 		{
 			return new ErrorSTO(stoDes.getName());
 		}
-		else if(expr.isError())
+		else if(expr.getType().isError() || expr.isError())
 		{
 			return new ErrorSTO(stoDes.getName());
 		}
@@ -1356,6 +1356,15 @@ class MyParser extends parser
 			}
 		}
 		//else it's a pointer no need to do anything lah
+		if(des.getType().isPointer())
+		{
+			Type newType;
+			PointerType temp = (PointerType) des.getType();
+			if(temp.hasNext()) {
+				newType = temp.next();
+				return new VarSTO(newType.getName(), newType);
+			}
+		}
 		return des;
 	}
 	//----------------------------------------------------------------
