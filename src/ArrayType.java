@@ -41,7 +41,7 @@ class ArrayType extends CompositeType {
         return dimensions;
     }
     public Boolean isAssignableTo(Type t){
-        if(t.isArray() && t.getName() == this.getName()){
+        if(t.isArray() && t.getName().equals(this.getName())){
             return true;
         }
 
@@ -49,7 +49,7 @@ class ArrayType extends CompositeType {
     }
 
     public Boolean isEquivalentTo(Type t){
-        if(t.isArray()){
+        if(t.getName().equals(this.getName())) {
             return true;
         }
 

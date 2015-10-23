@@ -353,7 +353,7 @@ class MyParser extends parser
 				break;
 		}
 		VarSTO sto = new VarSTO(id, head);
-		//sto.setIsModifiable(false);
+		sto.setIsModifiable(false);
 		return sto;
 	}
 
@@ -463,6 +463,7 @@ class MyParser extends parser
 					break;
 			}
 			VarSTO sto = new VarSTO(id, head);
+			sto.setIsModifiable(false);
 			m_symtab.insert(sto);
 		}
 		else if(expr != null && !t.isAssignableTo(expr.getType()))
@@ -1110,7 +1111,8 @@ class MyParser extends parser
 								m_errors.print(Formatter.toString(ErrorMsg.error5r_Call, argumentType.getName(), parameterSTO.getName(), parameterType.getName()));
 							}
 							// Check for Modifiable L value
-							else if(!argumentSTO.isModLValue()){
+							// exception to array that is passed by references
+							else if(!argumentSTO.isModLValue() && !argumentSTO.getType().isArray()){
 								m_nNumErrors++;
 								m_errors.print(Formatter.toString(ErrorMsg.error5c_Call, parameterSTO.getName(), parameterType.getName()));
 							}
@@ -1136,7 +1138,8 @@ class MyParser extends parser
 						Type parameterType = parameterSTO.getType();
 
 						if(parameterSTO.getPbr()){
-							if(!argumentSTO.isModLValue()){
+							// check whether is modifiable, exception to array
+							if(!argumentSTO.isModLValue() && !argumentSTO.getType().isArray()){
 								m_nNumErrors++;
 								m_errors.print(Formatter.toString(ErrorMsg.error5c_Call, parameterSTO.getName(), parameterType.getName()));
 								sto = new ErrorSTO(sto.getName());
@@ -1310,9 +1313,10 @@ class MyParser extends parser
 		//System.out.println(((ConstSTO)sto).getIntValue());
 		// Good place to do the array checks
 		//System.out.println(expr.isExpr());
-		if(des.isError() || expr.isError())
+
+		if(des.isError() || des.getType().isError() || expr.getType().isError() || expr.isError())
 		{
-			return new ErrorSTO(expr.getName());
+			return new ErrorSTO(des.getName());
 		}
 		if(des.getType().isNullPointer())
 		{
@@ -1350,7 +1354,10 @@ class MyParser extends parser
 				//System.out.println("1");
 				VarSTO sto = new VarSTO(next.getName(), (ArrayType)next);
 				return sto;
-			} else if(next.isInt()){
+			} else if (next.isPointer()){
+				VarSTO sto = new VarSTO(next.getName(), (PointerType)next);
+			}
+			else if(next.isInt()){
 				//System.out.println("2");
 				return new VarSTO(des.getName(), new IntType());
 			} else if(next.isBool())

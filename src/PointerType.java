@@ -38,7 +38,7 @@ class PointerType extends CompositeType{
     }
 
     public Boolean isEquivalentTo(Type t){
-        if(t.isPointer()){
+        if(t.getName().equals(this.getName())){
             return true;
         }
 
