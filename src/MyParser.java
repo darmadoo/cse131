@@ -183,7 +183,7 @@ class MyParser extends parser
 	}
 
 	//----------------------------------------------------------------
-	// TODO DAISY TARO BUAT CHECK BRP
+	// TODO DAISY
 	//----------------------------------------------------------------
 	String GetType(Vector<STO> arguments)
 	{
@@ -196,7 +196,7 @@ class MyParser extends parser
 	}
 
 	//----------------------------------------------------------------
-	//TODO DAISY TARO BUAT CHECK BRP
+	//TODO DAISY
 	//----------------------------------------------------------------
 	int GetSize(Vector<STO> arguments)
 	{
@@ -228,6 +228,7 @@ class MyParser extends parser
 					DoFuncCall(findStruct.getCtorDtorsList().firstElement(), temp);
 				}
 				else {
+					// Check for L modif if it is a pointer but not struct
 					if(!(des.getIsAddressable() && des.getIsModifiable())){
 						m_nNumErrors++;
 						m_errors.print(ErrorMsg.error16_New_var);
@@ -1315,7 +1316,7 @@ class MyParser extends parser
 	}
 
 	//----------------------------------------------------------------
-	// haven't do the pointer check
+	//
 	//----------------------------------------------------------------
 	STO DoDesignator2_Arrays(STO des, STO expr)
 	{
@@ -1557,6 +1558,7 @@ class MyParser extends parser
 	// Check 12.2
 	//----------------------------------------------------------------
 	void incrementBreakCounter(){
+		// Do keep track of the number of open braces
 		breakCounter++;
 	}
 
@@ -1564,6 +1566,7 @@ class MyParser extends parser
 	// Check 12.2
 	//----------------------------------------------------------------
 	void decrementBreakCounter(){
+		// Do keep track of the number of close braces
 		breakCounter--;
 	}
 
@@ -1571,6 +1574,7 @@ class MyParser extends parser
 	// Check 12.2
 	//----------------------------------------------------------------
 	void DoBreakCheck(){
+		// Check if the number of open braces matches up
 		if(breakCounter == 0){
 			m_nNumErrors++;
 			m_errors.print(ErrorMsg.error12_Break);
@@ -1581,6 +1585,7 @@ class MyParser extends parser
 	// Check 12.2
 	//----------------------------------------------------------------
 	void DoContinueCheck() {
+		// Check if the number of open braces matches up
 		if (breakCounter == 0) {
 			m_nNumErrors++;
 			m_errors.print(ErrorMsg.error12_Continue);
@@ -1600,6 +1605,7 @@ class MyParser extends parser
 	// Check 13.1
 	//----------------------------------------------------------------
 	void ResetStruct(){
+		// Should reset the global, for the next struct or function
 		currentStructName = "";
 		isStruct = false;
 	}
@@ -1610,11 +1616,13 @@ class MyParser extends parser
 	void DoDuplicateVarCheck(VarSTO curVar){
 		String structName = currentStructName + delimiter + curVar.getName();
 
+		// Check if the variable already exists inside the scope
 		if(map.containsKey(structName)){
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.error13a_Struct, curVar.getName()));
 		}
 		else{
+			// Put it inside the scope otherwise
 			map.put(structName, curVar);
 		}
 	}
@@ -1669,11 +1677,14 @@ class MyParser extends parser
 	// Check 13.2
 	//----------------------------------------------------------------
 	Vector CtorCheck(Vector<STO> ctorDtorList, String structName){
+		// Function to check if the struct does not have a constructor
+		// If the structs do not contain any ctor or dtor
 		if(ctorDtorList.isEmpty()){
 			FuncSTO emptyCtor = new FuncSTO(structName);
 			emptyCtor.setParams(new Vector());
 			ctorDtorList.add(emptyCtor);
 		}
+		// if it contains only one dtor
 		else if (ctorDtorList.size() == 1){
 			if((ctorDtorList.firstElement().getName()).equals("~" + structName)){
 				FuncSTO emptyCtor = new FuncSTO(structName);
@@ -1694,15 +1705,18 @@ class MyParser extends parser
 	STO DoDuplicateFuncCheck(){
 		String hashKey = currentStructName + delimiter + generateUniqueKey(functionSTO, functionSTO.getParams());
 
+		// Check if the function already inside the global scope
 		if(map.containsKey(currentStructName + delimiter + functionSTO.getName())){
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.error13a_Struct, functionSTO.getName()));
 		}
+		// Check our overloaded hash map
 		else if(map.containsKey(hashKey)){
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.error9_Decl, functionSTO.getName()));
 		}
 		else{
+			// Insert the function inside the global scope and the overloaded hashmap
 			map.put(hashKey, functionSTO);
 			buildOverloadedHashMap(functionSTO, currentStructName + delimiter + functionSTO.getName());
 		}
@@ -1773,7 +1787,7 @@ class MyParser extends parser
 						found = true;
 					}
 				}
-
+				// If we already found the variable, we should return it
 				if(found){
 					return sto;
 				}
@@ -1789,6 +1803,7 @@ class MyParser extends parser
 						}
 					}
 
+					// If even after functions there are no match, throw the error
 					if(!found){
 						m_nNumErrors++;
 						m_errors.print(Formatter.toString(ErrorMsg.error14f_StructExp, strID, sto.getType().getName()));
@@ -1886,6 +1901,9 @@ class MyParser extends parser
 							m_nNumErrors++;
 							m_errors.print(Formatter.toString(ErrorMsg.error14f_StructExp, id, struct.getName()));
 							return new ErrorSTO(sto.getName());
+						}
+						else{
+							return funcList.get(index);
 						}
 					}
 				}
