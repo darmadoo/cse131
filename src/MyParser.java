@@ -23,7 +23,7 @@ class MyParser extends parser
 	private SymbolTable m_symtab;
 
 	// SELF-DEFINED VARIABLES
-	private String delimiter = ".";
+	private String delimiter = "%";
 	private HashMap<String, STO> map = new HashMap<>();
 	// Check 6.3
 	private boolean topLevelFlag = false;
@@ -180,126 +180,6 @@ class MyParser extends parser
 	void DoProgramEnd()
 	{
 		m_symtab.closeScope();
-	}
-
-	//----------------------------------------------------------------
-	//----------------------------------------------------------------
-	String GetType(Vector<STO> arguments)
-	{
-		String result = "";
-		for(STO x : arguments) {
-			if(x.isConst())
-				result = result + "[" + ((ConstSTO)x).getIntValue() + "]";
-		}
-		return result;
-	}
-
-	//----------------------------------------------------------------
-	//----------------------------------------------------------------
-	int GetSize(Vector<STO> arguments)
-	{
-		int result = 1;
-		for(STO x : arguments) {
-			if(x.isConst())
-				result = result * ((ConstSTO)x).getIntValue();
-		}
-		return result;
-	}
-
-	//----------------------------------------------------------------
-	//
-	//----------------------------------------------------------------
-	void DoNewStatement(STO des, Vector<STO> temp)
-	{
-		if(des.isError())
-		{
-			return;
-		}
-
-		if(temp.isEmpty()){
-			if(des.getType() instanceof PointerType && !des.getType().isNullPointer()){
-				if(((PointerType) des.getType()).next() instanceof StructType){
-					map.size();
-					// Find the struct
-					StructType struct = (StructType)((PointerType) des.getType()).next();
-					StructdefSTO findStruct =(StructdefSTO) m_symtab.accessGlobal(struct.getName());
-					DoFuncCall(findStruct.getCtorDtorsList().firstElement(), temp);
-				}
-				else {
-					// Check for L modif if it is a pointer but not struct
-					if(!(des.getIsAddressable() && des.getIsModifiable())){
-						m_nNumErrors++;
-						m_errors.print(ErrorMsg.error16_New_var);
-					}
-				}
-			}
-			//if it's modifiable l value
-			else if (des.getIsAddressable() && des.getIsModifiable())
-			{
-				if (!des.getType().isPointer())
-				{
-					m_nNumErrors++;
-					m_errors.print(Formatter.toString(ErrorMsg.error16_New, des.getType().getName()));
-				}
-			}
-			else
-			{
-				m_nNumErrors++;
-				m_errors.print(ErrorMsg.error16_New_var);
-			}
-		}
-		else{
-			if(des.getType() instanceof PointerType && !des.getType().isNullPointer()){
-				if(((PointerType) des.getType()).next() instanceof StructType){
-					// Find the struct
-					StructType struct = (StructType)((PointerType) des.getType()).next();
-					StructdefSTO findStruct =(StructdefSTO) m_symtab.accessGlobal(struct.getName());
-					DoFuncCall(findStruct.getCtorDtorsList().firstElement(), temp);
-				}
-				else{
-					m_nNumErrors++;
-					m_errors.print(Formatter.toString(ErrorMsg.error16b_NonStructCtorCall, des.getType().getName()));
-				}
-			}
-			//if it's modifiable l value
-			else if (des.getIsAddressable() && des.getIsModifiable())
-			{
-				if (!des.getType().isPointer())
-				{
-					m_nNumErrors++;
-					m_errors.print(Formatter.toString(ErrorMsg.error16_New, des.getType().getName()));
-				}
-			}
-			else
-			{
-				m_nNumErrors++;
-				m_errors.print(ErrorMsg.error16_New_var);
-			}
-		}
-
-	}
-
-	//----------------------------------------------------------------
-	//
-	//----------------------------------------------------------------
-	void DoDeleteStatement(STO des) {
-		if (des.isError()) {
-			return;
-		}
-		//if it's modifiable l value
-		if (des.getIsAddressable() && des.getIsModifiable())
-		{
-			if (!des.getType().isPointer())
-			{
-				m_nNumErrors++;
-				m_errors.print(Formatter.toString(ErrorMsg.error16_Delete, des.getType().getName()));
-			}
-		}
-		else
-		{
-			m_nNumErrors++;
-			m_errors.print(ErrorMsg.error16_Delete_var);
-		}
 	}
 
 	//----------------------------------------------------------------
@@ -496,26 +376,6 @@ class MyParser extends parser
 		m_symtab.insert(sto);
 	}
 
-
-	//----------------------------------------------------------------
-	// CHECK 14.1
-	//----------------------------------------------------------------
-	VarSTO VarTypeDec(Type typ, String id, Vector<STO> arrayList){
-		VarSTO temp;
-
-		if (arrayList != null)
-		{
-			// construct array
-			temp = DoDeclArray(id, typ, arrayList);
-		}
-		else{
-			// Construct variable
-			temp = new VarSTO(id, typ);
-		}
-
-		return temp;
-	}
-
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
@@ -690,7 +550,6 @@ class MyParser extends parser
 		}
 
 		int count = 0;
-
 		for(int i = 0; i < varList.size(); i++){
 			count += varList.get(i).getType().getSize();
 		}
@@ -839,46 +698,6 @@ class MyParser extends parser
 	}
 
 	//----------------------------------------------------------------
-	// New helper function to add functions into hashmap
-	// CHECK 9.2
-	//----------------------------------------------------------------
-	void buildOverloadedHashMap(FuncSTO cur, String curName){
-		// Check if the function name exists inside the function hash map
-		if(funcMap.containsKey(curName)){
-			// If Exists, retrieve from the hash map
-			Vector<FuncSTO> v = funcMap.get(curName);
-			// Set the functions to overloaded
-			v.firstElement().setOverloaded(true);
-			cur.setOverloaded(true);
-			v.add(cur);
-
-			// Put the function back into the map
-			funcMap.put(curName, v);
-		} else {
-			// If does not exists, then create a new vector with the function name in it
-			Vector<FuncSTO> v = new Vector();
-			v.add(cur);
-			funcMap.put(curName, v);
-		}
-	}
-
-	//----------------------------------------------------------------
-	// New helper function to generate the string for the hash map
-	// CHECK 5.1
-	//----------------------------------------------------------------
-	String generateUniqueKey(STO curr, Vector<STO> currParam){
-		String name = curr.getName() + delimiter;
-		String params = "";
-
-		Iterator<STO> itr = currParam.iterator();
-		while(itr.hasNext()){
-				params += (itr.next().getType().getName() + delimiter);
-		}
-
-		return name + params;
-	}
-
-	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
 	void DoFormalParams(Vector<STO> params)
@@ -923,44 +742,6 @@ class MyParser extends parser
 	{
 		m_symtab.closeScope();
 	}
-
-	//----------------------------------------------------------------
-	// Check 4
-	//----------------------------------------------------------------
-	STO DoBoolCheck(STO expr){
-
-		if(expr instanceof ErrorSTO || expr.getType().isError()){
-			return expr;
-		}
-		Type varType = expr.getType();
-		if(!(varType instanceof BoolType)){
-			// handle propagating errors
-			m_nNumErrors++;
-			m_errors.print(Formatter.toString(ErrorMsg.error4_Test, varType.getName()));
-		}
-
-		return expr;
-	}
-
-	//----------------------------------------------------------------
-	// Check 7
-	//----------------------------------------------------------------
-	STO DoExitCheck(STO expr){
-		if(expr instanceof ErrorSTO){
-			return expr;
-		}
-
-		if(expr != null)
-		{
-			Type varType = expr.getType();
-			if (!(varType instanceof IntType)) {
-				// handle propagating errors
-				m_nNumErrors++;
-				m_errors.print(Formatter.toString(ErrorMsg.error7_Exit, varType.getName()));
-			}
-		}
-		return expr;
-	}
 	
 	//----------------------------------------------------------------
 	//
@@ -1000,6 +781,40 @@ class MyParser extends parser
 		}
 
 		return stoDes;
+	}
+
+	//----------------------------------------------------------------
+	//
+	//----------------------------------------------------------------
+	STO DoDesignator3_ID(String strID)
+	{
+		STO sto;
+
+		if ((sto = m_symtab.access(strID)) == null)
+		{
+			m_nNumErrors++;
+			m_errors.print(Formatter.toString(ErrorMsg.undeclared_id, strID));
+			sto = new ErrorSTO(strID);
+		}
+
+		return sto;
+	}
+
+	//----------------------------------------------------------------
+	//
+	//----------------------------------------------------------------
+	STO DoDesignator4_ID(String strID)
+	{
+		STO sto;
+
+		if ((sto = m_symtab.accessGlobal(strID)) == null)
+		{
+			m_nNumErrors++;
+			m_errors.print(Formatter.toString(ErrorMsg.error0g_Scope, strID));
+			sto = new ErrorSTO(strID);
+		}
+
+		return sto;
 	}
 
 	//----------------------------------------------------------------
@@ -1044,7 +859,41 @@ class MyParser extends parser
 	}
 
 	//----------------------------------------------------------------
-	//
+	// Check 4
+	//----------------------------------------------------------------
+	STO DoBoolCheck(STO expr){
+
+		if(expr instanceof ErrorSTO || expr.getType().isError()){
+			return expr;
+		}
+		Type varType = expr.getType();
+		if(!(varType instanceof BoolType)){
+			// handle propagating errors
+			m_nNumErrors++;
+			m_errors.print(Formatter.toString(ErrorMsg.error4_Test, varType.getName()));
+		}
+
+		return expr;
+	}
+
+	//----------------------------------------------------------------
+	// New helper function to generate the string for the hash map
+	// CHECK 5.1
+	//----------------------------------------------------------------
+	String generateUniqueKey(STO curr, Vector<STO> currParam){
+		String name = curr.getName() + delimiter;
+		String params = "";
+
+		Iterator<STO> itr = currParam.iterator();
+		while(itr.hasNext()){
+			params += (itr.next().getType().getName() + delimiter);
+		}
+
+		return name + params;
+	}
+
+	//----------------------------------------------------------------
+	// Check 5
 	//----------------------------------------------------------------
 	STO DoFuncCall(STO sto, Vector<STO> arguments)
 	{
@@ -1059,94 +908,90 @@ class MyParser extends parser
 			m_errors.print(Formatter.toString(ErrorMsg.not_function, sto.getName()));
 			return new ErrorSTO(sto.getName());
 		}
-
-		// Get the function
-		FuncSTO temp = (FuncSTO) sto;
-		// Build the name mingling
-		String hashKey = generateUniqueKey(temp, arguments);
-		// Store the size of the argument and the parameters
-		int size = temp.getParamSize();
-		int paramSize = arguments.size();
-
-		// Check 9b
-		if(temp.getOverloaded()){
-			Vector<FuncSTO> func = funcMap.get(temp.getName());
-			if(!(func == null)){
-				// Do error checking for overloaded function
-				return DoOverloadedCheck(temp, arguments, funcMap.get(temp.getName()));
-			}
-		}
-		// Not overloaded
 		else{
-			// Check 5.1
-			// Check if the parameters passed in is equals to the arguments
-			if(size != paramSize){
-				m_nNumErrors++;
-				m_errors.print(Formatter.toString(ErrorMsg.error5n_Call, paramSize, size));
-				return new ErrorSTO(sto.getName());
+			// Get the function
+			FuncSTO temp = (FuncSTO) sto;
+			// Build the name mingling
+			String hashKey = generateUniqueKey(temp, arguments);
+			// Store the size of the argument and the parameters
+			int size = temp.getParamSize();
+			int paramSize = arguments.size();
+
+			// Check 9b
+			if(temp.getOverloaded()){
+				Vector<FuncSTO> func = funcMap.get(temp.getName());
+				if(func != null){
+					// Do error checking for overloaded function
+					STO isOverloaded = functionOverloadedCheck(temp, arguments, funcMap.get(temp.getName()));
+					if(!(isOverloaded instanceof ErrorSTO)){
+						return isOverloaded;
+					}
+				}
 			}
+			// Not overloaded
 			else{
-				// Check if the function declared is in the hash map
-				if(!map.containsKey(hashKey)){
-					boolean flag = false;
-					for(int i = 0; i < size; i++){
-						// Store the arguments and the type of the arguments
-						STO argumentSTO = arguments.get(i);
-						Type argumentType = argumentSTO.getType();
+				// Check 5.1
+				// Check if the parameters passed in is equals to the arguments
+				if(size != paramSize){
+					m_nNumErrors++;
+					m_errors.print(Formatter.toString(ErrorMsg.error5n_Call, paramSize, size));
+					return new ErrorSTO(sto.getName());
+				}
+				else{
+					// Check if the function declared is in the hash map
+					if(!map.containsKey(hashKey)){
+						int errorCount = 0;
+						for(int i = 0; i < size; i++){
+							// Make sure that the argument is valid
+							if(arguments.get(i) instanceof ErrorSTO){
+								continue;
+							}
 
-						// Store the parameters and the type of the parameters
-						VarSTO parameterSTO = (VarSTO)temp.getParams().get(i);
-						Type parameterType = parameterSTO.getType();
-
-						// Make sure that the argument is valid
-						if(argumentSTO instanceof ErrorSTO){
-							continue;
+							// Check for pass by reference
+							if(((VarSTO)temp.getParams().get(i)).getPbr()){
+								// Check for equivalence
+								if(!((temp.getParams().get(i)).getType()).isEquivalentTo(arguments.get(i).getType())){
+									m_nNumErrors++;
+									m_errors.print(Formatter.toString(ErrorMsg.error5r_Call, arguments.get(i).getType().getName(), (temp.getParams().get(i)).getName(), ((temp.getParams().get(i)).getType()).getName()));
+									errorCount++;
+								}
+								// Check for Modifiable L value
+								// exception to array that is passed by references
+								else if(!arguments.get(i).isModLValue() && !arguments.get(i).getType().isArray()){
+									m_nNumErrors++;
+									m_errors.print(Formatter.toString(ErrorMsg.error5c_Call, (temp.getParams().get(i)).getName(), ((temp.getParams().get(i)).getType()).getName()));
+									errorCount++;
+								}
+							}
+							else{
+								// Pass by value, so check for assignability (Type promotion)
+								if(!((temp.getParams().get(i)).getType()).isAssignableTo(arguments.get(i).getType())){
+									m_nNumErrors++;
+									m_errors.print(Formatter.toString(ErrorMsg.error5a_Call, arguments.get(i).getType().getName(), (temp.getParams().get(i)).getName(), ((temp.getParams().get(i)).getType()).getName()));
+									errorCount++;
+								}
+							}
 						}
-
-						// Check for pass by reference
-						if(parameterSTO.getPbr()){
-							// Check for equivalence
-							if(!parameterType.isEquivalentTo(argumentType)){
-								m_nNumErrors++;
-								m_errors.print(Formatter.toString(ErrorMsg.error5r_Call, argumentType.getName(), parameterSTO.getName(), parameterType.getName()));
-								flag = true;
-							}
-							// Check for Modifiable L value
-							// exception to array that is passed by references
-							else if(!argumentSTO.isModLValue() && !argumentSTO.getType().isArray()){
-								m_nNumErrors++;
-								m_errors.print(Formatter.toString(ErrorMsg.error5c_Call, parameterSTO.getName(), parameterType.getName()));
-								flag = true;
-							}
+						// Here if anyone of the variables causes an error, return
+						if(errorCount > 0){
+							return new ErrorSTO(sto.getName());
 						}
 						else{
-							// Pass by value, so check for assignability (Type promotion)
-							if(!parameterType.isAssignableTo(argumentType)){
-								m_nNumErrors++;
-								m_errors.print(Formatter.toString(ErrorMsg.error5a_Call, argumentType.getName(), parameterSTO.getName(), parameterType.getName()));
-								flag = true;
-							}
+							// Continue
 						}
 					}
-					if(flag){
-						return new ErrorSTO(sto.getName());
-					}
-				}
-				// Already inside the namespace
-				else{
-					for(int j = 0; j < size; j++){
-						// Get the STO and the type
-						STO argumentSTO = arguments.get(j);
-
-						VarSTO parameterSTO = (VarSTO)temp.getParams().get(j);
-						Type parameterType = parameterSTO.getType();
-
-						if(parameterSTO.getPbr()){
-							// check whether is modifiable, exception to array
-							if(!argumentSTO.isModLValue() && !argumentSTO.getType().isArray()){
-								m_nNumErrors++;
-								m_errors.print(Formatter.toString(ErrorMsg.error5c_Call, parameterSTO.getName(), parameterType.getName()));
-								sto = new ErrorSTO(sto.getName());
+					// Already inside the namespace
+					else{
+						for(int j = 0; j < size; j++){
+							if(((VarSTO)temp.getParams().get(j)).getPbr()){
+								// check whether is modifiable, exception to array
+								if(!arguments.get(j).isModLValue()){
+									if(!arguments.get(j).getType().isArray()){
+										m_nNumErrors++;
+										m_errors.print(Formatter.toString(ErrorMsg.error5c_Call, (temp.getParams().get(j)).getName(), (temp.getParams().get(j)).getType().getName()));
+										sto = new ErrorSTO(sto.getName());
+									}
+								}
 							}
 						}
 					}
@@ -1154,17 +999,47 @@ class MyParser extends parser
 			}
 		}
 
+		return generateExpr(sto);
+	}
+
+	//----------------------------------------------------------------
+	// Check 5 and 9
+	//----------------------------------------------------------------
+	STO generateExpr(STO sto){
 		// Solving pass by reference issue where functions are non modif L val
 		ExprSTO exprSTO = new ExprSTO(sto.getName(), sto.getType());
+		// Set the addressabilty and modifiability to the current functions's
 		exprSTO.setIsAddressable(sto.getIsAddressable());
 		exprSTO.setIsModifiable(sto.getIsModifiable());
+
 		return exprSTO;
 	}
 
-	// Check 9b
-	STO DoOverloadedCheck(FuncSTO curSTO, Vector<STO> arguments, Vector<FuncSTO> functions){
+	//----------------------------------------------------------------
+	// Check 7
+	//----------------------------------------------------------------
+	STO DoExitCheck(STO expr){
+		if(expr instanceof ErrorSTO){
+			return expr;
+		}
+
+		if(expr != null)
+		{
+			Type varType = expr.getType();
+			if (!(varType instanceof IntType)) {
+				// handle propagating errors
+				m_nNumErrors++;
+				m_errors.print(Formatter.toString(ErrorMsg.error7_Exit, varType.getName()));
+			}
+		}
+		return expr;
+	}
+
+	//----------------------------------------------------------------
+	// Check 9
+	//----------------------------------------------------------------
+	STO functionOverloadedCheck(FuncSTO curSTO, Vector<STO> arguments, Vector<FuncSTO> functions){
 		int found = -1;
-		boolean foundCorrectValue = false;
 
 		for(int i = 0; i < functions.size(); i++){
 			Vector<STO> parameters = functions.get(i).getParams();
@@ -1172,61 +1047,50 @@ class MyParser extends parser
 			// Check if the number of parameters matches the number of arguments
 			if(parameters.size() == arguments.size()){
 				if(parameters.size() == 0){
-					foundCorrectValue = true;
 					found = i;
-				}
-
-				if(foundCorrectValue){
 					break;
 				}
-				else{
-					// Loop through all the parameters
-					for(int j = 0; j < parameters.size(); j++){
 
-						// Make sure that the types do match, else break out of the function
-						if(!(parameters.get(j).getType().isEquivalentTo(arguments.get(j).getType()))){
-							break;
-						}
-
-						int argSize = j + 1;
-
-						// After we validated that the no of params matches the arguments and the type
-						if(argSize == parameters.size()){
-							// Check if the parameters is a pass by reference
-							if(((VarSTO)parameters.get(j)).getPbr()){
-								// Check if it is L-modif
-								if(arguments.get(j).isModLValue()){
-									foundCorrectValue = true;
-									found = i;
-								}
-							}
-							// Pass by value
-							else{
-								foundCorrectValue = true;
-								found = i;
-							}
-						}
-					}
-					// As soon we find a suitable function to call we stop looking further
-					if(foundCorrectValue){
+				// Loop through all the parameters
+				for(int j = 0; j < parameters.size(); j++){
+					// Make sure that the types do match, else break out of the function
+					if(!(parameters.get(j).getType().isEquivalentTo(arguments.get(j).getType()))){
 						break;
 					}
+
+					int argSize = j + 1;
+
+					// After we validated that the no of params matches the arguments and the type
+					if(argSize == parameters.size()){
+						// Check if the parameters is a pass by reference
+						if(((VarSTO)parameters.get(j)).getPbr()){
+							// Check if it is L-modif
+							if(arguments.get(j).isModLValue()){
+								found = i;
+								break;
+							}
+						}
+						// Pass by value
+						else{
+							found = i;
+							break;
+						}
+					}
 				}
+
 			}
 		}
 
 		// If after all the checks there are no suitable functions then we print the error
-		if(!foundCorrectValue){
+		if(found < 0){
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.error9_Illegal, curSTO.getName()));
 			return new ErrorSTO(curSTO.getName());
 		}
-
-		// Solving pass by reference issue where functions are non modif L val
-		ExprSTO exprSTO = new ExprSTO(functions.get(found).getName(), functions.get(found).getReturnType());
-		exprSTO.setIsAddressable(functions.get(found).getIsAddressable());
-		exprSTO.setIsModifiable(functions.get(found).getIsModifiable());
-		return exprSTO;
+		else{
+			// Solving pass by reference issue where functions are non modif L val
+			return generateExpr(functions.get(found));
+		}
 	}
 
 	//----------------------------------------------------------------
@@ -1311,7 +1175,40 @@ class MyParser extends parser
 	}
 
 	//----------------------------------------------------------------
-	//
+	// New helper function to add functions into hashmap
+	// CHECK 9.2
+	//----------------------------------------------------------------
+	void buildOverloadedHashMap(FuncSTO cur, String curName){
+		// Check if the function name exists inside the function hash map
+		if(funcMap.containsKey(curName)){
+			// If Exists, retrieve from the hash map
+			Vector<FuncSTO> v = funcMap.get(curName);
+			if(v != null){
+				// Set the functions to overloaded
+				if(v.firstElement().getOverloaded() != true){
+					v.firstElement().setOverloaded(true);
+				}
+
+				if(cur.getOverloaded() != true){
+					cur.setOverloaded(true);
+				}
+
+				v.add(cur);
+
+				// Put the function back into the map
+				funcMap.put(curName, v);
+			}
+		}
+		else {
+			// If does not exists, then create a new vector with the function name in it
+			Vector<FuncSTO> v = new Vector();
+			v.add(cur);
+			funcMap.put(curName, v);
+		}
+	}
+
+	//----------------------------------------------------------------
+	// Check 10/11
 	//----------------------------------------------------------------
 	STO DoDesignator2_Arrays(STO des, STO expr)
 	{
@@ -1382,8 +1279,9 @@ class MyParser extends parser
 		}
 		return des;
 	}
+
 	//----------------------------------------------------------------
-	//
+	// Check 10/11
 	//----------------------------------------------------------------
 	STO DoDesignator2_Array(STO sto)
 	{
@@ -1408,135 +1306,6 @@ class MyParser extends parser
 			return new ErrorSTO(sto.getName());
 		}
 		return sto;
-	}
-
-	//----------------------------------------------------------------
-	//
-	//----------------------------------------------------------------
-	STO DoDesignator3_ID(String strID)
-	{
-		STO sto;
-
-		if ((sto = m_symtab.access(strID)) == null)
-		{
-			m_nNumErrors++;
-		 	m_errors.print(Formatter.toString(ErrorMsg.undeclared_id, strID));
-			sto = new ErrorSTO(strID);
-		}
-
-		return sto;
-	}
-
-	//----------------------------------------------------------------
-	//
-	//----------------------------------------------------------------
-	STO DoDesignator4_ID(String strID)
-	{
-		STO sto;
-
-		if ((sto = m_symtab.accessGlobal(strID)) == null)
-		{
-			m_nNumErrors++;
-			m_errors.print(Formatter.toString(ErrorMsg.error0g_Scope, strID));
-			sto = new ErrorSTO(strID);
-		}
-
-		return sto;
-	}
-
-	//----------------------------------------------------------------
-	//
-	//----------------------------------------------------------------
-	String GetPointerType(Vector<String> arguments)
-	{
-		String result = "";
-		for(int i = 0; i < arguments.size(); i++) {
-			result = result + "*";
-		}
-		return result;
-	}
-
-	//----------------------------------------------------------------
-	//
-	//----------------------------------------------------------------
-	Type DoPointerType(Type t, Vector<String> arguments)
-	{
-		PointerType head = null;
-		PointerType pointer = null;
-		PointerType temp;
-		while(!arguments.isEmpty()) {
-			String x = arguments.firstElement();
-			if (x == "*")
-			{
-				temp = new PointerType(t.getName() + GetPointerType(arguments), 4);
-				if(head == null) {
-					head = temp;
-				}
-				else {
-					pointer = head;
-					while (pointer.hasNext()) {
-						pointer = (PointerType) pointer.next();
-					}
-					pointer.setChild(temp);
-				}
-			}
-
-			arguments.remove(x);
-		}
-
-		pointer = head;
-		while (pointer.hasNext()) {
-			pointer = (PointerType) pointer.next();
-		}
-		if(pointer != null){
-			pointer.setChild(t);
-		}
-
-		pointer = head;
-		while(pointer.hasNext())
-		{
-			if(pointer.next().isPointer())
-				pointer = (PointerType)pointer.next();
-			else
-				break;
-		}
-		return head;
-	}
-
-	//----------------------------------------------------------------
-	// Check 14
-	//----------------------------------------------------------------
-	Type DoStructType_ID(String strID)
-	{
-		STO sto;
-
-		if(!strID.equals(currentStructName)){
-			if ((sto = m_symtab.access(strID)) == null)
-			{
-				//System.out.println(strID);
-				m_nNumErrors++;
-				m_errors.print(Formatter.toString(ErrorMsg.undeclared_id, strID));
-				return new ErrorType();
-			}
-
-			if (!sto.isStructdef())
-			{
-				m_nNumErrors++;
-				m_errors.print(Formatter.toString(ErrorMsg.not_type, sto.getName()));
-				return new ErrorType();
-			}
-			return sto.getType();
-		}
-		// Calls within itself
-		else{
-			m_symtab.getLevel();
-			funcMap.size();
-			map.size();
-		}
-
-		// prob wrong
-		return new StructType(strID);
-
 	}
 
 	//----------------------------------------------------------------
@@ -1665,16 +1434,12 @@ class MyParser extends parser
 		// Function to check if the struct does not have a constructor
 		// If the structs do not contain any ctor or dtor
 		if(ctorDtorList.isEmpty()){
-			FuncSTO emptyCtor = new FuncSTO(structName);
-			emptyCtor.setParams(new Vector());
-			ctorDtorList.add(emptyCtor);
+			makeCtor(structName, ctorDtorList);
 		}
 		// if it contains only one dtor
 		else if (ctorDtorList.size() == 1){
 			if((ctorDtorList.firstElement().getName()).equals("~" + structName)){
-				FuncSTO emptyCtor = new FuncSTO(structName);
-				emptyCtor.setParams(new Vector());
-				ctorDtorList.add(emptyCtor);
+				makeCtor(structName, ctorDtorList);
 			}
 		}
 		else{
@@ -1682,6 +1447,15 @@ class MyParser extends parser
 		}
 
 		return ctorDtorList;
+	}
+
+	//----------------------------------------------------------------
+	// Check 13.2
+	//----------------------------------------------------------------
+	void makeCtor(String id, Vector<STO> list){
+		FuncSTO emptyCtor = new FuncSTO(id);
+		emptyCtor.setParams(new Vector());
+		list.add(emptyCtor);
 	}
 
 	//----------------------------------------------------------------
@@ -1708,6 +1482,58 @@ class MyParser extends parser
 
 		FuncSTO temp = functionSTO;
 		functionSTO = null;
+		return temp;
+	}
+
+	//----------------------------------------------------------------
+	// Check 14
+	//----------------------------------------------------------------
+	Type DoStructType_ID(String strID)
+	{
+		STO sto;
+
+		if(!strID.equals(currentStructName)){
+			if ((sto = m_symtab.access(strID)) == null)
+			{
+				//System.out.println(strID);
+				m_nNumErrors++;
+				m_errors.print(Formatter.toString(ErrorMsg.undeclared_id, strID));
+				return new ErrorType();
+			}
+
+			if (!sto.isStructdef())
+			{
+				m_nNumErrors++;
+				m_errors.print(Formatter.toString(ErrorMsg.not_type, sto.getName()));
+				return new ErrorType();
+			}
+			return sto.getType();
+		}
+		// Calls within itself
+		else{
+		}
+
+		// prob wrong
+		return new StructType(strID);
+
+	}
+
+	//----------------------------------------------------------------
+	// CHECK 14.1
+	//----------------------------------------------------------------
+	VarSTO VarTypeDec(Type typ, String id, Vector<STO> arrayList){
+		VarSTO temp;
+
+		if (arrayList != null)
+		{
+			// construct array
+			temp = DoDeclArray(id, typ, arrayList);
+		}
+		else{
+			// Construct variable
+			temp = new VarSTO(id, typ);
+		}
+
 		return temp;
 	}
 
@@ -1811,6 +1637,65 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	void setRecursiveFuncTrue(){
 		recursiveFunc = true;
+	}
+
+	//----------------------------------------------------------------
+	// Check 15
+	//----------------------------------------------------------------
+	String GetPointerType(Vector<String> arguments)
+	{
+		String result = "";
+		for(int i = 0; i < arguments.size(); i++) {
+			result = result + "*";
+		}
+		return result;
+	}
+
+	//----------------------------------------------------------------
+	// Check 15
+	//----------------------------------------------------------------
+	Type DoPointerType(Type t, Vector<String> arguments)
+	{
+		PointerType head = null;
+		PointerType pointer = null;
+		PointerType temp;
+		while(!arguments.isEmpty()) {
+			String x = arguments.firstElement();
+			if (x == "*")
+			{
+				temp = new PointerType(t.getName() + GetPointerType(arguments), 4);
+				if(head == null) {
+					head = temp;
+				}
+				else {
+					pointer = head;
+					while (pointer.hasNext()) {
+						pointer = (PointerType) pointer.next();
+					}
+					pointer.setChild(temp);
+				}
+			}
+
+			arguments.remove(x);
+		}
+
+		pointer = head;
+		while (pointer.hasNext()) {
+			pointer = (PointerType) pointer.next();
+		}
+		if(pointer != null){
+			pointer.setChild(t);
+		}
+
+		pointer = head;
+		while(pointer.hasNext())
+		{
+			if(pointer.next().isPointer())
+				pointer = (PointerType)pointer.next();
+			else
+				break;
+		}
+		return head;
 	}
 
 	//----------------------------------------------------------------
@@ -1951,6 +1836,127 @@ class MyParser extends parser
 			}
 		}
 		return sto;
+	}
+
+	//----------------------------------------------------------------
+	// Check 16
+	//----------------------------------------------------------------
+	void DoNewStatement(STO des, Vector<STO> temp)
+	{
+		if(des.isError())
+		{
+			return;
+		}
+
+		if(temp.isEmpty()){
+			if(des.getType() instanceof PointerType && !des.getType().isNullPointer()){
+				if(((PointerType) des.getType()).next() instanceof StructType){
+					map.size();
+					// Find the struct
+					StructType struct = (StructType)((PointerType) des.getType()).next();
+					StructdefSTO findStruct =(StructdefSTO) m_symtab.accessGlobal(struct.getName());
+					DoFuncCall(findStruct.getCtorDtorsList().firstElement(), temp);
+				}
+				else {
+					// Check for L modif if it is a pointer but not struct
+					if(!(des.getIsAddressable() && des.getIsModifiable())){
+						m_nNumErrors++;
+						m_errors.print(ErrorMsg.error16_New_var);
+					}
+				}
+			}
+			//if it's modifiable l value
+			else if (des.getIsAddressable() && des.getIsModifiable())
+			{
+				if (!des.getType().isPointer())
+				{
+					m_nNumErrors++;
+					m_errors.print(Formatter.toString(ErrorMsg.error16_New, des.getType().getName()));
+				}
+			}
+			else
+			{
+				m_nNumErrors++;
+				m_errors.print(ErrorMsg.error16_New_var);
+			}
+		}
+		else{
+			if(des.getType() instanceof PointerType && !des.getType().isNullPointer()){
+				if(((PointerType) des.getType()).next() instanceof StructType){
+					// Find the struct
+					StructType struct = (StructType)((PointerType) des.getType()).next();
+					StructdefSTO findStruct =(StructdefSTO) m_symtab.accessGlobal(struct.getName());
+					DoFuncCall(findStruct.getCtorDtorsList().firstElement(), temp);
+				}
+				else{
+					m_nNumErrors++;
+					m_errors.print(Formatter.toString(ErrorMsg.error16b_NonStructCtorCall, des.getType().getName()));
+				}
+			}
+			//if it's modifiable l value
+			else if (des.getIsAddressable() && des.getIsModifiable())
+			{
+				if (!des.getType().isPointer())
+				{
+					m_nNumErrors++;
+					m_errors.print(Formatter.toString(ErrorMsg.error16_New, des.getType().getName()));
+				}
+			}
+			else
+			{
+				m_nNumErrors++;
+				m_errors.print(ErrorMsg.error16_New_var);
+			}
+		}
+
+	}
+
+	//----------------------------------------------------------------
+	// Check 16
+	//----------------------------------------------------------------
+	void DoDeleteStatement(STO des) {
+		if (des.isError()) {
+			return;
+		}
+		//if it's modifiable l value
+		if (des.getIsAddressable() && des.getIsModifiable())
+		{
+			if (!des.getType().isPointer())
+			{
+				m_nNumErrors++;
+				m_errors.print(Formatter.toString(ErrorMsg.error16_Delete, des.getType().getName()));
+			}
+		}
+		else
+		{
+			m_nNumErrors++;
+			m_errors.print(ErrorMsg.error16_Delete_var);
+		}
+	}
+
+	//----------------------------------------------------------------
+	//----------------------------------------------------------------
+	String GetType(Vector<STO> arguments)
+	{
+		String result = "";
+		for(STO x : arguments) {
+			if(x.isConst())
+				result = result + "[" + ((ConstSTO)x).getIntValue() + "]";
+		}
+		return result;
+	}
+
+	//----------------------------------------------------------------
+	// Check 19
+	//----------------------------------------------------------------
+	int GetSize(Vector<STO> arguments)
+	{
+		int result = 1;
+		for(STO x : arguments) {
+			if(x.isConst())
+				result = result * ((ConstSTO)x).getIntValue();
+		}
+		return result;
 	}
 
 	//----------------------------------------------------------------

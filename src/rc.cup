@@ -395,20 +395,17 @@ OptFieldFuncsList ::= FieldFuncsList:_1
 FieldFuncsList ::=  FieldFuncDecl:_1
                     {:
                         RESULT = new Vector();
-                        RESULT.addElement(_1);
+                        RESULT.addElement(((MyParser) parser).getStruct());
                     :}
     |               FieldFuncsList:_1 FieldFuncDecl:_2
                     {:
                         RESULT = _1;
-                        RESULT.addElement (_2);
+                        RESULT.addElement (((MyParser) parser).getStruct());
                     :}
     ;
 
 
 FieldFuncDecl ::=   FuncDef
-                    {:
-                        RESULT = ((MyParser) parser).getStruct();
-                    :}
     ;
 
 
@@ -636,7 +633,9 @@ ParamDecl ::=       Type:_1 OptRef:_2 T_ID:_3 OptArrayList:_4
                             temp = new VarSTO(_3, _1);
                         }
                         else
+                        {
                             temp = ((MyParser) parser).DoDeclArray(_3, _1, _4);
+                        }
 
                         if(_2 == "&"){
                             ((VarSTO)temp).setPbr(true);
