@@ -487,15 +487,15 @@ DecoratedBasicType ::= BasicType:_1 OptPointerList:_2
 
 BasicType ::=       T_INT
                     {:
-                        RESULT = new IntType();  // gotta do something here!
+                        RESULT = new IntType();
                     :}
     |               T_FLOAT
                     {:
-                        RESULT = new FloatType();  // gotta do something here!
+                        RESULT = new FloatType();
                     :}
     |               T_BOOL
                     {:
-                        RESULT = new BoolType();  // gotta do something here!
+                        RESULT = new BoolType();
                     :}
     ;
 
@@ -864,8 +864,6 @@ Expr3 ::=           Expr3:_1 T_CARET Expr4:_3
 Expr4 ::=           Expr4:_1 T_AMPERSAND Expr5:_3
                     {:
                         RESULT = ((MyParser) parser).DoBinaryExpr (_1, new AmpersandOp(), _3);
-                        // Make a function that returns a Pointer TYPE
-                        // Make it a pointer with the data type from dobinaryexpr
                     :}
     |               Expr5:_1
                     {:
@@ -1020,12 +1018,10 @@ IncDecOp ::=        T_PLUSPLUS
 Designator ::=      T_STAR Designator:_1
                     {:
                         RESULT = ((MyParser) parser).DoStarCheck (_1);
-                        //RESULT = _1;
                     :}
     |               T_AMPERSAND Designator:_1
                     {:
                         RESULT = ((MyParser) parser).DoAmpersand (_1);
-                        //RESULT = _1;
                     :}
     |               UnarySign Designator:_1
                     {:
@@ -1037,14 +1033,11 @@ Designator ::=      T_STAR Designator:_1
                     :}
     |               T_SIZEOF T_LPAREN Designator:_2 T_RPAREN
                     {:
-                        //RESULT = new ConstSTO("sizeof variable - fix me", null, 0);
                         RESULT = ((MyParser) parser).DoSizeCheck (_2);
                     :}
     |               T_SIZEOF T_LPAREN Type:_2 OptArrayList:_1 T_RPAREN
                     {:
                         RESULT = ((MyParser) parser).DoSizeCheck (_2, _1);
-                        //RESULT = new ConstSTO("sizeof type - fix me", null, 0);
-
                     :}
     |               T_LPAREN DecoratedType:_1 T_RPAREN Designator:_2
                     {:
@@ -1106,14 +1099,13 @@ Designator3 ::=     T_LPAREN Expr:_2 T_RPAREN
                     :}
     |               T_INT_LITERAL:_1
                     {:
-                        // RESULT = new ConstSTO (_1, new IntType(), Integer.parseInt(_1, 10), true);    // fix me!
-                        ConstSTO sto = new ConstSTO (_1, new IntType(), Integer.parseInt(_1, 10));    // fix me!
+                        ConstSTO sto = new ConstSTO (_1, new IntType(), Integer.parseInt(_1, 10));
                         sto.setIsAddressable(false);
                         RESULT = sto;
                     :}
     |               T_FLOAT_LITERAL:_1
                     {:
-                        ConstSTO sto = new ConstSTO (_1, new FloatType(), Float.parseFloat(_1));  // fix me!
+                        ConstSTO sto = new ConstSTO (_1, new FloatType(), Float.parseFloat(_1));
                         sto.setIsAddressable(false);
                         RESULT = sto;
                     :}
@@ -1123,23 +1115,23 @@ Designator3 ::=     T_LPAREN Expr:_2 T_RPAREN
                     :}
     |               T_TRUE
                     {:
-                        ConstSTO sto = new ConstSTO ("true", new BoolType(), 1);    // fix me!
+                        ConstSTO sto = new ConstSTO ("true", new BoolType(), 1);
                         sto.setIsAddressable(false);
                         RESULT = sto;
                     :}
     |               T_FALSE
                     {:
-                        ConstSTO sto = new ConstSTO ("false", new BoolType(), 0);   // fix me!
+                        ConstSTO sto = new ConstSTO ("false", new BoolType(), 0);
                         sto.setIsAddressable(false);
                         RESULT = sto;
                     :}
     |               T_NULLPTR
                     {:
-                        RESULT = new ExprSTO ("nullptr", new NullPointerType("nullptr", 4));     // fix me!
+                        RESULT = new ExprSTO ("nullptr", new NullPointerType("nullptr", 4));
                     :}
     |               T_THIS
                     {:
-                        RESULT = new ExprSTO ("this", new StructType("this"));              // fix me!
+                        RESULT = new ExprSTO ("this", new StructType("this"));
                     :}
     |               T_COLONCOLON T_ID:_1
                     {:

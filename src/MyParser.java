@@ -183,7 +183,6 @@ class MyParser extends parser
 	}
 
 	//----------------------------------------------------------------
-	// TODO DAISY
 	//----------------------------------------------------------------
 	String GetType(Vector<STO> arguments)
 	{
@@ -196,7 +195,6 @@ class MyParser extends parser
 	}
 
 	//----------------------------------------------------------------
-	//TODO DAISY
 	//----------------------------------------------------------------
 	int GetSize(Vector<STO> arguments)
 	{
@@ -302,7 +300,6 @@ class MyParser extends parser
 			m_nNumErrors++;
 			m_errors.print(ErrorMsg.error16_Delete_var);
 		}
-
 	}
 
 	//----------------------------------------------------------------
@@ -345,11 +342,9 @@ class MyParser extends parser
 		while (pointer.hasNext()) {
 			pointer = (ArrayType) pointer.next();
 		}
-		if(pointer != null){
+		if(pointer != null) {
 			pointer.setChild(t);
 		}
-
-		//pointer.setChild(t);
 
 		pointer= head;
 		while(pointer.hasNext())
@@ -409,8 +404,8 @@ class MyParser extends parser
 	}
 
 	//----------------------------------------------------------------
-	// I think we are good sih.. basic type variables cannot be initialized to nullptr
-	// but pointer variables can be initialize to nullptr -> part of check 15c
+	//
+	//
 	//----------------------------------------------------------------
 	void DoVarDecl(String id, Type t, STO expr, Vector<STO> arguments, String rtType)
 	{
@@ -1320,9 +1315,7 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	STO DoDesignator2_Arrays(STO des, STO expr)
 	{
-		//System.out.println(((ConstSTO)sto).getIntValue());
 		// Good place to do the array checks
-		//System.out.println(expr.isExpr());
 		if(des.isError() || des.getType().isError() || expr.getType().isError() || expr.isError())
 		{
 			return new ErrorSTO(des.getName());
@@ -1360,23 +1353,19 @@ class MyParser extends parser
 
 			Type next = temp.next();
 			if (next.isArray()) {
-				//System.out.println("1");
-				VarSTO sto = new VarSTO(next.getName(), (ArrayType)next);
+				VarSTO sto = new VarSTO(next.getName(), (ArrayType) next);
 				return sto;
 			} else if (next.isPointer()){
-				VarSTO sto = new VarSTO(next.getName(), (PointerType)next);
+				VarSTO sto = new VarSTO(next.getName(), (PointerType) next);
 				return sto;
 			}
 			else if(next.isInt()){
-				//System.out.println("2");
 				return new VarSTO(des.getName(), new IntType());
 			} else if(next.isBool())
 			{
-				//System.out.println("3");
 				return new VarSTO(des.getName(), new BoolType());
 			}
 			else {
-				//System.out.println("4");
 				return new VarSTO(des.getName(), new FloatType());
 
 			}
@@ -1503,8 +1492,6 @@ class MyParser extends parser
 			pointer.setChild(t);
 		}
 
-		//pointer.setChild(t);
-
 		pointer = head;
 		while(pointer.hasNext())
 		{
@@ -1544,9 +1531,7 @@ class MyParser extends parser
 		else{
 			m_symtab.getLevel();
 			funcMap.size();
-			//Vector<STO> ctorList = map.
 			map.size();
-			//return new StructType(strID, )
 		}
 
 		// prob wrong
@@ -1802,7 +1787,6 @@ class MyParser extends parser
 							found = true;
 						}
 					}
-
 					// If even after functions there are no match, throw the error
 					if(!found){
 						m_nNumErrors++;
@@ -1812,7 +1796,6 @@ class MyParser extends parser
 				}
 			}
 		}
-
 		return sto;
 	}
 
@@ -1853,11 +1836,11 @@ class MyParser extends parser
 			return new ErrorSTO(sto.getName());
 		}
 		// Need to check for variables inside the struct
-		//else it's a pointer
+		// else it's a pointer
 		else
 		{
 			Type nextType;
-			//check whether it's pointer to a struct
+			// check whether it's pointer to a struct
 			PointerType temp = (PointerType)sto.getType();
 			if(temp.hasNext())
 			{
@@ -1908,7 +1891,6 @@ class MyParser extends parser
 					}
 				}
 			}
-
 		}
 		return sto;
 	}
@@ -2080,8 +2062,8 @@ class MyParser extends parser
 			// float -> float
 			return new ExprSTO(sto.getName(), t);
 		}
-		//pointers can be cast to any type except nullpointer
-		//make sure sto is pointer AND not nullptr
+		// pointers can be cast to any type except nullpointer
+		// make sure sto is pointer AND not nullptr
 		// make sure t is not nullptr
 		else if(sto.getType().isPointer() && !sto.getType().isNullPointer() && !t.isNullPointer())
 		{
