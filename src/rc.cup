@@ -107,7 +107,6 @@ non terminal
     ExternDecl,
     VarDecl,
     ConstDecl,
-    OptStatic,
     StructdefDecl,
     CtorDtorDecl,
     OptStmtList,
@@ -139,6 +138,7 @@ non terminal String
     MulOp,
     IncDecOp,
     OptRef,
+    OptStatic,
     Pointer
     ;
 
@@ -235,6 +235,12 @@ ExternDecl ::=      T_EXTERN DecoratedBasicType:_2 T_ID:_3 OptArrayList:_4
 
 VarDecl ::=         OptStatic:_1 DecoratedType:_2 T_ID:_3 OptArrayList:_4 OptInit:_5
                     {:
+                        if(_1 == "STATIC"){
+                            ((MyParser) parser).isStatic(true);
+                        }
+                        else{
+                            ((MyParser) parser).isStatic(false);
+                        }
                         ((MyParser) parser).DoVarDecl (_3, _2, (STO) _5, _4, "");
                     :}
                     T_SEMI
@@ -264,8 +270,14 @@ ConstDecl ::=       OptStatic:_1 T_CONST BasicType:_2 T_ID:_3 T_ASSIGN ConstExpr
     ;
 
 
-OptStatic ::=       T_STATIC
+OptStatic ::=       T_STATIC:_1
+                    {:
+                        RESULT = "STATIC";
+                    :}
     |               /* empty */
+                    {:
+                        RESULT = "NOTSTATIC";
+                    :}
     ;
 
 

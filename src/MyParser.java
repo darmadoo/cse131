@@ -6,12 +6,14 @@
 
 import java_cup.runtime.*;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 
 class MyParser extends parser
 {
+	private AssemblyGenerator m_writer;
 	private Lexer m_lexer;
 	private ErrorPrinter m_errors;
 	private boolean m_debugMode;
@@ -38,6 +40,8 @@ class MyParser extends parser
 	// Check 14.2
 	private boolean recursiveFunc = false;
 
+	private boolean isStaticFlag = false;
+
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
@@ -48,6 +52,7 @@ class MyParser extends parser
 		m_errors = errors;
 		m_debugMode = debugMode;
 		m_nNumErrors = 0;
+		m_writer = new AssemblyGenerator("rc.s");
 	}
 
 	//----------------------------------------------------------------
@@ -172,6 +177,7 @@ class MyParser extends parser
 	{
 		// Opens the global scope.
 		m_symtab.openScope();
+		m_writer.writeRodata();
 	}
 
 	//----------------------------------------------------------------
@@ -180,6 +186,9 @@ class MyParser extends parser
 	void DoProgramEnd()
 	{
 		m_symtab.closeScope();
+		// CALL WRITE ASSEMBLY
+		m_writer.writeToFile();
+		m_writer.dispose();
 	}
 
 	//----------------------------------------------------------------
@@ -363,17 +372,35 @@ class MyParser extends parser
 		{
 			if (expr.getType().isInt()) {
 				VarSTO sto = new VarSTO(id, t, ((ConstSTO) expr).getIntValue());
+				// Check I.1
+				m_writer.writeGlobalInit(expr, id, t, isStaticFlag);
+
 				m_symtab.insert(sto);
 			} else if (expr.getType().isFloat()) {
 				VarSTO sto = new VarSTO(id, t, ((ConstSTO) expr).getFloatValue());
+				// Check I.1
+				m_writer.writeGlobalInit(expr, id, t, isStaticFlag);
+
 				m_symtab.insert(sto);
 			} else {
 				VarSTO sto = new VarSTO(id, t, ((ConstSTO) expr).getBoolValue());
+				// Check I.1
+				m_writer.writeGlobalInit(expr, id, t, isStaticFlag);
+
 				m_symtab.insert(sto);
 			}
 		}
-		VarSTO sto = new VarSTO(id, t);
-		m_symtab.insert(sto);
+		else{
+			VarSTO sto = new VarSTO(id, t);
+
+			m_writer.writeGlobalNonInit(id, isStaticFlag);
+
+			if(expr instanceof VarSTO){
+				// Call writer to int
+			}
+
+			m_symtab.insert(sto);
+		}
 	}
 
 	//----------------------------------------------------------------
@@ -2085,5 +2112,9 @@ class MyParser extends parser
 		m_nNumErrors++;
 		m_errors.print(Formatter.toString(ErrorMsg.error20_Cast, sto.getType().getName(), t.getName()));
 		return new ErrorSTO(sto.getName());
+	}
+
+	void isStatic(boolean flag){
+		isStaticFlag = flag;
 	}
 }

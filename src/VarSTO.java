@@ -13,6 +13,8 @@ class VarSTO extends STO
 	//----------------------------------------------------------------
 	private BigDecimal		m_value;
 
+	private int offset;
+
 	public VarSTO(String strName)
 	{
 		super(strName);
@@ -99,6 +101,9 @@ class VarSTO extends STO
 		super.setIsModifiable(true);
 	}
 
+	public BigDecimal getM_value(){
+		return m_value;
+	}
 
 	//----------------------------------------------------------------
 	//
