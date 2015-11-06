@@ -2117,4 +2117,33 @@ class MyParser extends parser
 	void isStatic(boolean flag){
 		isStaticFlag = flag;
 	}
+
+
+	//////////////////// PROJECT 2 STUFF ///////////////////////
+	//----------------------------------------------------------------
+	//
+	//----------------------------------------------------------------
+	void DoCout(STO sto)
+	{
+		if(sto.isConst())
+		{
+			//handle literal -> const that is not addressable
+			if(!sto.getIsAddressable()) {
+				//if type is null then it's string literal
+				if (sto.getType() == null) {
+					m_writer.writeStringCout(sto.getName());
+				}
+			}
+		}
+		else
+			System.out.println("nope");
+	}
+
+	//----------------------------------------------------------------
+	//
+	//----------------------------------------------------------------
+	void DoEndlCout()
+	{
+		m_writer.writeEndlCout();
+	}
 }

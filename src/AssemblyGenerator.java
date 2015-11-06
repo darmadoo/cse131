@@ -185,4 +185,44 @@ public class AssemblyGenerator {
         decreaseIndent();
 
     }
+
+
+    ///////////////////// DAISY STUFF ////////////////////////////
+    private int strCount = 0;
+    public void writeEndlCout()
+    {
+        writeAssembly("! cout << endl \n");
+        String temp = AssemlyString.SET + "\t\t\t" + AssemlyString.PREFIX + AssemlyString.STRENDL + ", %s\n";
+        writeAssembly(temp, "%o0");
+        writeAssembly(AssemlyString.CALL, AssemlyString.PRINTF, AssemlyString.nextLine);
+        writeAssembly(AssemlyString.NOP);
+        writeAssembly(AssemlyString.nextLine);
+    }
+
+    public void writeStringCout(String input)
+    {
+        String temp = AssemlyString.PREFIX + AssemlyString.STR + "." +  ++strCount + ": \n";
+        writeAssembly(AssemlyString.SECTION_RODATA);
+        writeAssembly(AssemlyString.ALIGN, "4");
+        decreaseIndent();
+        writeAssembly(temp);
+        increaseIndent();
+        writeAssembly(AssemlyString.ASCIZ, "\"" + input + "\"");
+        writeAssembly(AssemlyString.nextLine);
+
+        writeAssembly(AssemlyString.SECTION_TEXT);
+        writeAssembly(AssemlyString.ALIGN, "4");
+        writeAssembly(AssemlyString.nextLine);
+        temp = "! cout << \"" + input + "\"\n";
+        writeAssembly(temp);
+
+        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", AssemlyString.PREFIX + AssemlyString.STRFMT, "%o0");
+        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t",
+                      AssemlyString.PREFIX + AssemlyString.STR + "." + strCount, "%o1");
+        writeAssembly(AssemlyString.CALL, AssemlyString.PRINTF, AssemlyString.nextLine);
+        writeAssembly(AssemlyString.NOP);
+        writeAssembly(AssemlyString.nextLine);
+    }
+
+
 }

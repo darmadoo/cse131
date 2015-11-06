@@ -772,7 +772,7 @@ ReadStmt ::=        T_CIN T_ISTREAM Designator T_SEMI
     ;
 
 
-WriteStmt ::=       T_COUT T_OSTREAM WritePairList T_SEMI
+WriteStmt ::=       T_COUT T_OSTREAM WritePairList:_1 T_SEMI
     ;
 
 
@@ -781,8 +781,16 @@ WritePairList ::=   WritePair
     ;
 
 
-WritePair ::=       Expr
+WritePair ::=       Expr:_1
+                    {:
+                        //System.out.println(_1.getName());
+                        //System.out.println(_1);
+                        ((MyParser) parser).DoCout(_1);
+                    :}
     |               T_ENDL
+                    {:
+                        ((MyParser) parser).DoEndlCout();
+                    :}
     ;
 
 
@@ -1122,7 +1130,9 @@ Designator3 ::=     T_LPAREN Expr:_2 T_RPAREN
                     :}
     |               T_STR_LITERAL:_1
                     {:
-                        RESULT = new ConstSTO (_1);
+                        ConstSTO sto = new ConstSTO (_1);
+                        sto.setIsAddressable(false);
+                        RESULT = sto;
                     :}
     |               T_TRUE
                     {:

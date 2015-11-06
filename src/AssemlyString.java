@@ -35,7 +35,7 @@ public class AssemlyString {
     public static final String ASCIZ = ".asciz" + SEPARATOR + SEPARATOR + "%s\n";
 
     public static final String FUNCTIONCALL = PREFIX + "%s:\n";
-    public static final String INTFMT = "ntFmt";
+    public static final String INTFMT = "intFmt";
     public static final String STRFMT = "strFmt";
     public static final String STRTF = "strTF";
     public static final String STRENDL = "strEndl";
@@ -63,4 +63,7 @@ public class AssemlyString {
 
     public static final String ADD = "add";
     public static final String LOAD = "[%s], %s";
+
+    ///////////////// DAISY STUFF /////////////////////////
+    public static final String STR = "str";
 }
