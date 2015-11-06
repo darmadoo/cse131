@@ -66,4 +66,5 @@ public class AssemlyString {
 
     ///////////////// DAISY STUFF /////////////////////////
     public static final String STR = "str";
+    public static final String COUT_COMMENT = "! cout << %s \n";
 }

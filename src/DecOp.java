@@ -1,3 +1,5 @@
+import com.sun.tools.internal.jxc.ap.Const;
+
 public class DecOp extends UnaryOp {
 
     @Override
@@ -12,15 +14,21 @@ public class DecOp extends UnaryOp {
             if (aType instanceof IntType) {
                 // Int++ = Int
                 // return ExprSTO of int types
-                if(a.isConst())
-                    return new ConstSTO(a.getName() + "--", new IntType("int", 4), ((ConstSTO) a).getIntValue() - 1 );
+                if(a.isConst()) {
+                    ConstSTO sto = new ConstSTO(a.getName() + "--", new IntType("int", 4), ((ConstSTO) a).getIntValue() - 1);
+                    sto.setIsAddressable(false);
+                    return sto;
+                }
                 else
                     return new ExprSTO(a.getName() + "--", new IntType("int", 4));
             } else if(aType instanceof FloatType) {
                 // Float++ = Float
                 // return ExprSTO of float type
-                if(a.isConst())
-                    return new ConstSTO(a.getName() + "--", new FloatType("float", 4), ((ConstSTO) a).getFloatValue() + 1 );
+                if(a.isConst()) {
+                    ConstSTO sto = new ConstSTO(a.getName() + "--", new FloatType("float", 4), ((ConstSTO) a).getFloatValue() + 1);
+                    sto.setIsAddressable(false);
+                    return sto;
+                }
                 else
                     return new ExprSTO(a.getName() + "--", new FloatType("float", 4));
             } else { // else it's pointer type

@@ -18,16 +18,22 @@ public class StarOp extends ArithmeticOp {
         } else if (aType instanceof IntType && bType instanceof IntType) {
             // Int * Int = Int
             // return ExprSTO of int types
-            if(a.isConst() && b.isConst())
-                return new ConstSTO(a.getName() + " * " + b.getName(), new IntType("int", 4), ((ConstSTO) a).getIntValue() * ((ConstSTO) b).getIntValue());
+            if(a.isConst() && b.isConst()) {
+                ConstSTO sto = new ConstSTO(a.getName() + " * " + b.getName(), new IntType("int", 4), ((ConstSTO) a).getIntValue() * ((ConstSTO) b).getIntValue());
+                sto.setIsAddressable(false);
+                return sto;
+            }
             else
                 return new ExprSTO(a.getName() + " * " + b.getName(), new IntType("int", 4));
         } else {
             // Float * int = Float
             // Float * Float = Float
             // return ExprSTO of float type
-            if(a.isConst() && b.isConst())
-                return new ConstSTO(a.getName() + " * " + b.getName(), new FloatType("float", 4), ((ConstSTO) a).getFloatValue() * ((ConstSTO) b).getFloatValue());
+            if(a.isConst() && b.isConst()) {
+                ConstSTO sto = new ConstSTO(a.getName() + " * " + b.getName(), new FloatType("float", 4), ((ConstSTO) a).getFloatValue() * ((ConstSTO) b).getFloatValue());
+                sto.setIsAddressable(false);
+                return sto;
+            }
             else
                 return new ExprSTO(a.getName() + " * " + b.getName(), new FloatType("float", 4));
         }

@@ -2133,6 +2133,9 @@ class MyParser extends parser
 				if (sto.getType() == null) {
 					m_writer.writeStringCout(sto.getName());
 				}
+				if (sto.getType().isInt()) {
+					m_writer.writeIntLiteralCout( ((ConstSTO) sto).getIntValue());
+				}
 			}
 		}
 		else

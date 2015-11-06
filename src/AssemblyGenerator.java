@@ -191,7 +191,7 @@ public class AssemblyGenerator {
     private int strCount = 0;
     public void writeEndlCout()
     {
-        writeAssembly("! cout << endl \n");
+        writeAssembly(AssemlyString.COUT_COMMENT, "endl");
         String temp = AssemlyString.SET + "\t\t\t" + AssemlyString.PREFIX + AssemlyString.STRENDL + ", %s\n";
         writeAssembly(temp, "%o0");
         writeAssembly(AssemlyString.CALL, AssemlyString.PRINTF, AssemlyString.nextLine);
@@ -213,8 +213,7 @@ public class AssemblyGenerator {
         writeAssembly(AssemlyString.SECTION_TEXT);
         writeAssembly(AssemlyString.ALIGN, "4");
         writeAssembly(AssemlyString.nextLine);
-        temp = "! cout << \"" + input + "\"\n";
-        writeAssembly(temp);
+        writeAssembly(AssemlyString.COUT_COMMENT, "\"" + input + "\"");
 
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", AssemlyString.PREFIX + AssemlyString.STRFMT, "%o0");
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t",
@@ -224,5 +223,9 @@ public class AssemblyGenerator {
         writeAssembly(AssemlyString.nextLine);
     }
 
+    public void writeIntLiteralCout(int input)
+    {
+        writeAssembly(AssemlyString.COUT_COMMENT, "Haha");
+    }
 
 }

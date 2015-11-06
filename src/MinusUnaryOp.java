@@ -14,15 +14,20 @@ public class MinusUnaryOp extends UnaryOp {
         if (aType instanceof IntType) {
             // Int++ = Int
             // return ExprSTO of int types
-            if(a.isConst())
-                return new ConstSTO(a.getName() + "-", new IntType("int", 4), 0 - ((ConstSTO) a).getIntValue());
+            if(a.isConst()) {
+                ConstSTO sto = new ConstSTO(a.getName() + "-", new IntType("int", 4), 0 - ((ConstSTO) a).getIntValue());
+                sto.setIsAddressable(false);
+                return sto;
+            }
             else
                 return new ExprSTO(a.getName() + "-", new IntType("int", 4));
         } else {
             // Float++ = Float
             // return ExprSTO of float type
             if(a.isConst()) {
-                return new ConstSTO(a.getName() + "-", new FloatType("float", 4), 0.0 - ((ConstSTO) a).getFloatValue());
+                ConstSTO sto = new ConstSTO(a.getName() + "-", new FloatType("float", 4), 0.0 - ((ConstSTO) a).getFloatValue());
+                sto.setIsAddressable(false);
+                return sto;
             }
             else
                 return new ExprSTO(a.getName() + "-", new FloatType("float", 4));

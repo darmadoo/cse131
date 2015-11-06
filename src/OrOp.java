@@ -1,3 +1,5 @@
+import com.sun.tools.internal.jxc.ap.Const;
+
 /**
  * Created by Darmadoo on 10/9/15.
  */
@@ -20,8 +22,11 @@ public class OrOp extends BooleanOp {
             }
         }
         else {
-            if(a.isConst() && b.isConst())
-                return new ConstSTO(a.getName() + " || " + b.getName(), new BoolType("bool", 4), ((ConstSTO)a).getBoolValue() || ((ConstSTO)b).getBoolValue());
+            if(a.isConst() && b.isConst()) {
+                ConstSTO sto = new ConstSTO(a.getName() + " || " + b.getName(), new BoolType("bool", 4), ((ConstSTO) a).getBoolValue() || ((ConstSTO) b).getBoolValue());
+                sto.setIsAddressable(false);
+                return sto;
+            }
             else
                 return new ExprSTO(a.getName() + " || " + b.getName(), new BoolType("bool", 4));
         }

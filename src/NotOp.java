@@ -12,9 +12,11 @@ public class NotOp extends UnaryOp {
             return new ErrorSTO(Formatter.toString(ErrorMsg.error1u_Expr, aType.getName(), "!", new BoolType("bool", 4).getName()));
         }
         else {
-            if(a.isConst())
-                return new ConstSTO("!" + a.getName(), new BoolType("bool", 4), !((ConstSTO)a).getBoolValue());
-            else
+            if(a.isConst()) {
+                ConstSTO sto = new ConstSTO("!" + a.getName(), new BoolType("bool", 4), !((ConstSTO) a).getBoolValue());
+                sto.setIsAddressable(false);
+                return sto;
+            }else
                 return new ExprSTO("!" + a.getName(), new BoolType("bool", 4));
         }
     }

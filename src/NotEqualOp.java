@@ -32,16 +32,21 @@ public class NotEqualOp extends ComparisonOp {
         else {
             if((aType instanceof NumericType) && (bType instanceof NumericType))
             {
-                if(a.isConst() && b.isConst())
-                    return new ConstSTO(a.getName() + " != " + b.getName(), new BoolType("bool", 4), ((ConstSTO) a).getFloatValue() != ((ConstSTO) b).getFloatValue());
+                if(a.isConst() && b.isConst()) {
+                    ConstSTO sto = new ConstSTO(a.getName() + " != " + b.getName(), new BoolType("bool", 4), ((ConstSTO) a).getFloatValue() != ((ConstSTO) b).getFloatValue());
+                    sto.setIsAddressable(false);
+                    return sto;
+                }
                 else
                     return new ExprSTO(a.getName() + " != " + b.getName(), new BoolType("bool", 4));
             }
             else
             {
-                if(a.isConst() && b.isConst())
-                    return new ConstSTO(a.getName() + " != " + b.getName(), new BoolType("bool", 4), ((ConstSTO) a).getBoolValue() != ((ConstSTO) b).getBoolValue());
-                else
+                if(a.isConst() && b.isConst()) {
+                    ConstSTO sto = new ConstSTO(a.getName() + " != " + b.getName(), new BoolType("bool", 4), ((ConstSTO) a).getBoolValue() != ((ConstSTO) b).getBoolValue());
+                    sto.setIsAddressable(false);
+                    return sto;
+                }else
                     return new ExprSTO(a.getName() + " != " + b.getName(), new BoolType("bool", 4));
             }
         }
