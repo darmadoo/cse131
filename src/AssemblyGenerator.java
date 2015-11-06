@@ -187,8 +187,12 @@ public class AssemblyGenerator {
     }
 
 
-    ///////////////////// DAISY STUFF ////////////////////////////
+    //////////////////////////// DAISY STUFF ////////////////////////////
+    //----------------------------------------------------------------
+    // Phase 1 Check 2
+    //----------------------------------------------------------------
     private int strCount = 0;
+    private int floatCount = 0;
     public void writeEndlCout()
     {
         writeAssembly(AssemlyString.COUT_COMMENT, "endl");
@@ -201,11 +205,10 @@ public class AssemblyGenerator {
 
     public void writeStringCout(String input)
     {
-        String temp = AssemlyString.PREFIX + AssemlyString.STR + "." +  ++strCount + ": \n";
         writeAssembly(AssemlyString.SECTION_RODATA);
         writeAssembly(AssemlyString.ALIGN, "4");
         decreaseIndent();
-        writeAssembly(temp);
+        writeAssembly(AssemlyString.PREFIX + AssemlyString.STR + "." +  ++strCount + ": \n");
         increaseIndent();
         writeAssembly(AssemlyString.ASCIZ, "\"" + input + "\"");
         writeAssembly(AssemlyString.nextLine);
@@ -223,9 +226,44 @@ public class AssemblyGenerator {
         writeAssembly(AssemlyString.nextLine);
     }
 
-    public void writeIntLiteralCout(int input)
+    public void writeIntLiteralCout(String name, String input)
     {
-        writeAssembly(AssemlyString.COUT_COMMENT, "Haha");
+        writeAssembly(AssemlyString.COUT_COMMENT, name);
+        writeAssembly(AssemlyString.nextLine);
+        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", input, "%o1");
+        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", AssemlyString.PREFIX + AssemlyString.INTFMT, "%o0");
+        writeAssembly(AssemlyString.CALL, AssemlyString.PRINTF, AssemlyString.nextLine);
+        writeAssembly(AssemlyString.NOP);
+        writeAssembly(AssemlyString.nextLine);
     }
 
+    public void writeFloatLiteralCout(String name, String input)
+    {
+        writeAssembly(AssemlyString.COUT_COMMENT, name);
+        writeAssembly(AssemlyString.SECTION_RODATA);
+        writeAssembly(AssemlyString.ALIGN, "4");
+        decreaseIndent();
+        writeAssembly(AssemlyString.PREFIX + AssemlyString.FLOAT + "." +  ++floatCount + ": \n");
+        increaseIndent();
+        writeAssembly(AssemlyString.SINGLE, input);
+        writeAssembly(AssemlyString.nextLine);
+
+        writeAssembly(AssemlyString.SECTION_TEXT);
+        writeAssembly(AssemlyString.ALIGN, "4");
+        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + AssemlyString.SEPARATOR,
+                AssemlyString.PREFIX + AssemlyString.FLOAT + "." + floatCount, "%l7");
+        writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD, "%l7", "%f0\n");
+        writeAssembly(AssemlyString.CALL, AssemlyString.PRINTFLOAT, AssemlyString.nextLine);
+        writeAssembly(AssemlyString.NOP);
+        writeAssembly(AssemlyString.nextLine);
+    }
+
+    public void writeBoolLiteralCout(String name, String input)
+    {
+        writeAssembly(AssemlyString.COUT_COMMENT, name);
+        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", input, "%o0");
+        writeAssembly(AssemlyString.CALL, AssemlyString.PREFIX + AssemlyString.PRINTBOOL);
+        writeAssembly(AssemlyString.NOP);
+        writeAssembly(AssemlyString.nextLine);
+    }
 }

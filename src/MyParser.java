@@ -2133,8 +2133,23 @@ class MyParser extends parser
 				if (sto.getType() == null) {
 					m_writer.writeStringCout(sto.getName());
 				}
-				if (sto.getType().isInt()) {
-					m_writer.writeIntLiteralCout( ((ConstSTO) sto).getIntValue());
+				else if (sto.getType().isInt()) {
+					m_writer.writeIntLiteralCout(sto.getName(), Integer.toString(((ConstSTO)sto).getIntValue()));
+				}
+				else if (sto.getType().isFloat()) {
+					m_writer.writeFloatLiteralCout(sto.getName(), Float.toString(((ConstSTO) sto).getFloatValue()));
+				}
+				else // boolean
+				{
+					if(((ConstSTO)sto).getBoolValue())
+					{
+						//if true
+						m_writer.writeBoolLiteralCout(sto.getName(), "1");
+					}
+					else
+					{
+						m_writer.writeBoolLiteralCout(sto.getName(), "0");
+					}
 				}
 			}
 		}

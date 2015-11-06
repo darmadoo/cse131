@@ -64,7 +64,11 @@ public class AssemlyString {
     public static final String ADD = "add";
     public static final String LOAD = "[%s], %s";
 
-    ///////////////// DAISY STUFF /////////////////////////
+    //////////////////////////// DAISY STUFF ////////////////////////////
     public static final String STR = "str";
+    public static final String FLOAT = "float";
     public static final String COUT_COMMENT = "! cout << %s \n";
+    public static final String LD = "ld";
+    public static final String PRINTFLOAT = "printFloat";
+
 }
