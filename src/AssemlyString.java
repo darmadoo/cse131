@@ -72,6 +72,8 @@ public class AssemlyString {
     public static final String ST = "st";
     public static final String BNE = "bne";
     public static final String MOV = "mov";
+    public static final String FITOS = "fitos";
+
 
     public static final String PRINTFLOAT = "printFloat";
 

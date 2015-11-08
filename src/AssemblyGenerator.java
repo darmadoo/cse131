@@ -305,7 +305,6 @@ public class AssemblyGenerator {
 
         section(AssemlyString.TEXT);
         align("4");
-        next();
         writeAssembly(AssemlyString.COUT_COMMENT, "\"" + input + "\"");
 
         set(AssemlyString.PREFIX + AssemlyString.STRFMT, "%o0");
@@ -383,7 +382,7 @@ public class AssemblyGenerator {
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", sto.getOffset(), "%o1");
         writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", sto.getBase(), "%o1", "%o1");
 
-        if(sto.getType() instanceof FloatType)
+        if(sto.getType() instanceof FloatType && expr.getType() instanceof  FloatType)
         {
             next();
             section(AssemlyString.RODATA);
@@ -399,6 +398,16 @@ public class AssemblyGenerator {
             writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + AssemlyString.SEPARATOR,
                     AssemlyString.PREFIX + AssemlyString.FLOAT + "." + floatCount, "%l7");
             writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f0");
+            writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%f0", "%o1");
+        }
+        else if(sto.getType() instanceof FloatType && expr.getType() instanceof  IntType)
+        {
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", value, "%o0");
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", expr.getOffset(), "%l7");
+            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", sto.getBase(), "%l7", "%l7");
+            writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%l7");
+            writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f0");
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.FITOS, "%f0", "%f0");
             writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%f0", "%o1");
         }
         else
