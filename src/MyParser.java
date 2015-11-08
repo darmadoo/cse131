@@ -448,6 +448,7 @@ class MyParser extends parser
 				sto.setBase("%fp");
 				offset -= t.getSize();
 				sto.setOffset(Integer.toString(offset));
+				m_writer.writeLocalInitWithVar(sto, expr, fun, isStaticFlag);
 			}
 
 			m_symtab.insert(sto);
@@ -466,6 +467,7 @@ class MyParser extends parser
 				sto.setBase("%fp");
 				offset -= t.getSize();
 				sto.setOffset(Integer.toString(offset));
+				//uninitialize local variable do nothing in the assembly code
 			}
 
 			if(expr instanceof VarSTO){
@@ -548,6 +550,14 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	void DoConstDecl(String id, Type t, STO expr)
 	{
+		boolean exprIsConstVar = expr.getIsAddressable();
+		boolean global = true;
+		FuncSTO fun = m_symtab.getFunc();
+		if(fun != null)
+		{
+			global = false;
+		}
+
 		if (m_symtab.accessLocal(id) != null)
 		{
 			m_nNumErrors++;
@@ -572,16 +582,61 @@ class MyParser extends parser
 			if(expr.getType().isInt())
 			{
 				ConstSTO sto = new ConstSTO(id, t, ((ConstSTO) expr).getIntValue());
+				if(global) {
+					sto.setBase("%g0");
+					sto.setOffset(id);
+					//global constant writer here
+				}
+				else
+				{
+					sto.setBase("%fp");
+					offset -= t.getSize();
+					sto.setOffset(Integer.toString(offset));
+					if(exprIsConstVar)
+						m_writer.writeLocalInitWithVar(sto, expr, fun, isStaticFlag);
+					else
+						m_writer.writeLocalInitWithConst(sto, expr, fun, isStaticFlag);
+				}
 				m_symtab.insert(sto);
 			}
 			else if(expr.getType().isFloat())
 			{
 				ConstSTO sto = new ConstSTO(id, t, ((ConstSTO) expr).getFloatValue());
+				if(global) {
+					sto.setBase("%g0");
+					sto.setOffset(id);
+					//global constant writer here
+				}
+				else
+				{
+					sto.setBase("%fp");
+					offset -= t.getSize();
+					sto.setOffset(Integer.toString(offset));
+					if(exprIsConstVar)
+						m_writer.writeLocalInitWithVar(sto, expr, fun, isStaticFlag);
+					else
+						m_writer.writeLocalInitWithConst(sto, expr, fun, isStaticFlag);
+				}
 				m_symtab.insert(sto);
 			}
-			else
+			else // else boolean
 			{
 				ConstSTO sto = new ConstSTO(id, t, ((ConstSTO) expr).getBoolValue());
+				if(global) {
+					sto.setBase("%g0");
+					sto.setOffset(id);
+					//global constant writer here
+				}
+				else
+				{
+					sto.setBase("%fp");
+					offset -= t.getSize();
+					sto.setOffset(Integer.toString(offset));
+					if(exprIsConstVar)
+						m_writer.writeLocalInitWithVar(sto, expr, fun, isStaticFlag);
+					else
+						m_writer.writeLocalInitWithConst(sto, expr, fun, isStaticFlag);
+				}
 				m_symtab.insert(sto);
 			}
 		}
