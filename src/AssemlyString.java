@@ -70,11 +70,17 @@ public class AssemlyString {
 
     public static final String LD = "ld";
     public static final String ST = "st";
+    public static final String BNE = "bne";
+    public static final String MOV = "mov";
+
     public static final String PRINTFLOAT = "printFloat";
 
     public static final String COUT_COMMENT = "! cout << %s \n";
     public static final String VAR_DECL_COMMENT = "! %s = %s \n";
 
     public static final String STORE = "%s, [%s]";
+    public static final String INIT = ".$.init.%s";
+
+
 
 }

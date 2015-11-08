@@ -259,6 +259,13 @@ VarDecl ::=         OptStatic:_1 DecoratedType:_2 T_ID:_3 OptArrayList:_4 OptIni
 
 ConstDecl ::=       OptStatic:_1 T_CONST BasicType:_2 T_ID:_3 T_ASSIGN ConstExpr:_5
                     {:
+                        if(_1 == "STATIC"){
+                            ((MyParser) parser).isStatic(true);
+                        }
+                        else{
+                            ((MyParser) parser).isStatic(false);
+                        }
+
                         ((MyParser) parser).DoConstDecl (_3, _2, (STO) _5);
                     :}
                     T_SEMI

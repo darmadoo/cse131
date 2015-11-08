@@ -251,16 +251,50 @@ public class AssemblyGenerator {
     private int floatCount = 0;
     public void writeEndlCout()
     {
+        increaseIndent();
         writeAssembly(AssemlyString.COUT_COMMENT, "endl");
         String temp = AssemlyString.SET + "\t\t\t" + AssemlyString.PREFIX + AssemlyString.STRENDL + ", %s\n";
         writeAssembly(temp, "%o0");
         call(AssemlyString.PRINTF);
         nop();
         next();
+        decreaseIndent();
+    }
+
+    public void writeVarCout(STO sto)
+    {
+        increaseIndent();
+        writeAssembly(AssemlyString.COUT_COMMENT, sto.getName());
+        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", sto.getOffset(), "%l7");
+        writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", sto.getBase(), "%l7", "%l7");
+
+        if(sto.getType() instanceof IntType)
+        {
+            writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%o1");
+            set(AssemlyString.PREFIX + AssemlyString.INTFMT, "%o0");
+            call(AssemlyString.PRINTF);
+            nop();
+        }
+        else if (sto.getType() instanceof FloatType)
+        {
+            writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f0");
+            call(AssemlyString.PRINTFLOAT);
+            nop();
+        }
+        else
+        {
+            writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%o0");
+            call(AssemlyString.PREFIX + AssemlyString.PRINTBOOL);
+            nop();
+        }
+
+        next();
+        decreaseIndent();
     }
 
     public void writeStringCout(String input)
     {
+        increaseIndent();
         section(AssemlyString.RODATA);
         align("4");
         decreaseIndent();
@@ -279,10 +313,12 @@ public class AssemblyGenerator {
         call(AssemlyString.PRINTF);
         nop();
         next();
+        decreaseIndent();
     }
 
     public void writeIntLiteralCout(String name, String input)
     {
+        increaseIndent();
         writeAssembly(AssemlyString.COUT_COMMENT, name);
         next();
         set(input, "%o1");
@@ -290,11 +326,14 @@ public class AssemblyGenerator {
         call(AssemlyString.PRINTF);
         nop();
         next();
+        decreaseIndent();
     }
 
     public void writeFloatLiteralCout(String name, String input)
     {
+        increaseIndent();
         writeAssembly(AssemlyString.COUT_COMMENT, name);
+        next();
         section(AssemlyString.RODATA);
         align("4");
         decreaseIndent();
@@ -311,19 +350,23 @@ public class AssemblyGenerator {
         call(AssemlyString.PRINTFLOAT);
         nop();
         next();
+        decreaseIndent();
     }
 
     public void writeBoolLiteralCout(String name, String input)
     {
+        increaseIndent();
         writeAssembly(AssemlyString.COUT_COMMENT, name);
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", input, "%o0");
-        call(AssemlyString.PRINTBOOL);
+        call(AssemlyString.PREFIX + AssemlyString.PRINTBOOL);
         nop();
         next();
+        decreaseIndent();
     }
 
-    public void writeLocalInitWithConst(STO sto, STO expr, STO x, boolean isStaticFlag)
+    public void writeLocalInitWithConst(STO sto, STO expr)
     {
+        increaseIndent();
         //comment on the top
         String value = "";
         String commentValue = "";
@@ -371,10 +414,12 @@ public class AssemblyGenerator {
             writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
         }
         next();
+        decreaseIndent();
     }
 
-    public void writeLocalInitWithVar(STO sto, STO expr, STO x, boolean isStaticFlag)
+    public void writeLocalInitWithVar(STO sto, STO expr)
     {
+        increaseIndent();
         writeAssembly(AssemlyString.VAR_DECL_COMMENT, sto.getName(), expr.getName());
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", sto.getOffset(), "%o1");
         writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", sto.getBase(), "%o1", "%o1");
@@ -391,5 +436,48 @@ public class AssemblyGenerator {
             writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
         }
         next();
+        decreaseIndent();
     }
+
+    public void writeLocalStaticInitWithVar(STO sto, STO expr)
+    {
+        writeGlobalNonInit(sto.getOffset(), true);
+
+        increaseIndent();
+
+        section(AssemlyString.BSS);
+        align("4");
+
+        decreaseIndent();
+        writeAssembly(AssemlyString.INIT_VAR, sto.getOffset());
+        increaseIndent();
+
+        writeAssembly(AssemlyString.SKIP, "4");
+        next();
+        next();
+        section(AssemlyString.TEXT);
+        align("4");
+        next();
+
+        writeAssembly("! Start init guard \n");
+        writeAssembly(AssemlyString.SET + "\t\t\t" + AssemlyString.INIT, sto.getOffset() + ", %o0\n");
+        writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%o0", "%o0");
+        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.CMP + "\t", "%o0", "%g0");
+        writeAssembly(AssemlyString.BNE + "\t\t\t" + AssemlyString.INIT, sto.getOffset() + ".done \n");
+        nop();
+        next();
+
+        decreaseIndent();
+        writeLocalInitWithVar(sto, expr);
+        increaseIndent();
+        writeAssembly("! End init guard \n");
+        writeAssembly(AssemlyString.SET + "\t\t\t" + AssemlyString.INIT, sto.getOffset() + ", %o0\n");
+        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.MOV + "\t", "1", "%o1");
+
+        writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o1", "%o0");
+        decreaseIndent();
+        writeAssembly(AssemlyString.INIT_VAR, sto.getOffset() + ".done");
+        next();
+    }
+
 }

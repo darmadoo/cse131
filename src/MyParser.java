@@ -389,11 +389,21 @@ class MyParser extends parser
 				}
 				else
 				{
-					sto.setBase("%fp");
-					offset -= t.getSize();
-					sto.setOffset(Integer.toString(offset));
-					m_writer.writeLocalInitWithConst(sto, expr, fun, isStaticFlag);
-
+					//local and static
+					if(isStaticFlag)
+					{
+						sto.setBase("%g0");
+						sto.setOffset(fun.getName() + "." + fun.getType().getName() + "." + id);
+						m_writer.writeGlobalInit(expr, sto.getOffset(), t, isStaticFlag);
+					}
+					//local not static
+					else
+					{
+						sto.setBase("%fp");
+						offset -= t.getSize();
+						sto.setOffset(Integer.toString(offset));
+						m_writer.writeLocalInitWithConst(sto, expr);
+					}
 				}
 
 				m_symtab.insert(sto);
@@ -408,10 +418,21 @@ class MyParser extends parser
 				}
 				else
 				{
-					sto.setBase("%fp");
-					offset -= t.getSize();
-					sto.setOffset(Integer.toString(offset));
-					m_writer.writeLocalInitWithConst(sto, expr, fun, isStaticFlag);
+					//local and static
+					if(isStaticFlag)
+					{
+						sto.setBase("%g0");
+						sto.setOffset(fun.getName() + "." + fun.getType().getName() + "." + id);
+						m_writer.writeGlobalInit(expr, sto.getOffset(), t, isStaticFlag);
+					}
+					//local not static
+					else
+					{
+						sto.setBase("%fp");
+						offset -= t.getSize();
+						sto.setOffset(Integer.toString(offset));
+						m_writer.writeLocalInitWithConst(sto, expr);
+					}
 				}
 
 				m_symtab.insert(sto);
@@ -425,10 +446,21 @@ class MyParser extends parser
 				}
 				else
 				{
-					sto.setBase("%fp");
-					offset -= t.getSize();
-					sto.setOffset(Integer.toString(offset));
-					m_writer.writeLocalInitWithConst(sto, expr, fun, isStaticFlag);
+					//local and static
+					if(isStaticFlag)
+					{
+						sto.setBase("%g0");
+						sto.setOffset(fun.getName() + "." + fun.getType().getName() + "." + id);
+						m_writer.writeGlobalInit(expr, sto.getOffset(), t, isStaticFlag);
+					}
+					//local not static
+					else
+					{
+						sto.setBase("%fp");
+						offset -= t.getSize();
+						sto.setOffset(Integer.toString(offset));
+						m_writer.writeLocalInitWithConst(sto, expr);
+					}
 				}
 
 				m_symtab.insert(sto);
@@ -445,10 +477,21 @@ class MyParser extends parser
 			}
 			else
 			{
-				sto.setBase("%fp");
-				offset -= t.getSize();
-				sto.setOffset(Integer.toString(offset));
-				m_writer.writeLocalInitWithVar(sto, expr, fun, isStaticFlag);
+				//local and static
+				if(isStaticFlag)
+				{
+					sto.setBase("%g0");
+					sto.setOffset(fun.getName() + "." + fun.getType().getName() + "." + id);
+					m_writer.writeLocalStaticInitWithVar(sto, expr);
+				}
+				//local not static
+				else
+				{
+					sto.setBase("%fp");
+					offset -= t.getSize();
+					sto.setOffset(Integer.toString(offset));
+					m_writer.writeLocalInitWithVar(sto, expr);
+				}
 			}
 
 			m_symtab.insert(sto);
@@ -464,10 +507,21 @@ class MyParser extends parser
 			}
 			else
 			{
-				sto.setBase("%fp");
-				offset -= t.getSize();
-				sto.setOffset(Integer.toString(offset));
-				//uninitialize local variable do nothing in the assembly code
+				//local and static
+				if(isStaticFlag)
+				{
+					sto.setBase("%g0");
+					sto.setOffset(fun.getName() + "." + fun.getType().getName() + "." + id);
+					m_writer.writeGlobalNonInit(fun.getName() + "." + fun.getType().getName() + "." + id, isStaticFlag);
+				}
+				//local not static
+				else
+				{
+					sto.setBase("%fp");
+					offset -= t.getSize();
+					sto.setOffset(Integer.toString(offset));
+					//uninitialize local variable do nothing in the assembly code
+				}
 			}
 
 			if(expr instanceof VarSTO){
@@ -589,13 +643,22 @@ class MyParser extends parser
 				}
 				else
 				{
-					sto.setBase("%fp");
-					offset -= t.getSize();
-					sto.setOffset(Integer.toString(offset));
-					if(exprIsConstVar)
-						m_writer.writeLocalInitWithVar(sto, expr, fun, isStaticFlag);
-					else
-						m_writer.writeLocalInitWithConst(sto, expr, fun, isStaticFlag);
+					//local and static
+					if(isStaticFlag)
+					{
+						sto.setBase("%g0");
+						sto.setOffset(fun.getName() + "." + fun.getType().getName() + "." + id);
+						m_writer.writeGlobalInit(expr, sto.getOffset(), t, isStaticFlag);
+					}
+					else {
+						sto.setBase("%fp");
+						offset -= t.getSize();
+						sto.setOffset(Integer.toString(offset));
+						if (exprIsConstVar)
+							m_writer.writeLocalInitWithVar(sto, expr);
+						else
+							m_writer.writeLocalInitWithConst(sto, expr);
+					}
 				}
 				m_symtab.insert(sto);
 			}
@@ -609,13 +672,22 @@ class MyParser extends parser
 				}
 				else
 				{
-					sto.setBase("%fp");
-					offset -= t.getSize();
-					sto.setOffset(Integer.toString(offset));
-					if(exprIsConstVar)
-						m_writer.writeLocalInitWithVar(sto, expr, fun, isStaticFlag);
-					else
-						m_writer.writeLocalInitWithConst(sto, expr, fun, isStaticFlag);
+					//local and static
+					if(isStaticFlag)
+					{
+						sto.setBase("%g0");
+						sto.setOffset(fun.getName() + "." + fun.getType().getName() + "." + id);
+						m_writer.writeGlobalInit(expr, sto.getOffset(), t, isStaticFlag);
+					}
+					else {
+						sto.setBase("%fp");
+						offset -= t.getSize();
+						sto.setOffset(Integer.toString(offset));
+						if (exprIsConstVar)
+							m_writer.writeLocalInitWithVar(sto, expr);
+						else
+							m_writer.writeLocalInitWithConst(sto, expr);
+					}
 				}
 				m_symtab.insert(sto);
 			}
@@ -629,13 +701,22 @@ class MyParser extends parser
 				}
 				else
 				{
-					sto.setBase("%fp");
-					offset -= t.getSize();
-					sto.setOffset(Integer.toString(offset));
-					if(exprIsConstVar)
-						m_writer.writeLocalInitWithVar(sto, expr, fun, isStaticFlag);
-					else
-						m_writer.writeLocalInitWithConst(sto, expr, fun, isStaticFlag);
+					//local and static
+					if(isStaticFlag)
+					{
+						sto.setBase("%g0");
+						sto.setOffset(fun.getName() + "." + fun.getType().getName() + "." + id);
+						m_writer.writeGlobalInit(expr, sto.getOffset(), t, isStaticFlag);
+					}
+					else {
+						sto.setBase("%fp");
+						offset -= t.getSize();
+						sto.setOffset(Integer.toString(offset));
+						if (exprIsConstVar)
+							m_writer.writeLocalInitWithVar(sto, expr);
+						else
+							m_writer.writeLocalInitWithConst(sto, expr);
+					}
 				}
 				m_symtab.insert(sto);
 			}
@@ -906,6 +987,13 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	STO DoAssignExpr(STO stoDes, STO expr)
 	{
+		boolean global = true;
+		FuncSTO fun = m_symtab.getFunc();
+		if(fun != null)
+		{
+			global = false;
+		}
+
 		//System.out.println("StoDes Type: " + stoDes.getType());
 		//System.out.println("Expr Type: " + expr.getType());
 		if(stoDes.isError() || stoDes.getType().isError())
@@ -936,6 +1024,18 @@ class MyParser extends parser
 				m_errors.print(Formatter.toString(ErrorMsg.error3b_Assign, expr.getType().getName(), stoDes.getType().getName()));
 				return new ErrorSTO(stoDes.getName());
 			}
+		}
+
+		if(global)
+		{
+			//do your stuff here
+		}
+		else
+		{
+			if (!expr.isConst())
+				m_writer.writeLocalInitWithVar(stoDes, expr);
+			else
+				m_writer.writeLocalInitWithConst(stoDes, expr);
 		}
 
 		return stoDes;
@@ -2285,7 +2385,7 @@ class MyParser extends parser
 			}
 		}
 		else
-			System.out.println("nope");
+			m_writer.writeVarCout(sto);
 	}
 
 	//----------------------------------------------------------------
