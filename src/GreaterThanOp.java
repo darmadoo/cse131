@@ -17,12 +17,12 @@ public class GreaterThanOp extends ComparisonOp {
             }
         } else {
             if(a.isConst() && b.isConst()) {
-                ConstSTO sto =  new ConstSTO(a.getName() + " >= " + b.getName(), new BoolType("bool", 4), ((ConstSTO) a).getFloatValue() > ((ConstSTO) b).getFloatValue());
+                ConstSTO sto =  new ConstSTO("(" + a.getName() + " > " + b.getName() + ")", new BoolType("bool", 4), ((ConstSTO) a).getFloatValue() > ((ConstSTO) b).getFloatValue());
                 sto.setIsAddressable(false);
                 return sto;
             }
             else
-                return new ExprSTO(a.getName() + " > " + b.getName(), new BoolType("bool", 4));
+                return new ExprSTO("(" + a.getName() + " > " + b.getName() + ")", new BoolType("bool", 4));
         }
     }
 

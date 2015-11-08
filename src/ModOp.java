@@ -21,13 +21,13 @@ public class ModOp extends ArithmeticOp {
                 if (((ConstSTO) b).getIntValue() == 0)
                     return new ErrorSTO(ErrorMsg.error8_Arithmetic);
                 else {
-                    ConstSTO sto = new ConstSTO(a.getName() + " % " + b.getName(), new IntType("int", 4), ((ConstSTO) a).getIntValue() % ((ConstSTO) b).getIntValue());
+                    ConstSTO sto = new ConstSTO("(" + a.getName() + " % " + b.getName() + ")", new IntType("int", 4), ((ConstSTO) a).getIntValue() % ((ConstSTO) b).getIntValue());
                     sto.setIsAddressable(false);
                     return sto;
                 }
             }
             else
-                return new ExprSTO(a.getName() + " % " + b.getName(), new IntType("int", 4));
+                return new ExprSTO("(" + a.getName() + " % " + b.getName() + ")", new IntType("int", 4));
         }
     }
 

@@ -22,12 +22,12 @@ public class AndOp extends BooleanOp {
         }
         else {
             if(a.isConst() && b.isConst()) {
-                ConstSTO sto = new ConstSTO(a.getName() + " && " + b.getName(), new BoolType("bool", 4), ((ConstSTO) a).getBoolValue() && ((ConstSTO) b).getBoolValue());
+                ConstSTO sto = new ConstSTO("(" + a.getName() + " && " + b.getName() + ")", new BoolType("bool", 4), ((ConstSTO) a).getBoolValue() && ((ConstSTO) b).getBoolValue());
                 sto.setIsAddressable(false);
                 return sto;
             }
             else
-                return new ExprSTO(a.getName() + " && " + b.getName(), new BoolType("bool", 4));
+                return new ExprSTO("(" + a.getName() + " && " + b.getName() + ")", new BoolType("bool", 4));
         }
     }
 }

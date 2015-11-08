@@ -12,11 +12,11 @@ public class NotEqualOp extends ComparisonOp {
             if((aType instanceof PointerType) || (bType instanceof PointerType))
             {
                 if((aType.isNullPointer() && bType.isPointer()) || (aType.isPointer() && bType.isNullPointer()))
-                    return new ExprSTO(a.getName() + " != " + b.getName(), new BoolType("bool", 4));
+                    return new ExprSTO("(" + a.getName() + " != " + b.getName() + ")", new BoolType("bool", 4));
                 if(!(aType.isAssignableTo(bType)))
                     return new ErrorSTO(Formatter.toString(ErrorMsg.error17_Expr, "!=", aType.getName(), bType.getName()));
                 else
-                    return new ExprSTO(a.getName() + " != " + b.getName(), new BoolType("bool", 4));
+                    return new ExprSTO("(" + a.getName() + " != " + b.getName() + ")", new BoolType("bool", 4));
             }
             else
                 return new ErrorSTO(Formatter.toString(ErrorMsg.error1b_Expr, aType.getName(), "!=", bType.getName()));
@@ -33,21 +33,21 @@ public class NotEqualOp extends ComparisonOp {
             if((aType instanceof NumericType) && (bType instanceof NumericType))
             {
                 if(a.isConst() && b.isConst()) {
-                    ConstSTO sto = new ConstSTO(a.getName() + " != " + b.getName(), new BoolType("bool", 4), ((ConstSTO) a).getFloatValue() != ((ConstSTO) b).getFloatValue());
+                    ConstSTO sto = new ConstSTO("(" + a.getName() + " != " + b.getName() + ")", new BoolType("bool", 4), ((ConstSTO) a).getFloatValue() != ((ConstSTO) b).getFloatValue());
                     sto.setIsAddressable(false);
                     return sto;
                 }
                 else
-                    return new ExprSTO(a.getName() + " != " + b.getName(), new BoolType("bool", 4));
+                    return new ExprSTO("(" + a.getName() + " != " + b.getName() + ")", new BoolType("bool", 4));
             }
             else
             {
                 if(a.isConst() && b.isConst()) {
-                    ConstSTO sto = new ConstSTO(a.getName() + " != " + b.getName(), new BoolType("bool", 4), ((ConstSTO) a).getBoolValue() != ((ConstSTO) b).getBoolValue());
+                    ConstSTO sto = new ConstSTO("(" + a.getName() + " != " + b.getName() + ")", new BoolType("bool", 4), ((ConstSTO) a).getBoolValue() != ((ConstSTO) b).getBoolValue());
                     sto.setIsAddressable(false);
                     return sto;
                 }else
-                    return new ExprSTO(a.getName() + " != " + b.getName(), new BoolType("bool", 4));
+                    return new ExprSTO("(" + a.getName() + " != " + b.getName() + ")", new BoolType("bool", 4));
             }
         }
     }

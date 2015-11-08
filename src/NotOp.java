@@ -13,11 +13,11 @@ public class NotOp extends UnaryOp {
         }
         else {
             if(a.isConst()) {
-                ConstSTO sto = new ConstSTO("!" + a.getName(), new BoolType("bool", 4), !((ConstSTO) a).getBoolValue());
+                ConstSTO sto = new ConstSTO("(!" + a.getName() + ")", new BoolType("bool", 4), !((ConstSTO) a).getBoolValue());
                 sto.setIsAddressable(false);
                 return sto;
             }else
-                return new ExprSTO("!" + a.getName(), new BoolType("bool", 4));
+                return new ExprSTO("(!" + a.getName() + ")", new BoolType("bool", 4));
         }
     }
 
