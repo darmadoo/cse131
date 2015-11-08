@@ -42,6 +42,8 @@ class MyParser extends parser
 
 	private boolean isStaticFlag = false;
 
+	private int offset = 0;
+
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
@@ -298,6 +300,13 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	void DoVarDecl(String id, Type t, STO expr, Vector<STO> arguments, String rtType)
 	{
+		boolean global = true;
+		FuncSTO fun = m_symtab.getFunc();
+		if(fun != null)
+		{
+			global = false;
+		}
+
 		if (m_symtab.accessLocal(id) != null)
 		{
 			m_nNumErrors++;
@@ -373,27 +382,91 @@ class MyParser extends parser
 			if (expr.getType().isInt()) {
 				VarSTO sto = new VarSTO(id, t, ((ConstSTO) expr).getIntValue());
 				// Check I.1
-				m_writer.writeGlobalInit(expr, id, t, isStaticFlag);
+				if(global) {
+					sto.setBase("%g0");
+					sto.setOffset(id);
+					m_writer.writeGlobalInit(expr, id, t, isStaticFlag);
+				}
+				else
+				{
+					sto.setBase("%fp");
+					offset -= t.getSize();
+					sto.setOffset(Integer.toString(offset));
+					m_writer.writeLocalInitWithConst(sto, expr, fun, isStaticFlag);
+
+				}
 
 				m_symtab.insert(sto);
 			} else if (expr.getType().isFloat()) {
 				VarSTO sto = new VarSTO(id, t, ((ConstSTO) expr).getFloatValue());
 				// Check I.1
-				m_writer.writeGlobalInit(expr, id, t, isStaticFlag);
+
+				if(global) {
+					sto.setBase("%g0");
+					sto.setOffset(id);
+					m_writer.writeGlobalInit(expr, id, t, isStaticFlag);
+				}
+				else
+				{
+					sto.setBase("%fp");
+					offset -= t.getSize();
+					sto.setOffset(Integer.toString(offset));
+					m_writer.writeLocalInitWithConst(sto, expr, fun, isStaticFlag);
+				}
 
 				m_symtab.insert(sto);
 			} else {
 				VarSTO sto = new VarSTO(id, t, ((ConstSTO) expr).getBoolValue());
 				// Check I.1
-				m_writer.writeGlobalInit(expr, id, t, isStaticFlag);
+				if(global) {
+					sto.setBase("%g0");
+					sto.setOffset(id);
+					m_writer.writeGlobalInit(expr, id, t, isStaticFlag);
+				}
+				else
+				{
+					sto.setBase("%fp");
+					offset -= t.getSize();
+					sto.setOffset(Integer.toString(offset));
+					m_writer.writeLocalInitWithConst(sto, expr, fun, isStaticFlag);
+				}
 
 				m_symtab.insert(sto);
 			}
 		}
+		else if(expr != null && expr.isVar())
+		{
+			VarSTO sto = new VarSTO(id, t);
+
+			if(global) {
+				sto.setBase("%g0");
+				sto.setOffset(id);
+				// call global writer here
+			}
+			else
+			{
+				sto.setBase("%fp");
+				offset -= t.getSize();
+				sto.setOffset(Integer.toString(offset));
+			}
+
+			m_symtab.insert(sto);
+
+		}
 		else{
 			VarSTO sto = new VarSTO(id, t);
 
-			m_writer.writeGlobalNonInit(id, isStaticFlag);
+			if(global) {
+				sto.setBase("%g0");
+				sto.setOffset(id);
+				m_writer.writeGlobalNonInit(id, isStaticFlag);
+			}
+			else
+			{
+				sto.setBase("%fp");
+				offset -= t.getSize();
+				sto.setOffset(Integer.toString(offset));
+			}
 
 			if(expr instanceof VarSTO){
 				// Call writer to int
@@ -716,6 +789,9 @@ class MyParser extends parser
 			}
 		}
 
+		//end of function, reset the local variables offset;
+
+		offset = 0;
 		m_symtab.closeScope();
 
 		// Check 6.3

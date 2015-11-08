@@ -72,33 +72,32 @@ public class AssemblyGenerator {
     void writeGlobalNonInit(String id, boolean flag){
         increaseIndent();
 
-        writeAssembly(AssemlyString.SECTION_BSS);
-        writeAssembly(AssemlyString.ALIGN, "4");
+        section(AssemlyString.BSS);
+        align("4");
 
         if(!flag){
-            writeAssembly(AssemlyString.GLOBAL, id);
+            global(id);
         }
 
         decreaseIndent();
         writeAssembly(AssemlyString.VAR_NAME, id);
         increaseIndent();
         writeAssembly(AssemlyString.SKIP, "4");
-        writeAssembly(AssemlyString.nextLine);
-        writeAssembly(AssemlyString.nextLine);
-        writeAssembly(AssemlyString.SECTION_TEXT);
-        writeAssembly(AssemlyString.ALIGN, "4");
-        writeAssembly(AssemlyString.nextLine);
-
+        next();
+        next();
+        section(AssemlyString.TEXT);
+        align("4");
+        next();
         decreaseIndent();
     }
 
     void writeGlobalInit(STO expr, String id, Type t, boolean flag){
         increaseIndent();
 
-        writeAssembly(AssemlyString.SECTION_DATA);
-        writeAssembly(AssemlyString.ALIGN, "4");
+        section(AssemlyString.DATA);
+        align("4");
         if(!flag){
-            writeAssembly(AssemlyString.GLOBAL, id);
+            global(id);
         }
         decreaseIndent();
         writeAssembly(AssemlyString.VAR_NAME, id);
@@ -114,73 +113,130 @@ public class AssemblyGenerator {
             writeAssembly(AssemlyString.WORD, String.valueOf(((ConstSTO) expr).getValue()));
         }
 
-        writeAssembly(AssemlyString.nextLine);
-        writeAssembly(AssemlyString.SECTION_TEXT);
-        writeAssembly(AssemlyString.ALIGN, "4");
-        writeAssembly(AssemlyString.nextLine);
+        next();
+        section(AssemlyString.TEXT);
+        align("4");
+        next();
 
         decreaseIndent();
     }
 
-    void retRestore(){
-        writeAssembly(AssemlyString.NOP);
-        writeAssembly(AssemlyString.RET);
+    //----------------------------------------------------------------
+    // HELPER FUNCTIONS
+    //----------------------------------------------------------------
+    void next(){
         writeAssembly(AssemlyString.nextLine);
     }
 
+    void section(String sectionType){
+        writeAssembly(AssemlyString.SECTION + sectionType);
+    }
+
+    void align(String num){
+        writeAssembly(AssemlyString.ALIGN, num);
+    }
+
+    void global(String id){
+        writeAssembly(AssemlyString.GLOBAL, id);
+    }
+
+    void retRestore(){
+        nop();
+        writeAssembly(AssemlyString.RET);
+        writeAssembly(AssemlyString.RESTORE);
+        next();
+    }
+
+    void asciz(String str){
+        writeAssembly(AssemlyString.ASCIZ, str);
+    }
+
+    void save(String p1, String p2, String p3){
+        writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.SAVE, p1, p2, p3);
+    }
+
+    void set(String p1, String p2){
+        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + SEPARATOR, p1, p2);
+    }
+
+    void cmp(String p1, String p2){
+        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.CMP, p1, p2);
+    }
+
+    void add(String p1, String p2, String p3){
+        writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD, p1, p2, p3);
+    }
+
+    void nop(){
+        writeAssembly(AssemlyString.NOP);
+    }
+
+    void call(String func){
+        writeAssembly(AssemlyString.CALL, func, AssemlyString.nextLine);
+    }
+
+    // TODO
+    void be(String branch){
+        writeAssembly(AssemlyString.BE, branch);
+    }
+
+    //----------------------------------------------------------------
+    // END OF HELPER FUNCTIONS
+    //----------------------------------------------------------------
+
     void writeRodata(){
         increaseIndent();
-        writeAssembly(AssemlyString.SECTION_RODATA);
-        writeAssembly(AssemlyString.ALIGN, "4");
+        section(AssemlyString.RODATA);
+        align("4");
         decreaseIndent();
 
         writeAssembly(AssemlyString.FUNCTIONCALL, AssemlyString.INTFMT);
         increaseIndent();
-        writeAssembly(AssemlyString.ASCIZ, "\"%d\"");
+        asciz("\"%d\"");
         decreaseIndent();
 
         writeAssembly(AssemlyString.FUNCTIONCALL, AssemlyString.STRFMT);
         increaseIndent();
-        writeAssembly(AssemlyString.ASCIZ, "\"%s\"");
+        asciz("\"%s\"");
         decreaseIndent();
 
         writeAssembly(AssemlyString.FUNCTIONCALL, AssemlyString.STRTF);
         increaseIndent();
-        writeAssembly(AssemlyString.ASCIZ, "\"false\\0\\0\\0true\"");
+        asciz("\"false\\0\\0\\0true\"");
         decreaseIndent();
 
         writeAssembly(AssemlyString.FUNCTIONCALL, AssemlyString.STRENDL);
         increaseIndent();
-        writeAssembly(AssemlyString.ASCIZ, "\"\\n\"");
+        asciz("\"\\n\"");
         decreaseIndent();
 
         writeAssembly(AssemlyString.FUNCTIONCALL, AssemlyString.STRARRBOUND);
         increaseIndent();
-        writeAssembly(AssemlyString.ASCIZ, "\"Index value of %d is outside legal range [0,%d).\\n\"");
+        asciz("\"Index value of %d is outside legal range [0,%d).\\n\"");
         decreaseIndent();
 
         writeAssembly(AssemlyString.FUNCTIONCALL, AssemlyString.STRNULLPTR);
         increaseIndent();
-        writeAssembly(AssemlyString.ASCIZ, "\"Attempt to dereference NULL pointer.\\n\"");
-        writeAssembly(AssemlyString.nextLine);
-        writeAssembly(AssemlyString.SECTION_TEXT);
-        writeAssembly(AssemlyString.ALIGN, "4");
+        asciz("\"Attempt to dereference NULL pointer.\\n\"");
+        next();
+        section(AssemlyString.TEXT);
+        align("4");
         decreaseIndent();
 
         writeAssembly(AssemlyString.FUNCTIONCALL, AssemlyString.PRINTBOOL);
         increaseIndent();
-        writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.SAVE, "%sp", "-96", "%sp");
-        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET, AssemlyString.STRTF, "%o0");
-        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.CMP, "%g0", "%i0");
+        save("%sp", "-96", "%sp");
+        set(AssemlyString.STRTF, "%o0");
+        cmp("%g0", "%i0");
         // TODO PROBLEM!!
         writeAssembly(AssemlyString.BE, AssemlyString.FUNCTIONCALL, AssemlyString.PRINTBOOL2);
-        writeAssembly(AssemlyString.NOP);
-        writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD, "%o0", "8", "%o0");
+        nop();
+        add("%o0", "8", "%o0");
         decreaseIndent();
 
         writeAssembly(AssemlyString.FUNCTIONCALL, AssemlyString.PRINTBOOL2);
         increaseIndent();
-        writeAssembly(AssemlyString.CALL, AssemlyString.PRINTF, AssemlyString.nextLine);
+        call(AssemlyString.PRINTF);
         retRestore();
         decreaseIndent();
 
@@ -198,74 +254,121 @@ public class AssemblyGenerator {
         writeAssembly(AssemlyString.COUT_COMMENT, "endl");
         String temp = AssemlyString.SET + "\t\t\t" + AssemlyString.PREFIX + AssemlyString.STRENDL + ", %s\n";
         writeAssembly(temp, "%o0");
-        writeAssembly(AssemlyString.CALL, AssemlyString.PRINTF, AssemlyString.nextLine);
-        writeAssembly(AssemlyString.NOP);
-        writeAssembly(AssemlyString.nextLine);
+        call(AssemlyString.PRINTF);
+        nop();
+        next();
     }
 
     public void writeStringCout(String input)
     {
-        writeAssembly(AssemlyString.SECTION_RODATA);
-        writeAssembly(AssemlyString.ALIGN, "4");
+        section(AssemlyString.RODATA);
+        align("4");
         decreaseIndent();
         writeAssembly(AssemlyString.PREFIX + AssemlyString.STR + "." +  ++strCount + ": \n");
         increaseIndent();
-        writeAssembly(AssemlyString.ASCIZ, "\"" + input + "\"");
-        writeAssembly(AssemlyString.nextLine);
+        asciz("\"" + input + "\"");
+        next();
 
-        writeAssembly(AssemlyString.SECTION_TEXT);
-        writeAssembly(AssemlyString.ALIGN, "4");
-        writeAssembly(AssemlyString.nextLine);
+        section(AssemlyString.TEXT);
+        align("4");
+        next();
         writeAssembly(AssemlyString.COUT_COMMENT, "\"" + input + "\"");
 
-        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", AssemlyString.PREFIX + AssemlyString.STRFMT, "%o0");
-        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t",
-                      AssemlyString.PREFIX + AssemlyString.STR + "." + strCount, "%o1");
-        writeAssembly(AssemlyString.CALL, AssemlyString.PRINTF, AssemlyString.nextLine);
-        writeAssembly(AssemlyString.NOP);
-        writeAssembly(AssemlyString.nextLine);
+        set(AssemlyString.PREFIX + AssemlyString.STRFMT, "%o0");
+        set(AssemlyString.PREFIX + AssemlyString.STR + "." + strCount, "%o1");
+        call(AssemlyString.PRINTF);
+        nop();
+        next();
     }
 
     public void writeIntLiteralCout(String name, String input)
     {
         writeAssembly(AssemlyString.COUT_COMMENT, name);
-        writeAssembly(AssemlyString.nextLine);
-        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", input, "%o1");
-        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", AssemlyString.PREFIX + AssemlyString.INTFMT, "%o0");
-        writeAssembly(AssemlyString.CALL, AssemlyString.PRINTF, AssemlyString.nextLine);
-        writeAssembly(AssemlyString.NOP);
-        writeAssembly(AssemlyString.nextLine);
+        next();
+        set(input, "%o1");
+        set(AssemlyString.PREFIX + AssemlyString.INTFMT, "%o0");
+        call(AssemlyString.PRINTF);
+        nop();
+        next();
     }
 
     public void writeFloatLiteralCout(String name, String input)
     {
         writeAssembly(AssemlyString.COUT_COMMENT, name);
-        writeAssembly(AssemlyString.SECTION_RODATA);
-        writeAssembly(AssemlyString.ALIGN, "4");
+        section(AssemlyString.RODATA);
+        align("4");
         decreaseIndent();
         writeAssembly(AssemlyString.PREFIX + AssemlyString.FLOAT + "." +  ++floatCount + ": \n");
         increaseIndent();
         writeAssembly(AssemlyString.SINGLE, input);
-        writeAssembly(AssemlyString.nextLine);
+        next();
 
-        writeAssembly(AssemlyString.SECTION_TEXT);
-        writeAssembly(AssemlyString.ALIGN, "4");
+        section(AssemlyString.TEXT);
+        align("4");
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + AssemlyString.SEPARATOR,
                 AssemlyString.PREFIX + AssemlyString.FLOAT + "." + floatCount, "%l7");
-        writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD, "%l7", "%f0\n");
-        writeAssembly(AssemlyString.CALL, AssemlyString.PRINTFLOAT, AssemlyString.nextLine);
-        writeAssembly(AssemlyString.NOP);
-        writeAssembly(AssemlyString.nextLine);
+        writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f0");
+        call(AssemlyString.PRINTFLOAT);
+        nop();
+        next();
     }
 
     public void writeBoolLiteralCout(String name, String input)
     {
         writeAssembly(AssemlyString.COUT_COMMENT, name);
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", input, "%o0");
-        writeAssembly(AssemlyString.CALL, AssemlyString.PREFIX + AssemlyString.PRINTBOOL);
-        writeAssembly(AssemlyString.NOP);
-        writeAssembly(AssemlyString.nextLine);
+        call(AssemlyString.PRINTBOOL);
+        nop();
+        next();
     }
 
+    public void writeLocalInitWithConst(STO sto, STO expr, STO x, boolean isStaticFlag)
+    {
+        //comment on the top
+        String value = "";
+        String commentValue = "";
+        if(expr.getType() instanceof IntType){
+            value =  String.valueOf(((ConstSTO) expr).getIntValue());
+            commentValue = value;
+        }
+        else if(expr.getType() instanceof FloatType){
+            value = String.valueOf(((ConstSTO) expr).getFloatValue());
+            commentValue = value;
+        }
+        else if(expr.getType() instanceof BoolType){
+            value =  String.valueOf(((ConstSTO) expr).getValue());
+            if(value.equals("1"))
+                commentValue = "true";
+            else
+                commentValue = "false";
+        }
 
+        writeAssembly(AssemlyString.VAR_DECL_COMMENT, sto.getName(), commentValue);
+        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", sto.getOffset(), "%o1");
+        writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", sto.getBase(), "%o1", "%o1");
+
+        if(sto.getType() instanceof FloatType)
+        {
+            section(AssemlyString.RODATA);
+            align("4");
+            decreaseIndent();
+            writeAssembly(AssemlyString.PREFIX + AssemlyString.FLOAT + "." +  ++floatCount + ": \n");
+            increaseIndent();
+            writeAssembly(AssemlyString.SINGLE, value);
+            next();
+
+            section(AssemlyString.TEXT);
+            align("4");
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + AssemlyString.SEPARATOR,
+                    AssemlyString.PREFIX + AssemlyString.FLOAT + "." + floatCount, "%l7");
+            writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f0");
+            writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "f0", "%o1");
+        }
+        else
+        {
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", value, "%o0");
+            writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
+        }
+        next();
+    }
 }

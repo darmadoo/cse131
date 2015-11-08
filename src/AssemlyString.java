@@ -4,17 +4,17 @@
 public class AssemlyString {
     public static final String SEPARATOR = "\t";
 
-    public static final String SAVE_OP = "save";
     public static final String TWO_PARAM = "%s" + SEPARATOR + SEPARATOR + "%s, %s\n";
     public static final String THREE_PARAM = "%s" + SEPARATOR + SEPARATOR + "%s, %s, %s\n";
 
     public static final String nextLine = "\n";
 
     // Sections
-    public static final String SECTION_BSS = ".section" + SEPARATOR + "\".bss\"\n";
-    public static final String SECTION_DATA = ".section" + SEPARATOR + "\".data\"\n";
-    public static final String SECTION_TEXT = ".section" + SEPARATOR + "\".text\"\n";
-    public static final String SECTION_RODATA = ".section" + SEPARATOR + "\".rodata\"\n";
+    public static final String SECTION = ".section" + SEPARATOR;
+    public static final String BSS = "\".bss\"\n";
+    public static final String DATA = "\".data\"\n";
+    public static final String TEXT = "\".text\"\n";
+    public static final String RODATA = "\".rodata\"\n";
 
     // Align
     public static final String ALIGN = ".align" + SEPARATOR + SEPARATOR +"%s\n";
@@ -67,8 +67,14 @@ public class AssemlyString {
     //////////////////////////// DAISY STUFF ////////////////////////////
     public static final String STR = "str";
     public static final String FLOAT = "float";
-    public static final String COUT_COMMENT = "! cout << %s \n";
+
     public static final String LD = "ld";
+    public static final String ST = "st";
     public static final String PRINTFLOAT = "printFloat";
+
+    public static final String COUT_COMMENT = "! cout << %s \n";
+    public static final String VAR_DECL_COMMENT = "! %s = %s \n";
+
+    public static final String STORE = "%s, [%s]";
 
 }

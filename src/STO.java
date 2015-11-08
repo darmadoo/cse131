@@ -10,6 +10,8 @@ abstract class STO
 	private Type m_type;
 	private boolean m_isAddressable;
 	private boolean m_isModifiable;
+	private String base;
+	private String offset;
 
 	//----------------------------------------------------------------
 	//
@@ -29,6 +31,11 @@ abstract class STO
 		setIsAddressable(false);
 		setIsModifiable(false);
 	}
+
+	public String getBase(){ return base; }
+	public void setBase(String str){ base = str; }
+	public String getOffset() { return offset; }
+	public void setOffset(String str){ offset = str; }
 
 	//----------------------------------------------------------------
 	//
