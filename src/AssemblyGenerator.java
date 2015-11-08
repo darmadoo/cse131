@@ -266,4 +266,6 @@ public class AssemblyGenerator {
         writeAssembly(AssemlyString.NOP);
         writeAssembly(AssemlyString.nextLine);
     }
+
+
 }
