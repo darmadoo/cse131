@@ -369,24 +369,17 @@ public class AssemblyGenerator {
         increaseIndent();
         //comment on the top
         String value = "";
-        String commentValue = "";
         if(expr.getType() instanceof IntType){
             value =  String.valueOf(((ConstSTO) expr).getIntValue());
-            commentValue = value;
         }
         else if(expr.getType() instanceof FloatType){
             value = String.valueOf(((ConstSTO) expr).getFloatValue());
-            commentValue = value;
         }
         else if(expr.getType() instanceof BoolType){
             value =  String.valueOf(((ConstSTO) expr).getValue());
-            if(value.equals("1"))
-                commentValue = "true";
-            else
-                commentValue = "false";
         }
 
-        writeAssembly(AssemlyString.VAR_DECL_COMMENT, sto.getName(), commentValue);
+        writeAssembly(AssemlyString.VAR_DECL_COMMENT, sto.getName(), expr.getName());
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", sto.getOffset(), "%o1");
         writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", sto.getBase(), "%o1", "%o1");
 

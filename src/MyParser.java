@@ -2235,7 +2235,7 @@ class MyParser extends parser
 		}
 
 		// Make an R val constant
-		ConstSTO size = new ConstSTO(sto.getName(), sto.getType().getSize());
+		ConstSTO size = new ConstSTO("sizeof(" + sto.getType().getName() + ")", sto.getType().getSize());
 		size.setIsAddressable(false);
 		size.setIsModifiable(false);
 
@@ -2383,6 +2383,8 @@ class MyParser extends parser
 					}
 				}
 			}
+			else
+				m_writer.writeVarCout(sto);
 		}
 		else
 			m_writer.writeVarCout(sto);
