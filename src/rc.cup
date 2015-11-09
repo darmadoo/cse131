@@ -1083,6 +1083,7 @@ Designator ::=      T_STAR Designator:_1
                     :}
     |               IncDecOp:_1 Designator:_2
                     {:
+                      ((MyParser) parser).isPre(true);
                       if(_1 == "++")
                       {
                         RESULT = ((MyParser) parser).DoUnaryExpr (_2, new IncOp());
@@ -1112,6 +1113,8 @@ Designator2 ::=     Designator2:_1 T_DOT T_ID:_3
                     :}
     |               Designator2:_1 IncDecOp:_2
                     {:
+                        ((MyParser) parser).isPre(false);
+
                         if(_2 == "++")
                         {
                           RESULT = ((MyParser) parser).DoUnaryExpr (_1, new IncOp());

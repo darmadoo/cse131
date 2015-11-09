@@ -79,10 +79,12 @@ public class AssemlyString {
 
     public static final String COUT_COMMENT = "! cout << %s \n";
     public static final String VAR_DECL_COMMENT = "! %s = %s \n";
+    public static final String MATH_COMMENT = "! %s %s %s \n";
 
     public static final String STORE = "%s, [%s]";
     public static final String INIT = ".$.init.%s";
 
+    public static final String SUB = "sub";
 
 
 }

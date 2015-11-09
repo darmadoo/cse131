@@ -41,6 +41,7 @@ class MyParser extends parser
 	private boolean recursiveFunc = false;
 
 	private boolean isStaticFlag = false;
+	private boolean isPre = false;
 
 	private int offset = 0;
 
@@ -474,7 +475,7 @@ class MyParser extends parser
 				m_symtab.insert(sto);
 			}
 		}
-		else if(expr != null && expr.isVar())
+		else if(expr != null && ( expr.isVar() || expr.isExpr()))
 		{
 			VarSTO sto = new VarSTO(id, t);
 
@@ -956,6 +957,9 @@ class MyParser extends parser
 		m_symtab.insert(sto);
 
 		m_symtab.openScope();
+
+		offset = 0;
+
 		// Check 6.3
 		sto.setLevel(m_symtab.getLevel());
 		m_symtab.setFunc(sto);
@@ -979,6 +983,8 @@ class MyParser extends parser
 		m_symtab.insert(sto);
 
 		m_symtab.openScope();
+
+		offset = 0;
 		// Check 6.3
 		sto.setLevel(m_symtab.getLevel());
 		m_symtab.setFunc(sto);
@@ -1015,6 +1021,9 @@ class MyParser extends parser
 		m_symtab.insert(sto);
 
 		m_symtab.openScope();
+
+		offset = 0;
+
 		// Check 6.3
 		sto.setLevel(m_symtab.getLevel());
 
@@ -1230,7 +1239,6 @@ class MyParser extends parser
 	// Check 1
 	//----------------------------------------------------------------
 	STO DoBinaryExpr(STO a, BinaryOp o, STO b) {
-
 		if(a instanceof ErrorSTO){
 			return a;
 		}
@@ -1245,6 +1253,18 @@ class MyParser extends parser
 			m_nNumErrors++;
 			m_errors.print(result.getName());
 		}
+
+		// check I.4
+		result.setBase("%fp");
+		offset -= result.getType().getSize();
+		result.setOffset(Integer.toString(offset));
+
+		// Integer arithmetic expression
+		if(a.getType().isInt() && b.getType().isInt())
+		{
+			m_writer.writeIntegerBinaryArithmeticExpression(a, o, b, result);
+		}
+
 			//do stuff...
 		return result ;
 	}
@@ -1262,6 +1282,15 @@ class MyParser extends parser
 			// handle propagating errors
 			m_nNumErrors++;
 			m_errors.print(result.getName());
+		}
+
+		result.setBase("%fp");
+		offset -= result.getType().getSize();
+		result.setOffset(Integer.toString(offset));
+
+		if(a.getType().isInt())
+		{
+			m_writer.writeIntegerUnaryArithmeticExpression(a, o, isPre, result);
 		}
 		//do stuff...
 		return result ;
@@ -2498,6 +2527,10 @@ class MyParser extends parser
 
 	void isStatic(boolean flag){
 		isStaticFlag = flag;
+	}
+
+	void isPre(boolean flag){
+		isPre = flag;
 	}
 
 
