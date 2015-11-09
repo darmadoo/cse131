@@ -57,9 +57,12 @@ public class AssemlyString {
     public static final String SAVE = "save";
     public static final String CMP = "cmp";
     public static final String BE = "be" + SEPARATOR + SEPARATOR + "%s";
+    public static final String BL = "bl" + SEPARATOR + SEPARATOR + "%s";
+    public static final String BGE = "bge" + SEPARATOR + SEPARATOR + "%s";
     public static final String NOP = "nop\n";
     public static final String CALL = "call" + SEPARATOR + SEPARATOR + "%s\n";
     public static final String PRINTF = "printf";
+    public static final String EXIT = "exit";
 
     public static final String ADD = "add";
     public static final String LOAD = "[%s], %s";

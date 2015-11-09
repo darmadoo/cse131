@@ -141,10 +141,9 @@ public class AssemblyGenerator {
     }
 
     void retRestore(){
-        nop();
+       // nop();
         writeAssembly(AssemlyString.RET);
         writeAssembly(AssemlyString.RESTORE);
-        next();
     }
 
     void asciz(String str){
@@ -178,6 +177,10 @@ public class AssemblyGenerator {
     // TODO
     void be(String branch){
         writeAssembly(AssemlyString.BE, branch);
+    }
+
+    void mov(String p1, String p2){
+        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.MOV, p1, p2);
     }
 
     //----------------------------------------------------------------
@@ -237,9 +240,55 @@ public class AssemblyGenerator {
         writeAssembly(AssemlyString.FUNCTIONCALL, AssemlyString.PRINTBOOL2);
         increaseIndent();
         call(AssemlyString.PRINTF);
+        nop();
+        retRestore();
+        next();
+        decreaseIndent();
+
+        writeAssembly(AssemlyString.FUNCTIONCALL, AssemlyString.ARRCHECK);
+        increaseIndent();
+        save("%sp", "-96", "%sp");
+        cmp("%i0", "%g0");
+        writeAssembly(AssemlyString.BL, AssemlyString.PREFIX + AssemlyString.ARRCHECK2 + "\n");
+        nop();
+        cmp("%i0", "%i1");
+        writeAssembly(AssemlyString.BGE, AssemlyString.PREFIX + AssemlyString.ARRCHECK2 + "\n");
+        nop();
         retRestore();
         decreaseIndent();
 
+        writeAssembly(AssemlyString.FUNCTIONCALL, AssemlyString.ARRCHECK2);
+        increaseIndent();
+        set(AssemlyString.PREFIX + AssemlyString.STRARRBOUND, "%o0");
+        mov("%i0", "%o1");
+        call(AssemlyString.PRINTF);
+        mov("i1", "%o2");
+        call(AssemlyString.EXIT);
+        mov("1", "%o0");
+        retRestore();
+        next();
+        decreaseIndent();
+
+        writeAssembly(AssemlyString.FUNCTIONCALL, AssemlyString.PTRCHECK);
+        increaseIndent();
+        save("%sp", "-96", "%sp");
+        cmp("%i0", "%g0");
+        writeAssembly(AssemlyString.BNE + SEPARATOR + SEPARATOR + AssemlyString.PREFIX + AssemlyString.PTRCHECK2 + "\n");
+        nop();
+        set(AssemlyString.PREFIX + AssemlyString.STRNULLPTR, "%o0");
+        call(AssemlyString.PRINTF);
+        nop();
+        call(AssemlyString.EXIT);
+        mov("1", "%o0");
+        decreaseIndent();
+
+        writeAssembly(AssemlyString.FUNCTIONCALL, AssemlyString.PTRCHECK2);
+        increaseIndent();
+        retRestore();
+        decreaseIndent();
+
+        next();
+        next();
     }
 
 
