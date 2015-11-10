@@ -44,6 +44,7 @@ class MyParser extends parser
 	private boolean isPre = false;
 
 	private int offset = 0;
+	private int cmpCount = 0;
 
 	//----------------------------------------------------------------
 	//
@@ -483,6 +484,11 @@ class MyParser extends parser
 				sto.setBase("%g0");
 				sto.setOffset(id);
 				// call global writer here
+				m_writer.writeGlobalNonInit(id, isStaticFlag);
+
+				if(!isStaticFlag){
+					m_writer.initGlobal(id, expr);
+				}
 			}
 			else
 			{
@@ -597,6 +603,7 @@ class MyParser extends parser
 					sto.setBase("%g0");
 					sto.setOffset(id);
 					// call global writer here
+					m_writer.writeGlobalInit(expr, id, expr.getType(), isStaticFlag);
 				}
 				else {
 					if (isStaticFlag) {
@@ -619,6 +626,11 @@ class MyParser extends parser
 					sto.setBase("%g0");
 					sto.setOffset(id);
 					// call global writer here
+					m_writer.writeGlobalNonInit(id, isStaticFlag);
+
+					if(!isStaticFlag){
+						m_writer.initGlobal(id, expr);
+					}
 				}
 				else
 				{
@@ -1030,10 +1042,14 @@ class MyParser extends parser
 		m_symtab.setFunc(sto);
 	}
 
+	void writeFuncDecl(String id, Vector<STO> param){
+		m_writer.writeFuncDecl(id, param);
+	}
+
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
-	void DoFuncDecl_2()
+	void DoFuncDecl_2(String id, Vector<STO> params)
 	{
 		FuncSTO temp = m_symtab.getFunc();
 		String hashKey = generateUniqueKey(temp, temp.getParams());
@@ -1076,8 +1092,10 @@ class MyParser extends parser
 			}
 		}
 
-		//end of function, reset the local variables offset;
+		//TODO end of function, reset the local variables offset;
+		m_writer.writeFuncDecl2(id, params, offset);
 
+		//cmpCount = 0;
 		offset = 0;
 		m_symtab.closeScope();
 
@@ -1221,8 +1239,7 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
-	STO DoDesignator4_ID(String strID)
-	{
+	STO DoDesignator4_ID(String strID) {
 		STO sto;
 
 		if ((sto = m_symtab.accessGlobal(strID)) == null)
@@ -1262,7 +1279,8 @@ class MyParser extends parser
 		// Integer arithmetic expression
 		if(a.getType().isInt() && b.getType().isInt())
 		{
-			m_writer.writeIntegerBinaryArithmeticExpression(a, o, b, result);
+			cmpCount++;
+			m_writer.writeIntegerBinaryArithmeticExpression(a, o, b, result, cmpCount);
 		}
 
 			//do stuff...
@@ -1288,8 +1306,7 @@ class MyParser extends parser
 		offset -= result.getType().getSize();
 		result.setOffset(Integer.toString(offset));
 
-		if(a.getType().isInt())
-		{
+		if(a.getType().isInt()) {
 			m_writer.writeIntegerUnaryArithmeticExpression(a, o, isPre, result);
 		}
 		//do stuff...
@@ -1301,7 +1318,7 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	STO DoBoolCheck(STO expr){
 
-		if(expr instanceof ErrorSTO || expr.getType().isError()){
+		if(expr instanceof ErrorSTO || expr.getType().isError()) {
 			return expr;
 		}
 		Type varType = expr.getType();
@@ -1311,8 +1328,14 @@ class MyParser extends parser
 			m_errors.print(Formatter.toString(ErrorMsg.error4_Test, varType.getName()));
 		}
 
+		m_writer.writeEndofIf(expr, cmpCount);
 		return expr;
 	}
+
+	public void elseBlock(){
+		m_writer.writeAssembly(AssemlyString.PREFIX + "endif." + cmpCount + ":\n\n");
+	}
+
 
 	//----------------------------------------------------------------
 	// New helper function to generate the string for the hash map
@@ -1549,6 +1572,7 @@ class MyParser extends parser
 			return new ErrorSTO("Return type not void");
 		}
 
+		m_writer.writeReturn(null);
 		return temp;
 	}
 
@@ -1609,6 +1633,7 @@ class MyParser extends parser
 			}
 		}
 
+		m_writer.writeReturn(a);
 		return a;
 	}
 
@@ -2146,7 +2171,7 @@ class MyParser extends parser
 		}
 
 		// Check 15.1
-		if(sto.getType() instanceof NullPointerType){
+		if(sto.getType() instanceof NullPointerType) {
 			m_nNumErrors++;
 			m_errors.print(ErrorMsg.error15_Nullptr);
 			return new ErrorSTO(sto.getName());

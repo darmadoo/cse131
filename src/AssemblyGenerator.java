@@ -1,6 +1,8 @@
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Date;
+import java.util.Vector;
 
 public class AssemblyGenerator {
     private int indent_level = 0;
@@ -19,6 +21,34 @@ public class AssemblyGenerator {
                                               " */\n\n";
 
     private static final String SEPARATOR = "\t";
+
+    // Stack pointer
+    private static String sp = "%sp";
+    private static String fp = "%fp";
+
+    // Global pointers
+    private static String g0 = "%g0";
+    private static String g1 = "%g1";
+
+    // Local Pointers
+    private static String l0 = "%l0";
+    private static String l1 = "%l1";
+    private static String l2 = "%l2";
+    private static String l3 = "%l3";
+    private static String l4 = "%l4";
+    private static String l5 = "%l5";
+    private static String l6 = "%l6";
+    private static String l7 = "%l7";
+
+    // Out pointers
+    private static String o0 = "%o0";
+    private static String o1 = "%o1";
+    private static String o2 = "%o2";
+
+    private static String i0 = "%i0";
+    private static String i1 = "%i1";
+    private static String i2 = "%i2";
+
 
     private static final StringBuilder strBuilder = new StringBuilder();
 
@@ -69,7 +99,7 @@ public class AssemblyGenerator {
         strBuilder.append(String.format(template, (Object[])params));
     }
 
-    void writeGlobalNonInit(String id, boolean flag){
+    public void writeGlobalNonInit(String id, boolean flag){
         increaseIndent();
 
         section(AssemlyString.BSS);
@@ -91,7 +121,7 @@ public class AssemblyGenerator {
         decreaseIndent();
     }
 
-    void writeGlobalInit(STO expr, String id, Type t, boolean flag){
+    public void writeGlobalInit(STO expr, String id, Type t, boolean flag){
         increaseIndent();
 
         section(AssemlyString.DATA);
@@ -124,41 +154,41 @@ public class AssemblyGenerator {
     //----------------------------------------------------------------
     // HELPER FUNCTIONS
     //----------------------------------------------------------------
-    void next(){
+    private void next(){
         writeAssembly(AssemlyString.nextLine);
     }
 
-    void section(String sectionType){
+    private void section(String sectionType){
         writeAssembly(AssemlyString.SECTION + sectionType);
     }
 
-    void align(String num){
+    private void align(String num){
         writeAssembly(AssemlyString.ALIGN, num);
     }
 
-    void global(String id){
+    private void global(String id){
         writeAssembly(AssemlyString.GLOBAL, id);
     }
 
-    void retRestore(){
+    private void retRestore(){
        // nop();
         writeAssembly(AssemlyString.RET);
         writeAssembly(AssemlyString.RESTORE);
     }
 
-    void asciz(String str){
+    private void asciz(String str){
         writeAssembly(AssemlyString.ASCIZ, str);
     }
 
-    void save(String p1, String p2, String p3){
+    private void save(String p1, String p2, String p3){
         writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.SAVE, p1, p2, p3);
     }
 
-    void set(String p1, String p2){
+    private void set(String p1, String p2){
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + SEPARATOR, p1, p2);
     }
 
-    void cmp(String p1, String p2){
+    private void cmp(String p1, String p2){
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.CMP, p1, p2);
     }
 
@@ -166,28 +196,44 @@ public class AssemblyGenerator {
         writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD, p1, p2, p3);
     }
 
-    void nop(){
+    private void nop(){
         writeAssembly(AssemlyString.NOP);
     }
 
-    void call(String func){
+    private void call(String func){
         writeAssembly(AssemlyString.CALL, func, AssemlyString.nextLine);
     }
 
     // TODO
-    void be(String branch){
+    private void be(String branch){
         writeAssembly(AssemlyString.BE, branch);
     }
 
-    void mov(String p1, String p2){
+    private void mov(String p1, String p2){
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.MOV, p1, p2);
+    }
+
+    private void ld(String p1, String p2){
+        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.LD, "[" + p1 + "]", p2);
+    }
+
+    private void st(String p1, String p2){
+        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.ST, p1 ,"[" + p2 + "]");
+    }
+
+    private void assign(String left, String right){
+        writeAssembly(AssemlyString.ASSIGN, left, right);
+    }
+
+    private void inc(String str){
+        writeAssembly(AssemlyString.INC, str);
     }
 
     //----------------------------------------------------------------
     // END OF HELPER FUNCTIONS
     //----------------------------------------------------------------
 
-    void writeRodata(){
+    public void writeRodata(){
         increaseIndent();
         section(AssemlyString.RODATA);
         align("4");
@@ -288,9 +334,112 @@ public class AssemblyGenerator {
         decreaseIndent();
 
         next();
+    }
+
+    public void initGlobal(String id, STO expr){
+        writeAssembly(AssemlyString.INIT_VAR, id);
+        increaseIndent();
+        // TODO PASS IN FUNCTIONS INTO CALL
+        set("SAVE." + ".$.init." + id , g1);
+        save(sp, g1, sp);
+
+        increaseIndent();
+        next();
+        set(id, o1);
+        add(g0, o1, o1);
+        set(expr.getName(), l7);
+        add(g0, l7, l7);
+        ld(l7, o0);
+        st(o0, o1);
+        next();
+        decreaseIndent();
+
+        //TODO PASS FUNCTIONS
+        call(".$.init." + id + ".fini");
+        nop();
+        retRestore();
+        // TODO USE MEM_ALLOCATE
+        assign("SAVE." + ".$.init." + id, "-(92 + 0) & -8");
+        next();
+        decreaseIndent();
+
+        initGlobalDone(id);
+    }
+
+    private void initGlobalDone(String id){
+        writeAssembly(AssemlyString.INIT_VAR_FINI, id);
+        increaseIndent();
+        save(sp, "-96", sp);
+        retRestore();
+        next();
+        section(AssemlyString.INIT_SECTION);
+        align("4");
+        // TO DO FUNCTION
+        call(".$.init." + id);
+        nop();
+        next();
+        section(AssemlyString.TEXT);
+        align("4");
+        next();
+        decreaseIndent();
+    }
+
+    // Start of function
+    private String temp;
+    public void writeFuncDecl(String id, Vector<STO> params){
+        temp = id;
+        if(params == null){
+            temp += ".void";
+        }
+        else{
+            for(int i = 0; i < params.size(); i++){
+                temp += "." + params.get(i).getType().getName();
+            }
+        }
+
+        increaseIndent();
+        writeAssembly(AssemlyString.GLOBAL, id);
+        decreaseIndent();
+
+        writeAssembly(id + ":");
+        next();
+        writeAssembly(temp + ":");
+        next();
+        increaseIndent();
+        set("SAVE." + temp, g1);
+        save(sp, g1, sp);
         next();
     }
 
+    public void writeFuncDecl2(String id, Vector<STO> params, int offset){
+        temp = id;
+        if(params == null){
+            temp += ".void";
+        }
+        else{
+            for(int i = 0; i < params.size(); i++){
+                temp += "." + params.get(i).getType().getName();
+            }
+        }
+
+        call(temp + ".fini");
+        nop();
+        retRestore();
+        assign("SAVE." + temp, "-(92 + " + (-offset) + ") & -8");
+        next();
+
+        decreaseIndent();
+        writeFuncDecl2_Done(temp);
+
+    }
+
+    public void writeFuncDecl2_Done(String str){
+        writeAssembly(str + ".fini:");
+        next();
+        increaseIndent();
+        save(sp, "-96" , sp);
+        retRestore();
+    }
 
     //////////////////////////// DAISY STUFF ////////////////////////////
     //----------------------------------------------------------------
@@ -536,7 +685,7 @@ public class AssemblyGenerator {
     //----------------------------------------------------------------
     // Phase 1 Check 4
     //----------------------------------------------------------------
-    public void writeIntegerBinaryArithmeticExpression(STO a, BinaryOp o, STO b, STO result)
+    public void writeIntegerBinaryArithmeticExpression(STO a, BinaryOp o, STO b, STO result, int count)
     {
         String operand = "";
         if(o instanceof AddOp)
@@ -555,6 +704,8 @@ public class AssemblyGenerator {
             operand = "|";
         else if (o instanceof CaretOp)
             operand = "^";
+        else if(o instanceof GreaterThanOp)
+            operand = ">";
 
         increaseIndent();
         writeAssembly(AssemlyString.MATH_COMMENT, a.getName(), operand, b.getName());
@@ -594,11 +745,26 @@ public class AssemblyGenerator {
             writeAssembly(AssemlyString.THREE_PARAM, "or\t", "%o0", "%o1", "%o0");
         else if (o instanceof CaretOp)
             writeAssembly(AssemlyString.THREE_PARAM, "xor\t", "%o0", "%o1", "%o0");
+        else if(o instanceof GreaterThanOp){
+            cmp(o0, o1);
+            writeAssembly(AssemlyString.BLE, AssemlyString.PREFIX + "cmp." + count);
+            next();
+            mov(g0, o0);
+            inc(o0);
+            decreaseIndent();
+            writeAssembly(AssemlyString.PREFIX + "cmp." + count + ":");
+            next();
+            increaseIndent();
+        }
 
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", result.getOffset(), "%o1");
         writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", result.getBase(), "%o1", "%o1");
         writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
         next();
+
+        if(o instanceof GreaterThanOp){
+            writeIfCheck(result, count);
+        }
 
         decreaseIndent();
     }
@@ -669,6 +835,47 @@ public class AssemblyGenerator {
         next();
 
         decreaseIndent();
+    }
+
+    public void writeIfCheck(STO expr, int count){
+        set(expr.getOffset(), l7);
+        add(fp, l7, l7);
+        ld(l7, o0);
+        cmp(o0, g0);
+        writeAssembly(AssemlyString.BE, AssemlyString.PREFIX + "else." + count);
+        next();
+        nop();
+        next();
+        increaseIndent();
+    }
+
+    public void writeEndofIf(STO expr, int count){
+        writeAssembly(AssemlyString.BA, AssemlyString.PREFIX + "else." + count);
+        next();
+        nop();
+
+        decreaseIndent();
+        next();
+        writeAssembly(AssemlyString.PREFIX + "else." + count + ":");
+        next();
+        next();
+    }
+
+    public void writeReturn(STO expr){
+        increaseIndent();
+        if(expr != null){
+            writeAssembly(AssemlyString.RETURN_COMMENT, expr.getName());
+            set(expr.getName(), i0);
+        }
+        else{
+            writeAssembly(AssemlyString.RETURN_NULL_COMMENT);
+        }
+        call(temp + ".fini");
+        nop();
+        retRestore();
+        next();
+        decreaseIndent();
+
     }
 
 }

@@ -15,6 +15,7 @@ public class AssemlyString {
     public static final String DATA = "\".data\"\n";
     public static final String TEXT = "\".text\"\n";
     public static final String RODATA = "\".rodata\"\n";
+    public static final String INIT_SECTION = "\".init\"\n";
 
     // Align
     public static final String ALIGN = ".align" + SEPARATOR + SEPARATOR +"%s\n";
@@ -52,12 +53,20 @@ public class AssemlyString {
     public static final String RESTORE = "restore\n";
 
     public static final String INIT_VAR = ".$.init.%s:\n";
+    public static final String INIT_VAR_FINI = ".$.init.%s.fini:\n";
+
+
+    public static final String ASSIGN = "%s = %s\n";
+
+    public static final String MEM_ALLOCATE = "-(92 + %s) & -8";
 
     public static final String SET = "set";
     public static final String SAVE = "save";
     public static final String CMP = "cmp";
     public static final String BE = "be" + SEPARATOR + SEPARATOR + "%s";
+    public static final String BA = "ba" + SEPARATOR + SEPARATOR + "%s";
     public static final String BL = "bl" + SEPARATOR + SEPARATOR + "%s";
+    public static final String BLE = "ble" + SEPARATOR + SEPARATOR + "%s";
     public static final String BGE = "bge" + SEPARATOR + SEPARATOR + "%s";
     public static final String NOP = "nop\n";
     public static final String CALL = "call" + SEPARATOR + SEPARATOR + "%s\n";
@@ -66,6 +75,7 @@ public class AssemlyString {
 
     public static final String ADD = "add";
     public static final String LOAD = "[%s], %s";
+    public  static final String INC = "inc" + SEPARATOR + SEPARATOR + "%s\n";
 
     //////////////////////////// DAISY STUFF ////////////////////////////
     public static final String STR = "str";
@@ -83,6 +93,8 @@ public class AssemlyString {
     public static final String COUT_COMMENT = "! cout << %s \n";
     public static final String VAR_DECL_COMMENT = "! %s = %s \n";
     public static final String MATH_COMMENT = "! %s %s %s \n";
+    public static final String RETURN_COMMENT = "! return %s;\n";
+    public static final String RETURN_NULL_COMMENT = "! return;\n";
 
     public static final String STORE = "%s, [%s]";
     public static final String INIT = ".$.init.%s";
