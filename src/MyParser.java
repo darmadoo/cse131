@@ -1328,7 +1328,7 @@ class MyParser extends parser
 			m_errors.print(Formatter.toString(ErrorMsg.error4_Test, varType.getName()));
 		}
 
-		m_writer.writeEndofIf(expr, cmpCount);
+		m_writer.writeEndofIf(cmpCount);
 		return expr;
 	}
 
@@ -1572,7 +1572,7 @@ class MyParser extends parser
 			return new ErrorSTO("Return type not void");
 		}
 
-		m_writer.writeReturn(null);
+		m_writer.writeReturn(null, cmpCount);
 		return temp;
 	}
 
@@ -1633,7 +1633,7 @@ class MyParser extends parser
 			}
 		}
 
-		m_writer.writeReturn(a);
+		m_writer.writeReturn(a, cmpCount);
 		return a;
 	}
 

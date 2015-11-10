@@ -49,6 +49,8 @@ public class AssemblyGenerator {
     private static String i1 = "%i1";
     private static String i2 = "%i2";
 
+    private static String f0 = "%f0";
+
 
     private static final StringBuilder strBuilder = new StringBuilder();
 
@@ -849,7 +851,7 @@ public class AssemblyGenerator {
         increaseIndent();
     }
 
-    public void writeEndofIf(STO expr, int count){
+    public void writeEndofIf(int count){
         writeAssembly(AssemlyString.BA, AssemlyString.PREFIX + "else." + count);
         next();
         nop();
@@ -861,11 +863,32 @@ public class AssemblyGenerator {
         next();
     }
 
-    public void writeReturn(STO expr){
+    public void writeReturn(STO expr, int count){
         increaseIndent();
         if(expr != null){
             writeAssembly(AssemlyString.RETURN_COMMENT, expr.getName());
-            set(expr.getName(), i0);
+            if(expr.getType() instanceof IntType)
+            {
+                set(expr.getName(), i0);
+            }
+            else if(expr.getType() instanceof FloatType){
+                section(AssemlyString.RODATA);
+                align("4");
+                decreaseIndent();
+                writeAssembly(AssemlyString.PREFIX + expr.getType().getName() + "." + count + ":");
+                next();
+                writeAssembly(AssemlyString.SINGLE, String.valueOf(((ConstSTO) expr).getFloatValue()));
+                next();
+                next();
+                section(AssemlyString.TEXT);
+                align("4");
+                set(AssemlyString.PREFIX + expr.getType().getName() + "." + count, l7);
+                ld(l7, f0);
+            }
+            else if(expr.getType() instanceof BoolType){
+                set(String.valueOf(((ConstSTO) expr).getValue()), i0);
+            }
+
         }
         else{
             writeAssembly(AssemlyString.RETURN_NULL_COMMENT);
