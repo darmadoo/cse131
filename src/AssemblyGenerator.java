@@ -338,7 +338,7 @@ public class AssemblyGenerator {
         next();
     }
 
-    public void initGlobal(String id, STO expr){
+    public void initGlobal(String id, STO expr, int offset){
         writeAssembly(AssemlyString.INIT_VAR, id);
         increaseIndent();
         // TODO PASS IN FUNCTIONS INTO CALL
@@ -349,19 +349,21 @@ public class AssemblyGenerator {
         next();
         set(id, o1);
         add(g0, o1, o1);
-        set(expr.getName(), l7);
-        add(g0, l7, l7);
+        set(expr.getOffset(), l7);
+        add(expr.getBase(), l7, l7);
         ld(l7, o0);
         st(o0, o1);
         next();
         decreaseIndent();
 
         //TODO PASS FUNCTIONS
+        writeAssembly("! End of function .$.init." + id );
+        next();
         call(".$.init." + id + ".fini");
         nop();
         retRestore();
         // TODO USE MEM_ALLOCATE
-        assign("SAVE." + ".$.init." + id, "-(92 + 0) & -8");
+        assign("SAVE." + ".$.init." + id, "-(92 + " + (-offset) + ") & -8");
         next();
         decreaseIndent();
 
@@ -423,7 +425,8 @@ public class AssemblyGenerator {
                 temp += "." + params.get(i).getType().getName();
             }
         }
-
+        writeAssembly("! End of function " + temp);
+        next();
         call(temp + ".fini");
         nop();
         retRestore();
@@ -712,12 +715,23 @@ public class AssemblyGenerator {
         increaseIndent();
         writeAssembly(AssemlyString.MATH_COMMENT, a.getName(), operand, b.getName());
 
-        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", a.getOffset(), "%l7");
-        writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", a.getBase(), "%l7", "%l7");
-        writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
-        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", b.getOffset(), "%l7");
-        writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", b.getBase(), "%l7", "%l7");
-        writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o1");
+        if(!a.isConst()) {
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", a.getOffset(), "%l7");
+            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", a.getBase(), "%l7", "%l7");
+            writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
+        }
+        else {
+            set(Integer.toString(((ConstSTO) a).getIntValue()), "%o0");
+        }
+        if(!b.isConst()) {
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", b.getOffset(), "%l7");
+            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", b.getBase(), "%l7", "%l7");
+            writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o1");
+        }
+        else {
+            set(Integer.toString(((ConstSTO) b).getIntValue()), "%o1");
+        }
+
 
         if(o instanceof AddOp)
             writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", "%o0", "%o1", "%o0");
@@ -839,9 +853,30 @@ public class AssemblyGenerator {
         decreaseIndent();
     }
 
+    public void writeExit(STO expr)
+    {
+        increaseIndent();
+        writeAssembly("! exit(%s)\n", expr.getName());
+        if(expr.isConst())
+        {
+            set(Integer.toString(((ConstSTO)expr).getIntValue()), o0);
+        }
+        else
+        {
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", expr.getOffset(), l7);
+            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", expr.getBase(), l7, l7);
+            writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
+        }
+        call("exit");
+        nop();
+        next();
+        decreaseIndent();
+    }
+    //////////////////////////// END OF DAISY STUFF ////////////////////////////
+
     public void writeIfCheck(STO expr, int count){
         set(expr.getOffset(), l7);
-        add(fp, l7, l7);
+        add(expr.getBase(), l7, l7);
         ld(l7, o0);
         cmp(o0, g0);
         writeAssembly(AssemlyString.BE, AssemlyString.PREFIX + "else." + count);

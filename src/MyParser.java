@@ -487,7 +487,7 @@ class MyParser extends parser
 				m_writer.writeGlobalNonInit(id, isStaticFlag);
 
 				if(!isStaticFlag){
-					m_writer.initGlobal(id, expr);
+					m_writer.initGlobal(id, expr, offset);
 				}
 			}
 			else
@@ -629,7 +629,7 @@ class MyParser extends parser
 					m_writer.writeGlobalNonInit(id, isStaticFlag);
 
 					if(!isStaticFlag){
-						m_writer.initGlobal(id, expr);
+						m_writer.initGlobal(id, expr, offset);
 					}
 				}
 				else
@@ -1271,18 +1271,18 @@ class MyParser extends parser
 			m_errors.print(result.getName());
 		}
 
-		// check I.4
-		result.setBase("%fp");
-		offset -= result.getType().getSize();
-		result.setOffset(Integer.toString(offset));
+		if(!a.isConst() || !b.isConst()) {
+			// check I.4
+			result.setBase("%fp");
+			offset -= result.getType().getSize();
+			result.setOffset(Integer.toString(offset));
 
-		// Integer arithmetic expression
-		if(a.getType().isInt() && b.getType().isInt())
-		{
-			cmpCount++;
-			m_writer.writeIntegerBinaryArithmeticExpression(a, o, b, result, cmpCount);
+			// Integer arithmetic expression
+			if (a.getType().isInt() && b.getType().isInt()) {
+				cmpCount++;
+				m_writer.writeIntegerBinaryArithmeticExpression(a, o, b, result, cmpCount);
+			}
 		}
-
 			//do stuff...
 		return result ;
 	}
@@ -1492,6 +1492,7 @@ class MyParser extends parser
 				m_nNumErrors++;
 				m_errors.print(Formatter.toString(ErrorMsg.error7_Exit, varType.getName()));
 			}
+			m_writer.writeExit(expr);
 		}
 		return expr;
 	}
