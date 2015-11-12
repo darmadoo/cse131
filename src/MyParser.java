@@ -1271,6 +1271,7 @@ class MyParser extends parser
 			m_errors.print(result.getName());
 		}
 
+		//if not a constant folding
 		if(!a.isConst() || !b.isConst()) {
 			// check I.4
 			result.setBase("%fp");
@@ -1281,6 +1282,21 @@ class MyParser extends parser
 			if (a.getType().isInt() && b.getType().isInt()) {
 				cmpCount++;
 				m_writer.writeIntegerBinaryArithmeticExpression(a, o, b, result, cmpCount);
+			}
+			else if(a.getType().isFloat() || b.getType().isFloat())
+			{
+				//check whether one of them are int
+				STO temp = new VarSTO("Temp");
+
+				//if one of them are int
+				if(a.getType().isInt() || b.getType().isInt())
+				{
+					temp.setBase("%fp");
+					offset -= a.getType().getSize();
+					temp.setOffset(Integer.toString(offset));
+				}
+
+				m_writer.writeFloatBinaryArithmeticExpression(a, o, b, result, temp);
 			}
 		}
 			//do stuff...

@@ -872,6 +872,132 @@ public class AssemblyGenerator {
         next();
         decreaseIndent();
     }
+
+    public void writeFloatBinaryArithmeticExpression(STO a, BinaryOp o, STO b, STO result, STO temp){
+        increaseIndent();
+
+        String operand = "";
+        if(o instanceof AddOp)
+            operand = "+";
+        else if (o instanceof MinusOp)
+            operand = "-";
+        else if (o instanceof StarOp)
+            operand = "*";
+        else if (o instanceof SlashOp)
+            operand = "/";
+
+        writeAssembly(AssemlyString.MATH_COMMENT, a.getName(), operand, b.getName());
+        if(a.getType().isFloat())
+        {
+            //a is float literals
+            if(a.isConst() && !a.getIsAddressable())
+            {
+                section(AssemlyString.RODATA);
+                align("4");
+                decreaseIndent();
+                writeAssembly(AssemlyString.PREFIX + AssemlyString.FLOAT + "." +  ++floatCount + ": \n");
+                increaseIndent();
+                writeAssembly(AssemlyString.SINGLE, a.getName());
+                next();
+
+                section(AssemlyString.TEXT);
+                align("4");
+                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + AssemlyString.SEPARATOR,
+                        AssemlyString.PREFIX + AssemlyString.FLOAT + "." + floatCount, "%l7");
+                writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f0");
+            }
+            // else if a is float variables or expression
+            else
+            {
+                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", a.getOffset(), l7);
+                writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", a.getBase(), l7, l7);
+                writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%f0");
+            }
+        }
+        // else a is int
+        else if (a.getType().isInt())
+        {
+            // if a is int literals
+            if(a.isConst() && !a.getIsAddressable())
+            {
+                set(Integer.toString(((ConstSTO)a).getIntValue()), o0);
+            }
+            else {
+                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", a.getOffset(), l7);
+                writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", a.getBase(), l7, l7);
+                writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
+            }
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", temp.getOffset(), "%l7");
+            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", temp.getBase(), "%l7", "%l7");
+            writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%l7");
+            writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f0");
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.FITOS, "%f0", "%f0");
+        }
+
+        if(b.getType().isFloat())
+        {
+            //a is float literals
+            if(b.isConst() && !b.getIsAddressable())
+            {
+                section(AssemlyString.RODATA);
+                align("4");
+                decreaseIndent();
+                writeAssembly(AssemlyString.PREFIX + AssemlyString.FLOAT + "." +  ++floatCount + ": \n");
+                increaseIndent();
+                writeAssembly(AssemlyString.SINGLE, b.getName());
+                next();
+
+                section(AssemlyString.TEXT);
+                align("4");
+                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + AssemlyString.SEPARATOR,
+                        AssemlyString.PREFIX + AssemlyString.FLOAT + "." + floatCount, "%l7");
+                writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f1");
+            }
+            // else if a is float variables or expression
+            else
+            {
+                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", b.getOffset(), l7);
+                writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", b.getBase(), l7, l7);
+                writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%f1");
+            }
+        }
+        // else a is int
+        else if (b.getType().isInt())
+        {
+            // if a is int literals
+            if(b.isConst() && !b.getIsAddressable())
+            {
+                set(Integer.toString(((ConstSTO)b).getIntValue()), o0);
+            }
+            else {
+                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", b.getOffset(), l7);
+                writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", b.getBase(), l7, l7);
+                writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o1");
+            }
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", temp.getOffset(), "%l7");
+            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", temp.getBase(), "%l7", "%l7");
+            writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o1", "%l7");
+            writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f1");
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.FITOS, "%f1", "%f1");
+        }
+
+        if(o instanceof AddOp)
+            writeAssembly(AssemlyString.THREE_PARAM, "fadds", "%f0", "%f1", "%f0");
+        else if(o instanceof MinusOp)
+            writeAssembly(AssemlyString.THREE_PARAM, "fsubs", "%f0", "%f1", "%f0");
+        else if(o instanceof StarOp)
+            writeAssembly(AssemlyString.THREE_PARAM, "fmuls", "%f0", "%f1", "%f0");
+        else if(o instanceof SlashOp)
+            writeAssembly(AssemlyString.THREE_PARAM, "fdivs", "%f0", "%f1", "%f0");
+
+        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", result.getOffset(), "%o1");
+        writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", result.getBase(), "%o1", "%o1");
+        writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
+
+        next();
+        decreaseIndent();
+    }
+
     //////////////////////////// END OF DAISY STUFF ////////////////////////////
 
     public void writeIfCheck(STO expr, int count){
