@@ -310,7 +310,7 @@ public class AssemblyGenerator {
         set(AssemlyString.PREFIX + AssemlyString.STRARRBOUND, "%o0");
         mov("%i0", "%o1");
         call(AssemlyString.PRINTF);
-        mov("i1", "%o2");
+        mov(i1, "%o2");
         call(AssemlyString.EXIT);
         mov("1", "%o0");
         retRestore();
@@ -335,6 +335,7 @@ public class AssemblyGenerator {
         retRestore();
         decreaseIndent();
 
+        next();
         next();
     }
 
@@ -687,7 +688,7 @@ public class AssemblyGenerator {
     //----------------------------------------------------------------
     // Phase 1 Check 4
     //----------------------------------------------------------------
-    public void writeIntegerBinaryArithmeticExpression(STO a, BinaryOp o, STO b, STO result, int count)
+    public void writeIntegerBinaryArithmeticExpression(STO a, BinaryOp o, STO b, STO result, int count, boolean flag)
     {
         String operand = "";
         if(o instanceof AddOp)
@@ -848,7 +849,6 @@ public class AssemblyGenerator {
         next();
         nop();
         next();
-        increaseIndent();
     }
 
     public void writeEndofIf(int count){

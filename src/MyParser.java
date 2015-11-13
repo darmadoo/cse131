@@ -44,7 +44,9 @@ class MyParser extends parser
 	private boolean isPre = false;
 
 	private int offset = 0;
+	// Project 2 phase 1 check 5
 	private int cmpCount = 0;
+	private boolean ifFlag = false;
 
 	//----------------------------------------------------------------
 	//
@@ -716,6 +718,7 @@ class MyParser extends parser
 					sto.setBase("%g0");
 					sto.setOffset(id);
 					//global constant writer here
+					m_writer.writeGlobalInit(expr, id, expr.getType(), isStaticFlag);
 				}
 				else
 				{
@@ -1280,11 +1283,15 @@ class MyParser extends parser
 		if(a.getType().isInt() && b.getType().isInt())
 		{
 			cmpCount++;
-			m_writer.writeIntegerBinaryArithmeticExpression(a, o, b, result, cmpCount);
+			m_writer.writeIntegerBinaryArithmeticExpression(a, o, b, result, cmpCount, ifFlag);
 		}
 
 			//do stuff...
 		return result ;
+	}
+
+	void setIfFlag(boolean flag){
+		ifFlag = flag;
 	}
 
 	//----------------------------------------------------------------
