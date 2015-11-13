@@ -1325,6 +1325,9 @@ class MyParser extends parser
 		if(a.getType().isInt()) {
 			m_writer.writeIntegerUnaryArithmeticExpression(a, o, isPre, result);
 		}
+		else if(a.getType().isFloat()) {
+			m_writer.writeFloatUnaryArithmeticExpression(a, o, isPre, result);
+		}
 		//do stuff...
 		return result ;
 	}
