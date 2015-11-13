@@ -339,7 +339,7 @@ public class AssemblyGenerator {
         next();
     }
 
-    public void initGlobal(String id, STO expr){
+    public void initGlobal(String id, STO expr, int offset){
         writeAssembly(AssemlyString.INIT_VAR, id);
         increaseIndent();
         // TODO PASS IN FUNCTIONS INTO CALL
@@ -350,19 +350,21 @@ public class AssemblyGenerator {
         next();
         set(id, o1);
         add(g0, o1, o1);
-        set(expr.getName(), l7);
-        add(g0, l7, l7);
+        set(expr.getOffset(), l7);
+        add(expr.getBase(), l7, l7);
         ld(l7, o0);
         st(o0, o1);
         next();
         decreaseIndent();
 
         //TODO PASS FUNCTIONS
+        writeAssembly("! End of function .$.init." + id );
+        next();
         call(".$.init." + id + ".fini");
         nop();
         retRestore();
         // TODO USE MEM_ALLOCATE
-        assign("SAVE." + ".$.init." + id, "-(92 + 0) & -8");
+        assign("SAVE." + ".$.init." + id, "-(92 + " + (-offset) + ") & -8");
         next();
         decreaseIndent();
 
@@ -424,7 +426,8 @@ public class AssemblyGenerator {
                 temp += "." + params.get(i).getType().getName();
             }
         }
-
+        writeAssembly("! End of function " + temp);
+        next();
         call(temp + ".fini");
         nop();
         retRestore();
@@ -713,12 +716,24 @@ public class AssemblyGenerator {
         increaseIndent();
         writeAssembly(AssemlyString.MATH_COMMENT, a.getName(), operand, b.getName());
 
-        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", a.getOffset(), "%l7");
-        writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", a.getBase(), "%l7", "%l7");
-        writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
-        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", b.getOffset(), "%l7");
-        writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", b.getBase(), "%l7", "%l7");
-        writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o1");
+        if(a.isConst() && !a.getIsAddressable())
+        {
+            set(Integer.toString(((ConstSTO) a).getIntValue()), "%o0");
+        }
+        else {
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", a.getOffset(), "%l7");
+            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", a.getBase(), "%l7", "%l7");
+            writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
+        }
+        if(b.isConst() && !b.getIsAddressable())
+        {
+            set(Integer.toString(((ConstSTO) b).getIntValue()), "%o1");
+        }
+        else {
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", b.getOffset(), "%l7");
+            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", b.getBase(), "%l7", "%l7");
+            writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o1");
+        }
 
         if(o instanceof AddOp)
             writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", "%o0", "%o1", "%o0");
@@ -803,26 +818,15 @@ public class AssemblyGenerator {
             writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", result.getBase(), "%o1", "%o1");
             writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
         }
-        else if(o instanceof IncOp)
+        else
         {
             writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", "1", "%o1");
-            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", "%o0", "%o1", "%o2");
-            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", result.getOffset(), "%o1");
-            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", result.getBase(), "%o1", "%o1");
 
-            if(isPre)
-                writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o2", "%o1");
+            if(o instanceof IncOp)
+                writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", "%o0", "%o1", "%o2");
             else
-                writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
+                writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.SUB + "\t", "%o0", "%o1", "%o2");
 
-            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", a.getOffset(), "%o1");
-            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", a.getBase(), "%o1", "%o1");
-            writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o2", "%o1");
-        }
-        else if(o instanceof DecOp)
-        {
-            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", "1", "%o1");
-            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.SUB + "\t", "%o0", "%o1", "%o2");
             writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", result.getOffset(), "%o1");
             writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", result.getBase(), "%o1", "%o1");
 
@@ -840,9 +844,227 @@ public class AssemblyGenerator {
         decreaseIndent();
     }
 
+    public void writeExit(STO expr)
+    {
+        increaseIndent();
+        writeAssembly("! exit(%s)\n", expr.getName());
+        if(expr.isConst())
+        {
+            set(Integer.toString(((ConstSTO)expr).getIntValue()), o0);
+        }
+        else
+        {
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", expr.getOffset(), l7);
+            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", expr.getBase(), l7, l7);
+            writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
+        }
+        call("exit");
+        nop();
+        next();
+        decreaseIndent();
+    }
+
+    public void writeFloatBinaryArithmeticExpression(STO a, BinaryOp o, STO b, STO result, STO temp){
+        increaseIndent();
+
+        String operand = "";
+        if(o instanceof AddOp)
+            operand = "+";
+        else if (o instanceof MinusOp)
+            operand = "-";
+        else if (o instanceof StarOp)
+            operand = "*";
+        else if (o instanceof SlashOp)
+            operand = "/";
+
+        writeAssembly(AssemlyString.MATH_COMMENT, a.getName(), operand, b.getName());
+        if(a.getType().isFloat())
+        {
+            //a is float literals
+            if(a.isConst() && !a.getIsAddressable())
+            {
+                section(AssemlyString.RODATA);
+                align("4");
+                decreaseIndent();
+                writeAssembly(AssemlyString.PREFIX + AssemlyString.FLOAT + "." +  ++floatCount + ": \n");
+                increaseIndent();
+                writeAssembly(AssemlyString.SINGLE, a.getName());
+                next();
+
+                section(AssemlyString.TEXT);
+                align("4");
+                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + AssemlyString.SEPARATOR,
+                        AssemlyString.PREFIX + AssemlyString.FLOAT + "." + floatCount, "%l7");
+                writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f0");
+            }
+            // else if a is float variables or expression
+            else
+            {
+                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", a.getOffset(), l7);
+                writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", a.getBase(), l7, l7);
+                writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%f0");
+            }
+        }
+        // else a is int
+        else if (a.getType().isInt())
+        {
+            // if a is int literals
+            if(a.isConst() && !a.getIsAddressable())
+            {
+                set(Integer.toString(((ConstSTO)a).getIntValue()), o0);
+            }
+            else {
+                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", a.getOffset(), l7);
+                writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", a.getBase(), l7, l7);
+                writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
+            }
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", temp.getOffset(), "%l7");
+            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", temp.getBase(), "%l7", "%l7");
+            writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%l7");
+            writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f0");
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.FITOS, "%f0", "%f0");
+        }
+
+        if(b.getType().isFloat())
+        {
+            //a is float literals
+            if(b.isConst() && !b.getIsAddressable())
+            {
+                section(AssemlyString.RODATA);
+                align("4");
+                decreaseIndent();
+                writeAssembly(AssemlyString.PREFIX + AssemlyString.FLOAT + "." +  ++floatCount + ": \n");
+                increaseIndent();
+                writeAssembly(AssemlyString.SINGLE, b.getName());
+                next();
+
+                section(AssemlyString.TEXT);
+                align("4");
+                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + AssemlyString.SEPARATOR,
+                        AssemlyString.PREFIX + AssemlyString.FLOAT + "." + floatCount, "%l7");
+                writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f1");
+            }
+            // else if a is float variables or expression
+            else
+            {
+                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", b.getOffset(), l7);
+                writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", b.getBase(), l7, l7);
+                writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%f1");
+            }
+        }
+        // else a is int
+        else if (b.getType().isInt())
+        {
+            // if a is int literals
+            if(b.isConst() && !b.getIsAddressable())
+            {
+                set(Integer.toString(((ConstSTO)b).getIntValue()), o0);
+            }
+            else {
+                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", b.getOffset(), l7);
+                writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", b.getBase(), l7, l7);
+                writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o1");
+            }
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", temp.getOffset(), "%l7");
+            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", temp.getBase(), "%l7", "%l7");
+            writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o1", "%l7");
+            writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f1");
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.FITOS, "%f1", "%f1");
+        }
+
+        if(o instanceof AddOp)
+            writeAssembly(AssemlyString.THREE_PARAM, "fadds", "%f0", "%f1", "%f0");
+        else if(o instanceof MinusOp)
+            writeAssembly(AssemlyString.THREE_PARAM, "fsubs", "%f0", "%f1", "%f0");
+        else if(o instanceof StarOp)
+            writeAssembly(AssemlyString.THREE_PARAM, "fmuls", "%f0", "%f1", "%f0");
+        else if(o instanceof SlashOp)
+            writeAssembly(AssemlyString.THREE_PARAM, "fdivs", "%f0", "%f1", "%f0");
+
+        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", result.getOffset(), "%o1");
+        writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", result.getBase(), "%o1", "%o1");
+        writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%f0", "%o1");
+
+        next();
+        decreaseIndent();
+    }
+
+    public void writeFloatUnaryArithmeticExpression(STO a, UnaryOp o, boolean isPre, STO result)
+    {
+        increaseIndent();
+
+        if(o instanceof MinusUnaryOp)
+            writeAssembly("! -" + a.getName() + "\n");
+        else if(o instanceof IncOp)
+        {
+            if(isPre)
+                writeAssembly("! ++" + a.getName() + "\n");
+            else
+                writeAssembly("! " + a.getName() + "++\n");
+        }
+        else if(o instanceof DecOp)
+        {
+            if(isPre)
+                writeAssembly("! --" + a.getName() + "\n");
+            else
+                writeAssembly("! " + a.getName() + "--\n");
+        }
+
+        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", a.getOffset(), l7);
+        writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", a.getBase(), l7, l7);
+        writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%f0");
+
+        if(o instanceof MinusUnaryOp)
+        {
+            writeAssembly(AssemlyString.TWO_PARAM, "fnegs", "%f0", "%f0");
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", result.getOffset(), "%o1");
+            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", result.getBase(), "%o1", "%o1");
+            writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%f0", "%o1");
+        }
+        else
+        {
+            next();
+            section(AssemlyString.RODATA);
+            align("4");
+            decreaseIndent();
+            writeAssembly(AssemlyString.PREFIX + AssemlyString.FLOAT + "." +  ++floatCount + ": \n");
+            increaseIndent();
+            writeAssembly(AssemlyString.SINGLE, "1.0");
+            next();
+
+            section(AssemlyString.TEXT);
+            align("4");
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + AssemlyString.SEPARATOR,
+                    AssemlyString.PREFIX + AssemlyString.FLOAT + "." + floatCount, "%l7");
+            writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f1");
+
+            if(o instanceof IncOp)
+                writeAssembly(AssemlyString.THREE_PARAM, "fadds", "%f0", "%f1", "%f2");
+            else if(o instanceof DecOp)
+                writeAssembly(AssemlyString.THREE_PARAM, "fsubs", "%f0", "%f1", "%f2");
+
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", result.getOffset(), "%o1");
+            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", result.getBase(), "%o1", "%o1");
+
+            if(isPre)
+                writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%f2", "%o1");
+            else
+                writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%f0", "%o1");
+
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", a.getOffset(), "%o1");
+            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", a.getBase(), "%o1", "%o1");
+            writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%f2", "%o1");
+        }
+
+        next();
+        decreaseIndent();
+    }
+
+    //////////////////////////// END OF DAISY STUFF ////////////////////////////
+
     public void writeIfCheck(STO expr, int count){
         set(expr.getOffset(), l7);
-        add(fp, l7, l7);
+        add(expr.getBase(), l7, l7);
         ld(l7, o0);
         cmp(o0, g0);
         writeAssembly(AssemlyString.BE, AssemlyString.PREFIX + "else." + count);

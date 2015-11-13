@@ -489,7 +489,7 @@ class MyParser extends parser
 				m_writer.writeGlobalNonInit(id, isStaticFlag);
 
 				if(!isStaticFlag){
-					m_writer.initGlobal(id, expr);
+					m_writer.initGlobal(id, expr, offset);
 				}
 			}
 			else
@@ -631,7 +631,7 @@ class MyParser extends parser
 					m_writer.writeGlobalNonInit(id, isStaticFlag);
 
 					if(!isStaticFlag){
-						m_writer.initGlobal(id, expr);
+						m_writer.initGlobal(id, expr, offset);
 					}
 				}
 				else
@@ -1274,18 +1274,42 @@ class MyParser extends parser
 			m_errors.print(result.getName());
 		}
 
-		// check I.4
-		result.setBase("%fp");
-		offset -= result.getType().getSize();
-		result.setOffset(Integer.toString(offset));
+		//if not a constant folding
+		if(!a.isConst() || !b.isConst()) {
+			// check I.4
+			result.setBase("%fp");
+			offset -= result.getType().getSize();
+			result.setOffset(Integer.toString(offset));
 
+/*
 		// Integer arithmetic expression
 		if(a.getType().isInt() && b.getType().isInt())
 		{
 			cmpCount++;
 			m_writer.writeIntegerBinaryArithmeticExpression(a, o, b, result, cmpCount, ifFlag);
 		}
+*/
+			// Integer arithmetic expression
+			if (a.getType().isInt() && b.getType().isInt()) {
+				cmpCount++;
+				m_writer.writeIntegerBinaryArithmeticExpression(a, o, b, result, cmpCount, ifFlag);
+			}
+			else if(a.getType().isFloat() || b.getType().isFloat())
+			{
+				//check whether one of them are int
+				STO temp = new VarSTO("Temp");
 
+				//if one of them are int
+				if(a.getType().isInt() || b.getType().isInt())
+				{
+					temp.setBase("%fp");
+					offset -= a.getType().getSize();
+					temp.setOffset(Integer.toString(offset));
+				}
+
+				m_writer.writeFloatBinaryArithmeticExpression(a, o, b, result, temp);
+			}
+		}
 			//do stuff...
 		return result ;
 	}
@@ -1315,6 +1339,9 @@ class MyParser extends parser
 
 		if(a.getType().isInt()) {
 			m_writer.writeIntegerUnaryArithmeticExpression(a, o, isPre, result);
+		}
+		else if(a.getType().isFloat()) {
+			m_writer.writeFloatUnaryArithmeticExpression(a, o, isPre, result);
 		}
 		//do stuff...
 		return result ;
@@ -1499,6 +1526,7 @@ class MyParser extends parser
 				m_nNumErrors++;
 				m_errors.print(Formatter.toString(ErrorMsg.error7_Exit, varType.getName()));
 			}
+			m_writer.writeExit(expr);
 		}
 		return expr;
 	}
