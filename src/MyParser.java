@@ -1336,7 +1336,6 @@ class MyParser extends parser
 	// Check 4
 	//----------------------------------------------------------------
 	STO DoBoolCheck(STO expr){
-
 		if(expr instanceof ErrorSTO || expr.getType().isError()) {
 			return expr;
 		}
