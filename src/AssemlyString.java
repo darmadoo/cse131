@@ -4,7 +4,7 @@
 public class AssemlyString {
     public static final String SEPARATOR = "\t";
 
-    public static final String TWO_PARAM = "%s" + SEPARATOR + SEPARATOR + "%s, %s\n";
+    public static final String TWO_PARAM = "%s" + SEPARATOR + SEPARATOR +  "%s, %s\n";
     public static final String THREE_PARAM = "%s" + SEPARATOR + SEPARATOR + "%s, %s, %s\n";
 
     public static final String nextLine = "\n";
@@ -18,12 +18,12 @@ public class AssemlyString {
     public static final String INIT_SECTION = "\".init\"\n";
 
     // Align
-    public static final String ALIGN = ".align" + SEPARATOR + SEPARATOR +"%s\n";
+    public static final String ALIGN = ".align" + SEPARATOR + SEPARATOR + "%s\n";
 
     // Variables
     public static final String VAR_NAME = "%s:\n";
 
-    public static final String GLOBAL = ".global" + SEPARATOR + SEPARATOR +"%s\n";
+    public static final String GLOBAL = ".global" + SEPARATOR + SEPARATOR + "%s\n";
 
     public static final String SKIP = ".skip" + SEPARATOR + SEPARATOR + "%s";
 
@@ -63,11 +63,12 @@ public class AssemlyString {
     public static final String SET = "set";
     public static final String SAVE = "save";
     public static final String CMP = "cmp";
-    public static final String BE = "be" + SEPARATOR + SEPARATOR + "%s";
-    public static final String BA = "ba" + SEPARATOR + SEPARATOR + "%s";
-    public static final String BL = "bl" + SEPARATOR + SEPARATOR + "%s";
-    public static final String BLE = "ble" + SEPARATOR + SEPARATOR + "%s";
-    public static final String BGE = "bge" + SEPARATOR + SEPARATOR + "%s";
+    public static final String BE = "be" + SEPARATOR + SEPARATOR + SEPARATOR + "%s";
+    public static final String BA = "ba" + SEPARATOR + SEPARATOR + SEPARATOR + "%s";
+    public static final String BL = "bl" + SEPARATOR + SEPARATOR + SEPARATOR + "%s";
+    public static final String BLE = "ble" + SEPARATOR + SEPARATOR + SEPARATOR + "%s";
+    public static final String BGE = "bge" + SEPARATOR + SEPARATOR + SEPARATOR + "%s";
+    public static final String BG = "bg" + SEPARATOR + SEPARATOR + SEPARATOR + "%s";
     public static final String NOP = "nop\n";
     public static final String CALL = "call" + SEPARATOR + SEPARATOR + "%s\n";
     public static final String PRINTF = "printf";
@@ -75,7 +76,7 @@ public class AssemlyString {
 
     public static final String ADD = "add";
     public static final String LOAD = "[%s], %s";
-    public  static final String INC = "inc" + SEPARATOR + SEPARATOR + "%s\n";
+    public  static final String INC = "inc" + SEPARATOR + SEPARATOR + SEPARATOR + "%s\n";
 
     //////////////////////////// DAISY STUFF ////////////////////////////
     public static final String STR = "str";

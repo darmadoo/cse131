@@ -44,7 +44,9 @@ class MyParser extends parser
 	private boolean isPre = false;
 
 	private int offset = 0;
+	// Project 2 phase 1 check 5
 	private int cmpCount = 0;
+	private boolean ifFlag = false;
 
 	//----------------------------------------------------------------
 	//
@@ -716,6 +718,7 @@ class MyParser extends parser
 					sto.setBase("%g0");
 					sto.setOffset(id);
 					//global constant writer here
+					m_writer.writeGlobalInit(expr, id, expr.getType(), isStaticFlag);
 				}
 				else
 				{
@@ -1278,10 +1281,17 @@ class MyParser extends parser
 			offset -= result.getType().getSize();
 			result.setOffset(Integer.toString(offset));
 
+/*
+		// Integer arithmetic expression
+		if(a.getType().isInt() && b.getType().isInt())
+		{
+			cmpCount++;
+			m_writer.writeIntegerBinaryArithmeticExpression(a, o, b, result, cmpCount, ifFlag);
+		}
+*/
 			// Integer arithmetic expression
 			if (a.getType().isInt() && b.getType().isInt()) {
-				cmpCount++;
-				m_writer.writeIntegerBinaryArithmeticExpression(a, o, b, result, cmpCount);
+				m_writer.writeIntegerBinaryArithmeticExpression(a, o, b, result, ifFlag);
 			}
 			else if(a.getType().isFloat() || b.getType().isFloat())
 			{
@@ -1301,6 +1311,10 @@ class MyParser extends parser
 		}
 			//do stuff...
 		return result ;
+	}
+
+	void setIfFlag(boolean flag){
+		ifFlag = flag;
 	}
 
 	//----------------------------------------------------------------
@@ -1346,12 +1360,12 @@ class MyParser extends parser
 			m_errors.print(Formatter.toString(ErrorMsg.error4_Test, varType.getName()));
 		}
 
-		m_writer.writeEndofIf(cmpCount);
+		m_writer.writeEndofIf();
 		return expr;
 	}
 
 	public void elseBlock(){
-		m_writer.writeAssembly(AssemlyString.PREFIX + "endif." + cmpCount + ":\n\n");
+		m_writer.writeElseBlock();
 	}
 
 
@@ -1591,7 +1605,7 @@ class MyParser extends parser
 			return new ErrorSTO("Return type not void");
 		}
 
-		m_writer.writeReturn(null, cmpCount);
+		m_writer.writeReturn(null);
 		return temp;
 	}
 
@@ -1652,7 +1666,7 @@ class MyParser extends parser
 			}
 		}
 
-		m_writer.writeReturn(a, cmpCount);
+		m_writer.writeReturn(a);
 		return a;
 	}
 

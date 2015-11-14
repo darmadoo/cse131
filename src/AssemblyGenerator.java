@@ -191,11 +191,11 @@ public class AssemblyGenerator {
     }
 
     private void cmp(String p1, String p2){
-        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.CMP, p1, p2);
+        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.CMP + SEPARATOR, p1, p2);
     }
 
     void add(String p1, String p2, String p3){
-        writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD, p1, p2, p3);
+        writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + SEPARATOR, p1, p2, p3);
     }
 
     private void nop(){
@@ -212,11 +212,11 @@ public class AssemblyGenerator {
     }
 
     private void mov(String p1, String p2){
-        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.MOV, p1, p2);
+        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.MOV+ SEPARATOR, p1, p2);
     }
 
     private void ld(String p1, String p2){
-        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.LD, "[" + p1 + "]", p2);
+        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.LD + SEPARATOR, "[" + p1 + "]", p2);
     }
 
     private void st(String p1, String p2){
@@ -310,7 +310,7 @@ public class AssemblyGenerator {
         set(AssemlyString.PREFIX + AssemlyString.STRARRBOUND, "%o0");
         mov("%i0", "%o1");
         call(AssemlyString.PRINTF);
-        mov("i1", "%o2");
+        mov(i1, "%o2");
         call(AssemlyString.EXIT);
         mov("1", "%o0");
         retRestore();
@@ -321,7 +321,7 @@ public class AssemblyGenerator {
         increaseIndent();
         save("%sp", "-96", "%sp");
         cmp("%i0", "%g0");
-        writeAssembly(AssemlyString.BNE + SEPARATOR + SEPARATOR + AssemlyString.PREFIX + AssemlyString.PTRCHECK2 + "\n");
+        writeAssembly(AssemlyString.BNE + SEPARATOR + SEPARATOR + SEPARATOR + AssemlyString.PREFIX + AssemlyString.PTRCHECK2 + "\n");
         nop();
         set(AssemlyString.PREFIX + AssemlyString.STRNULLPTR, "%o0");
         call(AssemlyString.PRINTF);
@@ -335,6 +335,7 @@ public class AssemblyGenerator {
         retRestore();
         decreaseIndent();
 
+        next();
         next();
     }
 
@@ -452,6 +453,7 @@ public class AssemblyGenerator {
     //----------------------------------------------------------------
     private int strCount = 0;
     private int floatCount = 0;
+    private int cmpCount = 0;
     public void writeEndlCout()
     {
         increaseIndent();
@@ -546,7 +548,7 @@ public class AssemblyGenerator {
 
         section(AssemlyString.TEXT);
         align("4");
-        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + AssemlyString.SEPARATOR,
+        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + SEPARATOR,
                 AssemlyString.PREFIX + AssemlyString.FLOAT + "." + floatCount, "%l7");
         writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f0");
         call(AssemlyString.PRINTFLOAT);
@@ -600,7 +602,7 @@ public class AssemblyGenerator {
 
             section(AssemlyString.TEXT);
             align("4");
-            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + AssemlyString.SEPARATOR,
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + SEPARATOR,
                     AssemlyString.PREFIX + AssemlyString.FLOAT + "." + floatCount, "%l7");
             writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f0");
             writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%f0", "%o1");
@@ -690,7 +692,7 @@ public class AssemblyGenerator {
     //----------------------------------------------------------------
     // Phase 1 Check 4
     //----------------------------------------------------------------
-    public void writeIntegerBinaryArithmeticExpression(STO a, BinaryOp o, STO b, STO result, int count)
+    public void writeIntegerBinaryArithmeticExpression(STO a, BinaryOp o, STO b, STO result, boolean flag)
     {
         String operand = "";
         if(o instanceof AddOp)
@@ -709,8 +711,18 @@ public class AssemblyGenerator {
             operand = "|";
         else if (o instanceof CaretOp)
             operand = "^";
-        else if(o instanceof GreaterThanOp)
+        else if (o instanceof GreaterThanOp)
             operand = ">";
+        else if (o instanceof LessThanOp)
+            operand = "<";
+        else if (o instanceof GreaterThanEqualOp)
+            operand = ">=";
+        else if (o instanceof LessThanEqualOp)
+            operand = "<=";
+        else if (o instanceof EqualOp)
+            operand = "==";
+        else if (o instanceof NotEqualOp)
+            operand = "!=";
 
         increaseIndent();
         writeAssembly(AssemlyString.MATH_COMMENT, a.getName(), operand, b.getName());
@@ -763,24 +775,91 @@ public class AssemblyGenerator {
         else if (o instanceof CaretOp)
             writeAssembly(AssemlyString.THREE_PARAM, "xor\t", "%o0", "%o1", "%o0");
         else if(o instanceof GreaterThanOp){
+            cmpCount++;
             cmp(o0, o1);
-            writeAssembly(AssemlyString.BLE, AssemlyString.PREFIX + "cmp." + count);
+            writeAssembly(AssemlyString.BLE, AssemlyString.PREFIX + "cmp." + cmpCount);
             next();
             mov(g0, o0);
             inc(o0);
             decreaseIndent();
-            writeAssembly(AssemlyString.PREFIX + "cmp." + count + ":");
+            writeAssembly(AssemlyString.PREFIX + "cmp." + cmpCount + ":");
+            next();
+            increaseIndent();
+        }
+        else if (o instanceof LessThanOp)
+        {
+            cmpCount++;
+            cmp(o0, o1);
+            writeAssembly(AssemlyString.BGE, AssemlyString.PREFIX + "cmp." + cmpCount);
+            next();
+            mov(g0, o0);
+            inc(o0);
+            decreaseIndent();
+            writeAssembly(AssemlyString.PREFIX + "cmp." + cmpCount + ":");
+            next();
+            increaseIndent();
+        }
+        else if (o instanceof GreaterThanEqualOp)
+        {
+            cmpCount++;
+            cmp(o0, o1);
+            writeAssembly(AssemlyString.BL, AssemlyString.PREFIX + "cmp." + cmpCount);
+            next();
+            mov(g0, o0);
+            inc(o0);
+            decreaseIndent();
+            writeAssembly(AssemlyString.PREFIX + "cmp." + cmpCount + ":");
+            next();
+            increaseIndent();
+        }
+        else if (o instanceof LessThanEqualOp)
+        {
+            cmpCount++;
+            cmp(o0, o1);
+            writeAssembly(AssemlyString.BG, AssemlyString.PREFIX + "cmp." + cmpCount);
+            next();
+            mov(g0, o0);
+            inc(o0);
+            decreaseIndent();
+            writeAssembly(AssemlyString.PREFIX + "cmp." + cmpCount + ":");
+            next();
+            increaseIndent();
+        }
+        else if (o instanceof EqualOp)
+        {
+            cmpCount++;
+            cmp(o0, o1);
+            writeAssembly(AssemlyString.BNE + "\t\t\t" + AssemlyString.PREFIX + "cmp." + cmpCount);
+            next();
+            mov(g0, o0);
+            inc(o0);
+            decreaseIndent();
+            writeAssembly(AssemlyString.PREFIX + "cmp." + cmpCount + ":");
+            next();
+            increaseIndent();
+        }
+        else if (o instanceof NotEqualOp)
+        {
+            cmpCount++;
+            cmp(o0, o1);
+            writeAssembly(AssemlyString.BE, AssemlyString.PREFIX + "cmp." + cmpCount);
+            next();
+            mov(g0, o0);
+            inc(o0);
+            decreaseIndent();
+            writeAssembly(AssemlyString.PREFIX + "cmp." + cmpCount + ":");
             next();
             increaseIndent();
         }
 
-        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", result.getOffset(), "%o1");
-        writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", result.getBase(), "%o1", "%o1");
+
+        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + SEPARATOR, result.getOffset(), "%o1");
+        writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + SEPARATOR, result.getBase(), "%o1", "%o1");
         writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
         next();
 
         if(o instanceof GreaterThanOp){
-            writeIfCheck(result, count);
+            writeIfCheck(result);
         }
 
         decreaseIndent();
@@ -806,15 +885,15 @@ public class AssemblyGenerator {
                 writeAssembly("! " + a.getName() + "--\n");
         }
 
-        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", a.getOffset(), "%l7");
-        writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", a.getBase(), "%l7", "%l7");
+        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + SEPARATOR, a.getOffset(), "%l7");
+        writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + SEPARATOR, a.getBase(), "%l7", "%l7");
         writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
 
         if(o instanceof MinusUnaryOp)
         {
             writeAssembly(AssemlyString.TWO_PARAM, "neg\t", "%o0", "%o0");
-            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", result.getOffset(), "%o1");
-            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", result.getBase(), "%o1", "%o1");
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + SEPARATOR, result.getOffset(), "%o1");
+            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + SEPARATOR, result.getBase(), "%o1", "%o1");
             writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
         }
         else
@@ -892,7 +971,7 @@ public class AssemblyGenerator {
 
                 section(AssemlyString.TEXT);
                 align("4");
-                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + AssemlyString.SEPARATOR,
+                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + SEPARATOR,
                         AssemlyString.PREFIX + AssemlyString.FLOAT + "." + floatCount, "%l7");
                 writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f0");
             }
@@ -939,7 +1018,7 @@ public class AssemblyGenerator {
 
                 section(AssemlyString.TEXT);
                 align("4");
-                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + AssemlyString.SEPARATOR,
+                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + SEPARATOR,
                         AssemlyString.PREFIX + AssemlyString.FLOAT + "." + floatCount, "%l7");
                 writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f1");
             }
@@ -1033,7 +1112,7 @@ public class AssemblyGenerator {
 
             section(AssemlyString.TEXT);
             align("4");
-            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + AssemlyString.SEPARATOR,
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + SEPARATOR,
                     AssemlyString.PREFIX + AssemlyString.FLOAT + "." + floatCount, "%l7");
             writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f1");
 
@@ -1061,31 +1140,35 @@ public class AssemblyGenerator {
 
     //////////////////////////// END OF DAISY STUFF ////////////////////////////
 
-    public void writeIfCheck(STO expr, int count){
+    public void writeIfCheck(STO expr){
         set(expr.getOffset(), l7);
         add(expr.getBase(), l7, l7);
         ld(l7, o0);
         cmp(o0, g0);
-        writeAssembly(AssemlyString.BE, AssemlyString.PREFIX + "else." + count);
+        writeAssembly(AssemlyString.BE, AssemlyString.PREFIX + "else." + cmpCount);
         next();
         nop();
         next();
-        increaseIndent();
     }
 
-    public void writeEndofIf(int count){
-        writeAssembly(AssemlyString.BA, AssemlyString.PREFIX + "else." + count);
+    public void writeEndofIf(){
+        writeAssembly(AssemlyString.BA, AssemlyString.PREFIX + "else." + cmpCount);
         next();
         nop();
 
         decreaseIndent();
         next();
-        writeAssembly(AssemlyString.PREFIX + "else." + count + ":");
+        writeAssembly(AssemlyString.PREFIX + "else." + cmpCount + ":");
         next();
         next();
     }
 
-    public void writeReturn(STO expr, int count){
+    public void writeElseBlock()
+    {
+        writeAssembly(AssemlyString.PREFIX + "endif." + cmpCount + ":\n\n");
+    }
+
+    public void writeReturn(STO expr){
         increaseIndent();
         if(expr != null){
             writeAssembly(AssemlyString.RETURN_COMMENT, expr.getName());
@@ -1097,14 +1180,14 @@ public class AssemblyGenerator {
                 section(AssemlyString.RODATA);
                 align("4");
                 decreaseIndent();
-                writeAssembly(AssemlyString.PREFIX + expr.getType().getName() + "." + count + ":");
+                writeAssembly(AssemlyString.PREFIX + expr.getType().getName() + "." + cmpCount + ":");
                 next();
                 writeAssembly(AssemlyString.SINGLE, String.valueOf(((ConstSTO) expr).getFloatValue()));
                 next();
                 next();
                 section(AssemlyString.TEXT);
                 align("4");
-                set(AssemlyString.PREFIX + expr.getType().getName() + "." + count, l7);
+                set(AssemlyString.PREFIX + expr.getType().getName() + "." + cmpCount, l7);
                 ld(l7, f0);
             }
             else if(expr.getType() instanceof BoolType){

@@ -718,13 +718,18 @@ CtorCall ::=        T_COLON T_LPAREN OptExprList:_1 T_RPAREN
     ;
 
 
-IfStmt ::=          T_IF Expr:_1 CodeBlock
+IfStmt ::=          T_IF
+                    {:
+                        ((MyParser) parser).setIfFlag(true);
+                    :}
+                    Expr:_1 CodeBlock
                     {:
                         RESULT = ((MyParser) parser).DoBoolCheck(_1);
                     :}
                     OptElse
                     {:
                         ((MyParser) parser).elseBlock();
+                        ((MyParser) parser).setIfFlag(false);
                     :}
     ;
 
