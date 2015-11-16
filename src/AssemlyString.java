@@ -63,12 +63,15 @@ public class AssemlyString {
     public static final String SET = "set";
     public static final String SAVE = "save";
     public static final String CMP = "cmp";
+    public static final String FCMPS = "fcmps";
+
     public static final String BE = "be" + SEPARATOR + SEPARATOR + SEPARATOR + "%s";
     public static final String BA = "ba" + SEPARATOR + SEPARATOR + SEPARATOR + "%s";
     public static final String BL = "bl" + SEPARATOR + SEPARATOR + SEPARATOR + "%s";
     public static final String BLE = "ble" + SEPARATOR + SEPARATOR + SEPARATOR + "%s";
     public static final String BGE = "bge" + SEPARATOR + SEPARATOR + SEPARATOR + "%s";
     public static final String BG = "bg" + SEPARATOR + SEPARATOR + SEPARATOR + "%s";
+
     public static final String NOP = "nop\n";
     public static final String CALL = "call" + SEPARATOR + SEPARATOR + "%s\n";
     public static final String PRINTF = "printf";
@@ -88,6 +91,12 @@ public class AssemlyString {
     public static final String MOV = "mov";
     public static final String FITOS = "fitos";
 
+    public static final String FBLE = "fble" + SEPARATOR + SEPARATOR + "%s";
+    public static final String FBGE = "fbge" + SEPARATOR + SEPARATOR + "%s";
+    public static final String FBL = "fbl" + SEPARATOR + SEPARATOR + SEPARATOR + "%s";
+    public static final String FBG = "fbg" + SEPARATOR + SEPARATOR + SEPARATOR + "%s";
+    public static final String FBNE = "fbne" + SEPARATOR + SEPARATOR + "%s";
+    public static final String FBE = "fbe" + SEPARATOR + SEPARATOR + SEPARATOR + "%s";
 
     public static final String PRINTFLOAT = "printFloat";
 

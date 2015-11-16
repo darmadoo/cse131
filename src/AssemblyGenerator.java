@@ -50,6 +50,8 @@ public class AssemblyGenerator {
     private static String i2 = "%i2";
 
     private static String f0 = "%f0";
+    private static String f1 = "%f1";
+
 
 
     private static final StringBuilder strBuilder = new StringBuilder();
@@ -192,6 +194,11 @@ public class AssemblyGenerator {
 
     private void cmp(String p1, String p2){
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.CMP + SEPARATOR, p1, p2);
+    }
+
+
+    private void fcmps(String p1, String p2){
+        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.FCMPS, p1, p2);
     }
 
     void add(String p1, String p2, String p3){
@@ -954,6 +961,18 @@ public class AssemblyGenerator {
             operand = "*";
         else if (o instanceof SlashOp)
             operand = "/";
+        else if (o instanceof GreaterThanOp)
+            operand = ">";
+        else if (o instanceof LessThanOp)
+            operand = "<";
+        else if (o instanceof GreaterThanEqualOp)
+            operand = ">=";
+        else if (o instanceof LessThanEqualOp)
+            operand = "<=";
+        else if (o instanceof EqualOp)
+            operand = "==";
+        else if (o instanceof NotEqualOp)
+            operand = "!=";
 
         writeAssembly(AssemlyString.MATH_COMMENT, a.getName(), operand, b.getName());
         if(a.getType().isFloat())
@@ -1058,6 +1077,85 @@ public class AssemblyGenerator {
             writeAssembly(AssemlyString.THREE_PARAM, "fmuls", "%f0", "%f1", "%f0");
         else if(o instanceof SlashOp)
             writeAssembly(AssemlyString.THREE_PARAM, "fdivs", "%f0", "%f1", "%f0");
+        else if(o instanceof GreaterThanOp){
+            cmpCount++;
+            fcmps(f0, f1);
+            nop();
+            writeAssembly(AssemlyString.FBLE, AssemlyString.PREFIX + "cmp." + cmpCount);
+            next();
+            mov(g0, o0);
+            inc(o0);
+            decreaseIndent();
+            writeAssembly(AssemlyString.PREFIX + "cmp." + cmpCount + ":");
+            next();
+            increaseIndent();
+        }
+        else if (o instanceof LessThanOp)
+        {
+            cmpCount++;
+            fcmps(f0, f1);
+            nop();
+            writeAssembly(AssemlyString.FBGE, AssemlyString.PREFIX + "cmp." + cmpCount);
+            next();
+            mov(g0, o0);
+            inc(o0);
+            decreaseIndent();
+            writeAssembly(AssemlyString.PREFIX + "cmp." + cmpCount + ":");
+            next();
+            increaseIndent();
+        }
+        else if(o instanceof GreaterThanEqualOp){
+            cmpCount++;
+            fcmps(f0, f1);
+            nop();
+            writeAssembly(AssemlyString.FBL, AssemlyString.PREFIX + "cmp." + cmpCount);
+            next();
+            mov(g0, o0);
+            inc(o0);
+            decreaseIndent();
+            writeAssembly(AssemlyString.PREFIX + "cmp." + cmpCount + ":");
+            next();
+            increaseIndent();
+        }
+        else if(o instanceof LessThanEqualOp){
+            cmpCount++;
+            fcmps(f0, f1);
+            nop();
+            writeAssembly(AssemlyString.FBG, AssemlyString.PREFIX + "cmp." + cmpCount);
+            next();
+            mov(g0, o0);
+            inc(o0);
+            decreaseIndent();
+            writeAssembly(AssemlyString.PREFIX + "cmp." + cmpCount + ":");
+            next();
+            increaseIndent();
+        }
+        else if(o instanceof EqualOp){
+            cmpCount++;
+            fcmps(f0, f1);
+            nop();
+            writeAssembly(AssemlyString.FBNE, AssemlyString.PREFIX + "cmp." + cmpCount);
+            next();
+            mov(g0, o0);
+            inc(o0);
+            decreaseIndent();
+            writeAssembly(AssemlyString.PREFIX + "cmp." + cmpCount + ":");
+            next();
+            increaseIndent();
+        }
+        else if(o instanceof NotEqualOp){
+            cmpCount++;
+            fcmps(f0, f1);
+            nop();
+            writeAssembly(AssemlyString.FBE, AssemlyString.PREFIX + "cmp." + cmpCount);
+            next();
+            mov(g0, o0);
+            inc(o0);
+            decreaseIndent();
+            writeAssembly(AssemlyString.PREFIX + "cmp." + cmpCount + ":");
+            next();
+            increaseIndent();
+        }
 
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", result.getOffset(), "%o1");
         writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", result.getBase(), "%o1", "%o1");
@@ -1066,6 +1164,7 @@ public class AssemblyGenerator {
         next();
         decreaseIndent();
     }
+
 
     public void writeFloatUnaryArithmeticExpression(STO a, UnaryOp o, boolean isPre, STO result)
     {
