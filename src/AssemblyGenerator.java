@@ -357,6 +357,8 @@ public class AssemblyGenerator {
         next();
         decreaseIndent();
 
+        // TODO SAVE THEM IN THE BUFFER AND PRINT WHENEVER YOU NEED TO
+
         //TODO PASS FUNCTIONS
         writeAssembly("! End of function .$.init." + id );
         next();

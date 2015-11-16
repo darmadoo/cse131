@@ -1281,15 +1281,6 @@ class MyParser extends parser
 			offset -= result.getType().getSize();
 			result.setOffset(Integer.toString(offset));
 
-/*
-		// Integer arithmetic expression
-		if(a.getType().isInt() && b.getType().isInt())
-		{
-			cmpCount++;
-			m_writer.writeIntegerBinaryArithmeticExpression(a, o, b, result, cmpCount, ifFlag);
-		}
-*/
-			// Integer arithmetic expression
 			if (a.getType().isInt() && b.getType().isInt()) {
 				cmpCount++;
 				m_writer.writeIntegerBinaryArithmeticExpression(a, o, b, result, cmpCount, ifFlag);
