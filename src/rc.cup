@@ -797,7 +797,10 @@ ReturnStmt ::=      T_RETURN T_SEMI
     ;
 
 
-ReadStmt ::=        T_CIN T_ISTREAM Designator T_SEMI
+ReadStmt ::=        T_CIN T_ISTREAM Designator:_1 T_SEMI
+                    {:
+                        ((MyParser) parser).DoCin(_1);
+                    :}
     ;
 
 

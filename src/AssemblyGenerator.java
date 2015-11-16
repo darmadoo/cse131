@@ -620,7 +620,7 @@ public class AssemblyGenerator {
         {
             writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", value, "%o0");
             writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", expr.getOffset(), "%l7");
-            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", sto.getBase(), "%l7", "%l7");
+            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", expr.getBase(), "%l7", "%l7");
             writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%l7");
             writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f0");
             writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.FITOS, "%f0", "%f0");
@@ -635,7 +635,7 @@ public class AssemblyGenerator {
         decreaseIndent();
     }
 
-    public void writeLocalInitWithVar(STO sto, STO expr)
+    public void writeLocalInitWithVar(STO sto, STO expr, STO temp)
     {
         increaseIndent();
         writeAssembly(AssemlyString.VAR_DECL_COMMENT, sto.getName(), expr.getName());
@@ -645,19 +645,29 @@ public class AssemblyGenerator {
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", expr.getOffset(), "%l7");
         writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", expr.getBase(), "%l7", "%l7");
 
-        if(sto.getType() instanceof FloatType) {
+        if(sto.getType() instanceof FloatType && expr.getType() instanceof FloatType) {
             writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%f0");
             writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%f0", "%o1");
         }
-        else {
+        else if (sto.getType() instanceof IntType && expr.getType() instanceof IntType){
             writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
             writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
+        }
+        else if (sto.getType() instanceof FloatType && expr.getType() instanceof IntType && temp != null)
+        {
+            writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", temp.getOffset(), "%l7");
+            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", temp.getBase(), "%l7", "%l7");
+            writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%l7");
+            writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%f0");
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.FITOS, "%f0", "%f0");
+            writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%f0", "%o1");
         }
         next();
         decreaseIndent();
     }
 
-    public void writeLocalStaticInitWithVar(STO sto, STO expr)
+    public void writeLocalStaticInitWithVar(STO sto, STO expr, STO temp)
     {
         writeGlobalNonInit(sto.getOffset(), true);
 
@@ -685,9 +695,8 @@ public class AssemblyGenerator {
         nop();
         next();
 
-        decreaseIndent();
-        writeLocalInitWithVar(sto, expr);
-        increaseIndent();
+        writeLocalInitWithVar(sto, expr , temp);
+
         writeAssembly("! End init guard \n");
         writeAssembly(AssemlyString.SET + "\t\t\t" + AssemlyString.INIT, sto.getOffset() + ", %o0\n");
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.MOV + "\t", "1", "%o1");
@@ -1404,6 +1413,32 @@ public class AssemblyGenerator {
         next();
         decreaseIndent();
     }
+
+    //----------------------------------------------------------------
+    // Phase 2 Check 4
+    //----------------------------------------------------------------
+    public void writeCin(STO sto)
+    {
+        increaseIndent();
+        writeAssembly("! cin >> " + sto.getName());
+        next();
+
+        if(sto.getType().isInt())
+        {
+            call("inputInt");
+        }
+        else if(sto.getType().isFloat())
+        {
+            call("inputFloat");
+        }
+        nop();
+        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", sto.getOffset(), "%o1");
+        writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", sto.getBase(), "%o1", "%o1");
+        writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
+        next();
+        decreaseIndent();
+    }
+
     //////////////////////////// END OF DAISY STUFF ////////////////////////////
 
     public void writeIfCheck(STO expr){

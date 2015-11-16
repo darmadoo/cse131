@@ -499,7 +499,15 @@ class MyParser extends parser
 				{
 					sto.setBase("%g0");
 					sto.setOffset(fun.getName() + "." + fun.getType().getName() + "." + id);
-					m_writer.writeLocalStaticInitWithVar(sto, expr);
+					VarSTO temp = new VarSTO("temp");
+
+					if(sto.getType().isFloat() && expr.getType().isInt()) {
+						temp.setBase("%fp");
+						offset -= sto.getType().getSize();
+						temp.setOffset(Integer.toString(offset));
+					}
+
+					m_writer.writeLocalStaticInitWithVar(sto, expr, temp);
 				}
 				//local not static
 				else
@@ -507,7 +515,15 @@ class MyParser extends parser
 					sto.setBase("%fp");
 					offset -= t.getSize();
 					sto.setOffset(Integer.toString(offset));
-					m_writer.writeLocalInitWithVar(sto, expr);
+					VarSTO temp = new VarSTO("temp");
+
+					if(sto.getType().isFloat() && expr.getType().isInt()) {
+						temp.setBase("%fp");
+						offset -= sto.getType().getSize();
+						temp.setOffset(Integer.toString(offset));
+					}
+
+					m_writer.writeLocalInitWithVar(sto, expr, temp);
 				}
 			}
 
@@ -641,7 +657,7 @@ class MyParser extends parser
 					{
 						sto.setBase("%g0");
 						sto.setOffset(fun.getName() + "." + fun.getType().getName() + "." + id);
-						m_writer.writeLocalStaticInitWithVar(sto, expr);
+						m_writer.writeLocalStaticInitWithVar(sto, expr , null);
 					}
 					//local not static
 					else
@@ -649,7 +665,7 @@ class MyParser extends parser
 						sto.setBase("%fp");
 						offset -= expr.getType().getSize();
 						sto.setOffset(Integer.toString(offset));
-						m_writer.writeLocalInitWithVar(sto, expr);
+						m_writer.writeLocalInitWithVar(sto, expr, null);
 					}
 				}
 			}
@@ -733,10 +749,24 @@ class MyParser extends parser
 						sto.setBase("%fp");
 						offset -= t.getSize();
 						sto.setOffset(Integer.toString(offset));
-						if (exprIsConstVar)
-							m_writer.writeLocalInitWithVar(sto, expr);
-						else
+						if (exprIsConstVar) {
+							VarSTO temp = new VarSTO("temp");
+
+							if(sto.getType().isFloat() && expr.getType().isInt()) {
+								temp.setBase("%fp");
+								offset -= sto.getType().getSize();
+								temp.setOffset(Integer.toString(offset));
+							}
+							m_writer.writeLocalInitWithVar(sto, expr, temp);
+						}
+						else {
+							if (sto.getType().isFloat() && expr.getType().isInt()) {
+								expr.setBase("%fp");
+								offset -= sto.getType().getSize();
+								expr.setOffset(Integer.toString(offset));
+							}
 							m_writer.writeLocalInitWithConst(sto, expr);
+						}
 					}
 				}
 				m_symtab.insert(sto);
@@ -762,8 +792,9 @@ class MyParser extends parser
 						sto.setBase("%fp");
 						offset -= t.getSize();
 						sto.setOffset(Integer.toString(offset));
-						if (exprIsConstVar)
-							m_writer.writeLocalInitWithVar(sto, expr);
+						if (exprIsConstVar) {
+							m_writer.writeLocalInitWithVar(sto, expr, null);
+						}
 						else
 							m_writer.writeLocalInitWithConst(sto, expr);
 					}
@@ -791,8 +822,9 @@ class MyParser extends parser
 						sto.setBase("%fp");
 						offset -= t.getSize();
 						sto.setOffset(Integer.toString(offset));
-						if (exprIsConstVar)
-							m_writer.writeLocalInitWithVar(sto, expr);
+						if (exprIsConstVar) {
+							m_writer.writeLocalInitWithVar(sto, expr, null);
+						}
 						else
 							m_writer.writeLocalInitWithConst(sto, expr);
 					}
@@ -858,8 +890,9 @@ class MyParser extends parser
 						sto.setBase("%fp");
 						offset -= expr.getType().getSize();
 						sto.setOffset(Integer.toString(offset));
-						if (exprIsConstVar)
-							m_writer.writeLocalInitWithVar(sto, expr);
+						if (exprIsConstVar) {
+							m_writer.writeLocalInitWithVar(sto, expr, null);
+						}
 						else
 							m_writer.writeLocalInitWithConst(sto, expr);
 					}
@@ -887,8 +920,9 @@ class MyParser extends parser
 						sto.setBase("%fp");
 						offset -= expr.getType().getSize();
 						sto.setOffset(Integer.toString(offset));
-						if (exprIsConstVar)
-							m_writer.writeLocalInitWithVar(sto, expr);
+						if (exprIsConstVar) {
+							m_writer.writeLocalInitWithVar(sto, expr, null);
+						}
 						else
 							m_writer.writeLocalInitWithConst(sto, expr);
 					}
@@ -916,8 +950,9 @@ class MyParser extends parser
 						sto.setBase("%fp");
 						offset -= expr.getType().getSize();
 						sto.setOffset(Integer.toString(offset));
-						if (exprIsConstVar)
-							m_writer.writeLocalInitWithVar(sto, expr);
+						if (exprIsConstVar) {
+							m_writer.writeLocalInitWithVar(sto, expr, null);
+						}
 						else
 							m_writer.writeLocalInitWithConst(sto, expr);
 					}
@@ -1204,8 +1239,16 @@ class MyParser extends parser
 		}
 		else
 		{
-			if (!expr.isConst())
-				m_writer.writeLocalInitWithVar(stoDes, expr);
+			if (!expr.isConst()) {
+				VarSTO sto = new VarSTO("temp");
+
+				if(stoDes.getType().isFloat() && expr.getType().isInt()) {
+					sto.setBase("%fp");
+					offset -= expr.getType().getSize();
+					sto.setOffset(Integer.toString(offset));
+				}
+				m_writer.writeLocalInitWithVar(stoDes, expr, sto);
+			}
 			else {
 				if(stoDes.getType().isFloat() && expr.getType().isInt())
 				{
@@ -2604,6 +2647,16 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
+	void DoCin(STO sto)
+	{
+		if(!sto.getIsAddressable())
+		{
+			sto.setBase("g0");
+			sto.setOffset("0");
+		}
+		m_writer.writeCin(sto);
+	}
+
 	void DoCout(STO sto)
 	{
 		if(sto.isConst())
