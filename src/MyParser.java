@@ -1275,7 +1275,7 @@ class MyParser extends parser
 		}
 
 		//if not a constant folding
-		if(!a.isConst() || !b.isConst()) {
+		if( a.getIsAddressable() || b.getIsAddressable()) {
 			// check I.4
 			result.setBase("%fp");
 			offset -= result.getType().getSize();
@@ -1308,6 +1308,11 @@ class MyParser extends parser
 
 				m_writer.writeFloatBinaryArithmeticExpression(a, o, b, result, temp);
 			}
+			else if(a.getType().isBool() && b.getType().isBool())
+			{
+				m_writer.writeBoolBinaryArithmeticExpression(a, o, b, result);
+
+			}
 		}
 			//do stuff...
 		return result ;
@@ -1332,15 +1337,18 @@ class MyParser extends parser
 			m_errors.print(result.getName());
 		}
 
-		result.setBase("%fp");
-		offset -= result.getType().getSize();
-		result.setOffset(Integer.toString(offset));
+		if(a.getIsAddressable()) {
+			result.setBase("%fp");
+			offset -= result.getType().getSize();
+			result.setOffset(Integer.toString(offset));
 
-		if(a.getType().isInt()) {
-			m_writer.writeIntegerUnaryArithmeticExpression(a, o, isPre, result);
-		}
-		else if(a.getType().isFloat()) {
-			m_writer.writeFloatUnaryArithmeticExpression(a, o, isPre, result);
+			if (a.getType().isInt()) {
+				m_writer.writeIntegerUnaryArithmeticExpression(a, o, isPre, result);
+			} else if (a.getType().isFloat()) {
+				m_writer.writeFloatUnaryArithmeticExpression(a, o, isPre, result);
+			} else if (a.getType().isBool()) {
+				m_writer.writeBoolUnaryArithmeticExpression(a, o, result);
+			}
 		}
 		//do stuff...
 		return result ;

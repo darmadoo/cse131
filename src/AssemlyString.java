@@ -85,6 +85,8 @@ public class AssemlyString {
     public static final String STR = "str";
     public static final String FLOAT = "float";
 
+    public static final String XOR = "xor";
+
     public static final String LD = "ld";
     public static final String ST = "st";
     public static final String BNE = "bne";

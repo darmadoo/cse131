@@ -461,6 +461,8 @@ public class AssemblyGenerator {
     private int strCount = 0;
     private int floatCount = 0;
     private int cmpCount = 0;
+    private int andorCount = 0;
+
     public void writeEndlCout()
     {
         increaseIndent();
@@ -697,7 +699,7 @@ public class AssemblyGenerator {
     }
 
     //----------------------------------------------------------------
-    // Phase 1 Check 4
+    // Phase 1 Check 4, Phase 2 Check 3
     //----------------------------------------------------------------
     public void writeIntegerBinaryArithmeticExpression(STO a, BinaryOp o, STO b, STO result, boolean flag)
     {
@@ -871,6 +873,7 @@ public class AssemblyGenerator {
 
         decreaseIndent();
     }
+
     public void writeIntegerUnaryArithmeticExpression(STO a, UnaryOp o, boolean isPre, STO result)
     {
         increaseIndent();
@@ -949,6 +952,9 @@ public class AssemblyGenerator {
         decreaseIndent();
     }
 
+    //----------------------------------------------------------------
+    // Phase 2 Check 1
+    //----------------------------------------------------------------
     public void writeFloatBinaryArithmeticExpression(STO a, BinaryOp o, STO b, STO result, STO temp){
         increaseIndent();
 
@@ -1165,7 +1171,6 @@ public class AssemblyGenerator {
         decreaseIndent();
     }
 
-
     public void writeFloatUnaryArithmeticExpression(STO a, UnaryOp o, boolean isPre, STO result)
     {
         increaseIndent();
@@ -1237,6 +1242,168 @@ public class AssemblyGenerator {
         decreaseIndent();
     }
 
+    //----------------------------------------------------------------
+    // Phase 2 Check 3
+    //----------------------------------------------------------------
+    public void writeBoolBinaryArithmeticExpression(STO a, BinaryOp o, STO b, STO result) {
+        increaseIndent();
+
+        String operand = "";
+        if (o instanceof EqualOp)
+            operand = "==";
+        else if (o instanceof NotEqualOp)
+            operand = "!=";
+        else if (o instanceof AndOp)
+            operand = "&&";
+        else if (o instanceof OrOp)
+            operand = "||";
+
+        if(o instanceof AndOp || o instanceof OrOp)
+        {
+            writeAssembly("! Short Circuit LHS");
+            next();
+        }
+        else {
+            writeAssembly(AssemlyString.MATH_COMMENT, a.getName(), operand, b.getName());
+        }
+
+        if(a.isConst() && !a.getIsAddressable())
+        {
+            set(String.valueOf(((ConstSTO) a).getValue()), "%o0");
+        }
+        else {
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", a.getOffset(), "%l7");
+            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", a.getBase(), "%l7", "%l7");
+            writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
+        }
+
+        if(o instanceof AndOp || o instanceof OrOp)
+        {
+            cmp(o0, g0);
+            andorCount++;
+            if(o instanceof AndOp)
+            {
+                writeAssembly(AssemlyString.BE, AssemlyString.PREFIX + "andorSkip." + andorCount + "\n");
+            }
+            else
+            {
+                writeAssembly(AssemlyString.BNE + "\t\t\t" + AssemlyString.PREFIX + "andorSkip." + andorCount + "\n");
+            }
+            nop();
+            next();
+            writeAssembly(AssemlyString.MATH_COMMENT, a.getName(), operand, b.getName());
+            next();
+            writeAssembly("! Short Circuit RHS");
+            next();
+        }
+
+        if(b.isConst() && !b.getIsAddressable())
+        {
+            set(String.valueOf(((ConstSTO) b).getValue()), "%o1");
+        }
+        else {
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", b.getOffset(), "%l7");
+            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", b.getBase(), "%l7", "%l7");
+            if(o instanceof AndOp || o instanceof OrOp)
+                writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
+            else
+                writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o1");
+        }
+
+        if(o instanceof AndOp || o instanceof OrOp) {
+            cmp(o0, g0);
+            if(o instanceof AndOp)
+            {
+                writeAssembly(AssemlyString.BE, AssemlyString.PREFIX + "andorSkip." + andorCount + "\n");
+            }
+            else
+            {
+                writeAssembly(AssemlyString.BNE + "\t\t\t" + AssemlyString.PREFIX + "andorSkip." + andorCount + "\n");
+            }
+            nop();
+            writeAssembly(AssemlyString.BA, AssemlyString.PREFIX + "andorEnd." + andorCount + "\n");
+            if(o instanceof AndOp)
+            {
+                mov("1", o0);
+                decreaseIndent();
+                writeAssembly(AssemlyString.PREFIX + "andorSkip." + andorCount + ":\n");
+                increaseIndent();
+                mov("0", o0);
+                decreaseIndent();
+                writeAssembly(AssemlyString.PREFIX + "andorEnd." + andorCount + ":\n");
+                increaseIndent();
+            }
+            else
+            {
+                mov("0", o0);
+                decreaseIndent();
+                writeAssembly(AssemlyString.PREFIX + "andorSkip." + andorCount + ":\n");
+                increaseIndent();
+                mov("1", o0);
+                decreaseIndent();
+                writeAssembly(AssemlyString.PREFIX + "andorEnd." + andorCount + ":\n");
+                increaseIndent();
+            }
+        }
+
+        if (o instanceof EqualOp)
+        {
+            cmpCount++;
+            cmp(o0, o1);
+            writeAssembly(AssemlyString.BNE + "\t\t\t" + AssemlyString.PREFIX + "cmp." + cmpCount);
+            next();
+            mov(g0, o0);
+            inc(o0);
+            decreaseIndent();
+            writeAssembly(AssemlyString.PREFIX + "cmp." + cmpCount + ":");
+            next();
+            increaseIndent();
+        }
+        else if (o instanceof NotEqualOp)
+        {
+            cmpCount++;
+            cmp(o0, o1);
+            writeAssembly(AssemlyString.BE, AssemlyString.PREFIX + "cmp." + cmpCount);
+            next();
+            mov(g0, o0);
+            inc(o0);
+            decreaseIndent();
+            writeAssembly(AssemlyString.PREFIX + "cmp." + cmpCount + ":");
+            next();
+            increaseIndent();
+        }
+
+        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", result.getOffset(), "%o1");
+        writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", result.getBase(), "%o1", "%o1");
+        writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
+
+        next();
+        decreaseIndent();
+    }
+
+    public void writeBoolUnaryArithmeticExpression(STO a, UnaryOp o, STO result) {
+        increaseIndent();
+
+        if (o instanceof NotOp)
+        {
+            writeAssembly("! !" + a.getName() + "\n");
+        }
+
+        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", a.getOffset(), "%l7");
+        writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", a.getBase(), "%l7", "%l7");
+        writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
+
+        if (o instanceof NotOp)
+        {
+            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.XOR + "\t", o0, "1", o0);
+        }
+        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", result.getOffset(), "%o1");
+        writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", result.getBase(), "%o1", "%o1");
+        writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
+
+        next();
+        decreaseIndent();
+    }
     //////////////////////////// END OF DAISY STUFF ////////////////////////////
 
     public void writeIfCheck(STO expr){
