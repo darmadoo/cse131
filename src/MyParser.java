@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
+import java.util.Stack;
 
 class MyParser extends parser
 {
@@ -45,8 +46,12 @@ class MyParser extends parser
 
 	private int offset = 0;
 	// Project 2 phase 1 check 5
-	private int cmpCount = 0;
-	private boolean ifFlag = false;
+	private int ifCount = 0;
+	private int whileCount = 0;
+
+	private Stack<Integer> ifStack = new Stack<>();
+	private Stack<Integer> whileStack = new Stack<>();
+
 
 	//----------------------------------------------------------------
 	//
@@ -1318,7 +1323,7 @@ class MyParser extends parser
 		}
 
 		//if not a constant folding
-		if( a.getIsAddressable() || b.getIsAddressable()) {
+		if( !((!a.getIsAddressable() && a.isConst()) &&  (!b.getIsAddressable() && b.isConst()))) {
 			// check I.4
 			result.setBase("%fp");
 			offset -= result.getType().getSize();
@@ -1334,7 +1339,7 @@ class MyParser extends parser
 */
 			// Integer arithmetic expression
 			if (a.getType().isInt() && b.getType().isInt()) {
-				m_writer.writeIntegerBinaryArithmeticExpression(a, o, b, result, ifFlag);
+				m_writer.writeIntegerBinaryArithmeticExpression(a, o, b, result);
 			}
 			else if(a.getType().isFloat() || b.getType().isFloat())
 			{
@@ -1361,10 +1366,35 @@ class MyParser extends parser
 		return result ;
 	}
 
-	void setIfFlag(boolean flag){
-		ifFlag = flag;
+
+	void pushStack( String input ) {
+		if( input == "if") {
+			ifCount++;
+			ifStack.push(ifCount);
+			m_writer.changeIfCountValue(ifCount);
+		}
+		else if ( input == "while")
+		{
+			whileCount++;
+			whileStack.push(whileCount);
+			m_writer.changeWhileCountValue(whileCount);
+		}
 	}
 
+	void popStack( String input ) {
+		if(input == "if") {
+			ifStack.pop();
+			if (!ifStack.empty())
+				m_writer.changeIfCountValue(ifStack.peek());
+		}
+		else if ( input == "while")
+		{
+			whileStack.pop();
+			if (!whileStack.empty())
+				m_writer.changeWhileCountValue(whileStack.peek());
+		}
+
+	}
 	//----------------------------------------------------------------
 	// Check 1
 	//----------------------------------------------------------------
@@ -1411,12 +1441,25 @@ class MyParser extends parser
 			m_errors.print(Formatter.toString(ErrorMsg.error4_Test, varType.getName()));
 		}
 
-		m_writer.writeEndofIf();
 		return expr;
 	}
 
-	public void elseBlock(){
-		m_writer.writeElseBlock();
+	public void writeIf(STO sto){
+		m_writer.writeIfCheck(sto);
+	}
+
+	public void writeWhile() { m_writer.writeWhile(); }
+
+	public void writeWhileLoopCondition(STO sto) {
+		m_writer.writeWhileLoopCondition(sto);
+	}
+
+	public void writeEndWhileLoop() { m_writer.writeEndWhileLoop(); }
+
+	public void writeElseBlock() { m_writer.writeElseBlock();}
+
+	public void writeEndOfIf(){
+		m_writer.writeEndOfIf();
 	}
 
 

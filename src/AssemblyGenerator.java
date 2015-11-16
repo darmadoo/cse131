@@ -462,6 +462,8 @@ public class AssemblyGenerator {
     private int floatCount = 0;
     private int cmpCount = 0;
     private int andorCount = 0;
+    private int ifCount = 0;
+    private int whileCount = 0;
 
     public void writeEndlCout()
     {
@@ -710,7 +712,7 @@ public class AssemblyGenerator {
     //----------------------------------------------------------------
     // Phase 1 Check 4, Phase 2 Check 3
     //----------------------------------------------------------------
-    public void writeIntegerBinaryArithmeticExpression(STO a, BinaryOp o, STO b, STO result, boolean flag)
+    public void writeIntegerBinaryArithmeticExpression(STO a, BinaryOp o, STO b, STO result)
     {
         String operand = "";
         if(o instanceof AddOp)
@@ -870,15 +872,14 @@ public class AssemblyGenerator {
             increaseIndent();
         }
 
-
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + SEPARATOR, result.getOffset(), "%o1");
         writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + SEPARATOR, result.getBase(), "%o1", "%o1");
         writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
         next();
 
-        if(o instanceof GreaterThanOp){
-            writeIfCheck(result);
-        }
+        //if(flag){
+        //    writeIfCheck(result);
+        //}
 
         decreaseIndent();
     }
@@ -1439,34 +1440,104 @@ public class AssemblyGenerator {
         decreaseIndent();
     }
 
+    public void changeIfCountValue(int input)
+    {
+        ifCount = input;
+    }
+
+    public void changeWhileCountValue(int input)
+    {
+        whileCount = input;
+    }
+
+    public void writeWhile()
+    {
+        increaseIndent();
+        writeAssembly("! while ( ... ) \n");
+        decreaseIndent();
+        writeAssembly(AssemlyString.PREFIX + "loopCheck." + whileCount + ":\n");
+        next();
+        increaseIndent();
+    }
+
+    public void writeWhileLoopCondition(STO sto)
+    {
+        increaseIndent();
+        writeAssembly("! Check loop condition \n");
+        if(!sto.getIsAddressable() && sto.isConst())
+        {
+            set(String.valueOf(((ConstSTO) sto).getValue()), "%o0");
+        }
+        else {
+            set(sto.getOffset(), l7);
+            add(sto.getBase(), l7, l7);
+            ld(l7, o0);
+        }
+        cmp(o0, g0);
+        writeAssembly(AssemlyString.BE, AssemlyString.PREFIX + "loopEnd." + whileCount);
+        next();
+        nop();
+        next();
+        writeAssembly("! Start loop body \n");
+        next();
+    }
+
+    public void writeEndWhileLoop()
+    {
+        writeAssembly("! End of loop body \n");
+        writeAssembly(AssemlyString.BA, AssemlyString.PREFIX + "loopCheck." + whileCount);
+        next();
+        nop();
+        decreaseIndent();
+        writeAssembly(AssemlyString.PREFIX + "loopEnd." + whileCount + ":");
+        next();
+        next();
+        decreaseIndent();
+    }
     //////////////////////////// END OF DAISY STUFF ////////////////////////////
 
     public void writeIfCheck(STO expr){
-        set(expr.getOffset(), l7);
-        add(expr.getBase(), l7, l7);
-        ld(l7, o0);
+        increaseIndent();
+        writeAssembly("! if %s", expr.getName());
+        next();
+
+        if(!expr.getIsAddressable() && expr.isConst())
+        {
+            set(String.valueOf(((ConstSTO) expr).getValue()), "%o0");
+        }
+        else {
+            set(expr.getOffset(), l7);
+            add(expr.getBase(), l7, l7);
+            ld(l7, o0);
+        }
         cmp(o0, g0);
-        writeAssembly(AssemlyString.BE, AssemlyString.PREFIX + "else." + cmpCount);
+        writeAssembly(AssemlyString.BE, AssemlyString.PREFIX + "else." + ifCount);
         next();
         nop();
         next();
     }
 
-    public void writeEndofIf(){
-        writeAssembly(AssemlyString.BA, AssemlyString.PREFIX + "else." + cmpCount);
+    public void writeElseBlock(){
+        increaseIndent();
+        writeAssembly(AssemlyString.BA, AssemlyString.PREFIX + "endif." + ifCount);
         next();
         nop();
 
         decreaseIndent();
         next();
-        writeAssembly(AssemlyString.PREFIX + "else." + cmpCount + ":");
+        writeAssembly(" ! else \n");
+        decreaseIndent();
+        writeAssembly(AssemlyString.PREFIX + "else." + ifCount + ":");
         next();
         next();
+        increaseIndent();
     }
 
-    public void writeElseBlock()
+    public void writeEndOfIf()
     {
-        writeAssembly(AssemlyString.PREFIX + "endif." + cmpCount + ":\n\n");
+        writeAssembly(" ! endif \n");
+        decreaseIndent();
+        writeAssembly(AssemlyString.PREFIX + "endif." + ifCount + ":\n\n");
     }
 
     public void writeReturn(STO expr){

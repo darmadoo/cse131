@@ -720,16 +720,22 @@ CtorCall ::=        T_COLON T_LPAREN OptExprList:_1 T_RPAREN
 
 IfStmt ::=          T_IF
                     {:
-                        ((MyParser) parser).setIfFlag(true);
+                        ((MyParser) parser).pushStack("if");
                     :}
-                    Expr:_1 CodeBlock
+                    Expr:_1
                     {:
                         RESULT = ((MyParser) parser).DoBoolCheck(_1);
+                        ((MyParser) parser).writeIf(_1);
+                    :}
+                    CodeBlock
+                    {:
+                        ((MyParser) parser).writeElseBlock();
                     :}
                     OptElse
                     {:
-                        ((MyParser) parser).elseBlock();
-                        ((MyParser) parser).setIfFlag(false);
+                        ((MyParser) parser).writeEndOfIf();
+                        ((MyParser) parser).popStack("if");
+
                     :}
     ;
 
@@ -739,14 +745,22 @@ OptElse ::=         T_ELSE CodeBlock
     ;
 
 
-WhileStmt ::=       T_WHILE Expr:_1
+WhileStmt ::=       T_WHILE
+                    {:
+                        ((MyParser) parser).pushStack("while");
+                        ((MyParser) parser).writeWhile();
+                    :}
+                    Expr:_1
                     {:
                         ((MyParser) parser).incrementBreakCounter();
                         RESULT = ((MyParser) parser).DoBoolCheck(_1);
+                        ((MyParser) parser).writeWhileLoopCondition(_1);
                     :}
                     CodeBlock
                     {:
                         ((MyParser) parser).decrementBreakCounter();
+                        ((MyParser) parser).writeEndWhileLoop();
+
                     :}
     ;
 
