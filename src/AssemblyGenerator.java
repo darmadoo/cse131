@@ -1559,17 +1559,20 @@ public class AssemblyGenerator {
         increaseIndent();
         writeAssembly("! " + sto.getName() + "(...)\n");
         Vector<STO> param = ((FuncSTO)sto).getParams();
-        for(int i = 0; i < args.size(); i++){
-            writeAssembly("! " + param.get(i).getName() + " <- " + args.get(i).getName() + "\n");
-            set(args.get(i).getOffset(), l7);
-            add(fp, l7, l7);
-            if(args.get(i).getType() instanceof FloatType){
-                ld(l7, "%f" + i);
-            }
-            else{
-                ld(l7, "%o" + i);
+        if(args != null){
+            for(int i = 0; i < args.size(); i++){
+                writeAssembly("! " + param.get(i).getName() + " <- " + args.get(i).getName() + "\n");
+                set(args.get(i).getOffset(), l7);
+                add(fp, l7, l7);
+                if(args.get(i).getType() instanceof FloatType){
+                    ld(l7, "%f" + i);
+                }
+                else{
+                    ld(l7, "%o" + i);
+                }
             }
         }
+
         call(temp);
         nop();
         next();
