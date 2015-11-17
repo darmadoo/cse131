@@ -1323,7 +1323,7 @@ class MyParser extends parser
 		}
 
 		//if not a constant folding
-		if( !((!a.getIsAddressable() && a.isConst()) &&  (!b.getIsAddressable() && b.isConst()))) {
+		if( !((a.isConst() && !a.getIsAddressable()) && (b.isConst() && !b.getIsAddressable())) ) {
 			// check I.4
 			result.setBase("%fp");
 			offset -= result.getType().getSize();
@@ -1361,6 +1361,12 @@ class MyParser extends parser
 				m_writer.writeBoolBinaryArithmeticExpression(a, o, b, result);
 
 			}
+		}
+		//both are constant but still need to short circuit
+		else if(o instanceof AndOp || o instanceof OrOp)
+		{
+			//still has to short circuit
+			m_writer.writeBoolBinaryArithmeticExpression(a, o, b, null);
 		}
 			//do stuff...
 		return result ;
@@ -1410,7 +1416,7 @@ class MyParser extends parser
 			m_errors.print(result.getName());
 		}
 
-		if(a.getIsAddressable()) {
+		if(!(a.isConst() && !a.getIsAddressable())) {
 			result.setBase("%fp");
 			offset -= result.getType().getSize();
 			result.setOffset(Integer.toString(offset));
@@ -1585,7 +1591,7 @@ class MyParser extends parser
 				}
 			}
 		}
-		
+
 		return generateExpr(sto);
 	}
 

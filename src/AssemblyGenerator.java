@@ -895,6 +895,8 @@ public class AssemblyGenerator {
 
         if(o instanceof MinusUnaryOp)
             writeAssembly("! -" + a.getName() + "\n");
+        else if ( o instanceof PlusUnaryOp)
+            writeAssembly("! +" + a.getName() + "\n");
         else if(o instanceof IncOp)
         {
             if(isPre)
@@ -917,6 +919,13 @@ public class AssemblyGenerator {
         if(o instanceof MinusUnaryOp)
         {
             writeAssembly(AssemlyString.TWO_PARAM, "neg\t", "%o0", "%o0");
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + SEPARATOR, result.getOffset(), "%o1");
+            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + SEPARATOR, result.getBase(), "%o1", "%o1");
+            writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
+        }
+        else if(o instanceof PlusUnaryOp)
+        {
+            writeAssembly(AssemlyString.TWO_PARAM, "mov\t", "%o0", "%o0");
             writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + SEPARATOR, result.getOffset(), "%o1");
             writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + SEPARATOR, result.getBase(), "%o1", "%o1");
             writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
@@ -1192,6 +1201,8 @@ public class AssemblyGenerator {
 
         if(o instanceof MinusUnaryOp)
             writeAssembly("! -" + a.getName() + "\n");
+        else if ( o instanceof PlusUnaryOp)
+            writeAssembly("! +" + a.getName() + "\n");
         else if(o instanceof IncOp)
         {
             if(isPre)
@@ -1214,6 +1225,13 @@ public class AssemblyGenerator {
         if(o instanceof MinusUnaryOp)
         {
             writeAssembly(AssemlyString.TWO_PARAM, "fnegs", "%f0", "%f0");
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", result.getOffset(), "%o1");
+            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", result.getBase(), "%o1", "%o1");
+            writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%f0", "%o1");
+        }
+        else if(o instanceof PlusUnaryOp)
+        {
+            writeAssembly(AssemlyString.TWO_PARAM, "fmovs", "%f0", "%f0");
             writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", result.getOffset(), "%o1");
             writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", result.getBase(), "%o1", "%o1");
             writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%f0", "%o1");
@@ -1314,7 +1332,10 @@ public class AssemblyGenerator {
 
         if(b.isConst() && !b.getIsAddressable())
         {
-            set(String.valueOf(((ConstSTO) b).getValue()), "%o1");
+            if(o instanceof AndOp || o instanceof OrOp)
+                set(String.valueOf(((ConstSTO) b).getValue()), "%o0");
+            else
+                set(String.valueOf(((ConstSTO) b).getValue()), "%o1");
         }
         else {
             writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", b.getOffset(), "%l7");
@@ -1337,24 +1358,29 @@ public class AssemblyGenerator {
             }
             nop();
             writeAssembly(AssemlyString.BA, AssemlyString.PREFIX + "andorEnd." + andorCount + "\n");
+            String temp = "";
+            if(result != null)
+                temp = o0;
+            else
+                temp = g0;
             if(o instanceof AndOp)
             {
-                mov("1", o0);
+                mov("1", temp);
                 decreaseIndent();
                 writeAssembly(AssemlyString.PREFIX + "andorSkip." + andorCount + ":\n");
                 increaseIndent();
-                mov("0", o0);
+                mov("0", temp);
                 decreaseIndent();
                 writeAssembly(AssemlyString.PREFIX + "andorEnd." + andorCount + ":\n");
                 increaseIndent();
             }
             else
             {
-                mov("0", o0);
+                mov("0", temp);
                 decreaseIndent();
                 writeAssembly(AssemlyString.PREFIX + "andorSkip." + andorCount + ":\n");
                 increaseIndent();
-                mov("1", o0);
+                mov("1", temp);
                 decreaseIndent();
                 writeAssembly(AssemlyString.PREFIX + "andorEnd." + andorCount + ":\n");
                 increaseIndent();
@@ -1388,9 +1414,11 @@ public class AssemblyGenerator {
             increaseIndent();
         }
 
-        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", result.getOffset(), "%o1");
-        writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", result.getBase(), "%o1", "%o1");
-        writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
+        if(result != null) {
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", result.getOffset(), "%o1");
+            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", result.getBase(), "%o1", "%o1");
+            writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
+        }
 
         next();
         decreaseIndent();
