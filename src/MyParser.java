@@ -1292,9 +1292,9 @@ class MyParser extends parser
 	//
 	//----------------------------------------------------------------
 	STO DoDesignator4_ID(String strID) {
-		STO sto;
+		STO sto = m_symtab.accessGlobal(strID);
 
-		if ((sto = m_symtab.accessGlobal(strID)) == null)
+		if (sto == null)
 		{
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.error0g_Scope, strID));
@@ -1324,7 +1324,7 @@ class MyParser extends parser
 		}
 
 		//if not a constant folding
-		if( !((a.isConst() && !a.getIsAddressable()) && (b.isConst() && !b.getIsAddressable())) ) {
+		if( !((a.isConst() && !a.getIsAddressable()) && (b.isConst() && !b.getIsAddressable()))) {
 			// check I.4
 			result.setBase("%fp");
 			offset -= result.getType().getSize();
@@ -2748,5 +2748,13 @@ class MyParser extends parser
 	void DoEndlCout()
 	{
 		m_writer.writeEndlCout();
+	}
+
+	void DoShortCircuitLeft (STO sto, String input) {
+		m_writer.writeShortCircuitLeft(sto, input);
+	}
+
+	void DoShortCircuitRight (STO sto, String input) {
+		m_writer.writeShortCircuitRight(sto, input);
 	}
 }

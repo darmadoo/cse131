@@ -1071,7 +1071,7 @@ public class AssemblyGenerator {
             // if a is int literals
             if(b.isConst() && !b.getIsAddressable())
             {
-                set(Integer.toString(((ConstSTO)b).getIntValue()), o0);
+                set(Integer.toString(((ConstSTO)b).getIntValue()), o1);
             }
             else {
                 writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", b.getOffset(), l7);
@@ -1216,6 +1216,71 @@ public class AssemblyGenerator {
         decreaseIndent();
     }
 
+    String shortCircuitTemp;
+    public void writeShortCircuitLeft(STO a, String op)
+    {
+        shortCircuitTemp = a.getName();
+        increaseIndent();
+        writeAssembly("! Short Circuit LHS");
+        next();
+
+        if(a.isConst() && !a.getIsAddressable())
+        {
+            set(String.valueOf(((ConstSTO) a).getValue()), "%o0");
+        }
+        else {
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", a.getOffset(), "%l7");
+            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", a.getBase(), "%l7", "%l7");
+            writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
+        }
+        cmp(o0, g0);
+        andorCount++;
+        if( op == "and" )
+        {
+            writeAssembly(AssemlyString.BE, AssemlyString.PREFIX + "andorSkip." + andorCount + "\n");
+        }
+        else
+        {
+            writeAssembly(AssemlyString.BNE + "\t\t\t" + AssemlyString.PREFIX + "andorSkip." + andorCount + "\n");
+        }
+        nop();
+        next();
+        decreaseIndent();
+    }
+
+    public void writeShortCircuitRight(STO b, String op)
+    {
+        increaseIndent();
+        if(op == "and")
+            writeAssembly("! " + shortCircuitTemp + " && " + b.getName() + "\n\n");
+        else
+            writeAssembly("! " + shortCircuitTemp + " || " + b.getName() + "\n\n");
+
+        writeAssembly("! Short Circuit RHS");
+        next();
+
+        if(b.isConst() && !b.getIsAddressable())
+        {
+            set(String.valueOf(((ConstSTO) b).getValue()), "%o0");
+        }
+        else {
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", b.getOffset(), "%l7");
+            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", b.getBase(), "%l7", "%l7");
+            writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
+        }
+        cmp(o0, g0);
+        if( op == "and")
+        {
+            writeAssembly(AssemlyString.BE, AssemlyString.PREFIX + "andorSkip." + andorCount + "\n");
+        }
+        else
+        {
+            writeAssembly(AssemlyString.BNE + "\t\t\t" + AssemlyString.PREFIX + "andorSkip." + andorCount + "\n");
+        }
+        nop();
+        decreaseIndent();
+    }
+
     //----------------------------------------------------------------
     // Phase 2 Check 3
     //----------------------------------------------------------------
@@ -1232,72 +1297,28 @@ public class AssemblyGenerator {
         else if (o instanceof OrOp)
             operand = "||";
 
-        if(o instanceof AndOp || o instanceof OrOp)
-        {
-            writeAssembly("! Short Circuit LHS");
-            next();
-        }
-        else {
+        if(!( o instanceof AndOp || o instanceof OrOp))
             writeAssembly(AssemlyString.MATH_COMMENT, a.getName(), operand, b.getName());
-        }
 
-        if(a.isConst() && !a.getIsAddressable())
-        {
-            set(String.valueOf(((ConstSTO) a).getValue()), "%o0");
-        }
-        else {
-            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", a.getOffset(), "%l7");
-            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", a.getBase(), "%l7", "%l7");
-            writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
-        }
-
-        if(o instanceof AndOp || o instanceof OrOp)
-        {
-            cmp(o0, g0);
-            andorCount++;
-            if(o instanceof AndOp)
-            {
-                writeAssembly(AssemlyString.BE, AssemlyString.PREFIX + "andorSkip." + andorCount + "\n");
-            }
-            else
-            {
-                writeAssembly(AssemlyString.BNE + "\t\t\t" + AssemlyString.PREFIX + "andorSkip." + andorCount + "\n");
-            }
-            nop();
-            next();
-            writeAssembly(AssemlyString.MATH_COMMENT, a.getName(), operand, b.getName());
-            next();
-            writeAssembly("! Short Circuit RHS");
-            next();
-        }
-
-        if(b.isConst() && !b.getIsAddressable())
-        {
-            if(o instanceof AndOp || o instanceof OrOp)
-                set(String.valueOf(((ConstSTO) b).getValue()), "%o0");
-            else
-                set(String.valueOf(((ConstSTO) b).getValue()), "%o1");
-        }
-        else {
-            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", b.getOffset(), "%l7");
-            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", b.getBase(), "%l7", "%l7");
-            if(o instanceof AndOp || o instanceof OrOp)
+        if(!(o instanceof AndOp || o instanceof OrOp)) {
+            if (a.isConst() && !a.getIsAddressable()) {
+                set(String.valueOf(((ConstSTO) a).getValue()), "%o0");
+            } else {
+                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", a.getOffset(), "%l7");
+                writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", a.getBase(), "%l7", "%l7");
                 writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
-            else
+            }
+
+            if (b.isConst() && !b.getIsAddressable()) {
+                set(String.valueOf(((ConstSTO) b).getValue()), "%o1");
+            } else {
+                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", b.getOffset(), "%l7");
+                writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", b.getBase(), "%l7", "%l7");
                 writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o1");
+            }
         }
 
         if(o instanceof AndOp || o instanceof OrOp) {
-            cmp(o0, g0);
-            if(o instanceof AndOp)
-            {
-                writeAssembly(AssemlyString.BE, AssemlyString.PREFIX + "andorSkip." + andorCount + "\n");
-            }
-            else
-            {
-                writeAssembly(AssemlyString.BNE + "\t\t\t" + AssemlyString.PREFIX + "andorSkip." + andorCount + "\n");
-            }
-            nop();
             writeAssembly(AssemlyString.BA, AssemlyString.PREFIX + "andorEnd." + andorCount + "\n");
             String temp = "";
             if(result != null)
