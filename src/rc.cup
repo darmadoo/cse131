@@ -1088,9 +1088,13 @@ Designator ::=      T_STAR Designator:_1
                     {:
                         RESULT = ((MyParser) parser).DoAmpersand (_1);
                     :}
-    |               UnarySign Designator:_1
+    |               UnarySign:_2 Designator:_1
                     {:
-                        RESULT = ((MyParser) parser).DoUnaryExpr (_1, new MinusUnaryOp());
+                        if(_2 == "-")
+                            RESULT = ((MyParser) parser).DoUnaryExpr (_1, new MinusUnaryOp());
+                        else
+                            RESULT = ((MyParser) parser).DoUnaryExpr (_1, new PlusUnaryOp());
+
                     :}
     |               T_NOT Designator:_1
                     {:
