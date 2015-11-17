@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
+import java.util.Stack;
 
 class MyParser extends parser
 {
@@ -45,8 +46,12 @@ class MyParser extends parser
 
 	private int offset = 0;
 	// Project 2 phase 1 check 5
-	private int cmpCount = 0;
-	private boolean ifFlag = false;
+	private int ifCount = 0;
+	private int whileCount = 0;
+
+	private Stack<Integer> ifStack = new Stack<>();
+	private Stack<Integer> whileStack = new Stack<>();
+
 
 	//----------------------------------------------------------------
 	//
@@ -499,7 +504,15 @@ class MyParser extends parser
 				{
 					sto.setBase("%g0");
 					sto.setOffset(fun.getName() + "." + fun.getType().getName() + "." + id);
-					m_writer.writeLocalStaticInitWithVar(sto, expr);
+					VarSTO temp = new VarSTO("temp");
+
+					if(sto.getType().isFloat() && expr.getType().isInt()) {
+						temp.setBase("%fp");
+						offset -= sto.getType().getSize();
+						temp.setOffset(Integer.toString(offset));
+					}
+
+					m_writer.writeLocalStaticInitWithVar(sto, expr, temp);
 				}
 				//local not static
 				else
@@ -507,7 +520,15 @@ class MyParser extends parser
 					sto.setBase("%fp");
 					offset -= t.getSize();
 					sto.setOffset(Integer.toString(offset));
-					m_writer.writeLocalInitWithVar(sto, expr);
+					VarSTO temp = new VarSTO("temp");
+
+					if(sto.getType().isFloat() && expr.getType().isInt()) {
+						temp.setBase("%fp");
+						offset -= sto.getType().getSize();
+						temp.setOffset(Integer.toString(offset));
+					}
+
+					m_writer.writeLocalInitWithVar(sto, expr, temp);
 				}
 			}
 
@@ -641,7 +662,7 @@ class MyParser extends parser
 					{
 						sto.setBase("%g0");
 						sto.setOffset(fun.getName() + "." + fun.getType().getName() + "." + id);
-						m_writer.writeLocalStaticInitWithVar(sto, expr);
+						m_writer.writeLocalStaticInitWithVar(sto, expr , null);
 					}
 					//local not static
 					else
@@ -649,7 +670,7 @@ class MyParser extends parser
 						sto.setBase("%fp");
 						offset -= expr.getType().getSize();
 						sto.setOffset(Integer.toString(offset));
-						m_writer.writeLocalInitWithVar(sto, expr);
+						m_writer.writeLocalInitWithVar(sto, expr, null);
 					}
 				}
 			}
@@ -733,10 +754,24 @@ class MyParser extends parser
 						sto.setBase("%fp");
 						offset -= t.getSize();
 						sto.setOffset(Integer.toString(offset));
-						if (exprIsConstVar)
-							m_writer.writeLocalInitWithVar(sto, expr);
-						else
+						if (exprIsConstVar) {
+							VarSTO temp = new VarSTO("temp");
+
+							if(sto.getType().isFloat() && expr.getType().isInt()) {
+								temp.setBase("%fp");
+								offset -= sto.getType().getSize();
+								temp.setOffset(Integer.toString(offset));
+							}
+							m_writer.writeLocalInitWithVar(sto, expr, temp);
+						}
+						else {
+							if (sto.getType().isFloat() && expr.getType().isInt()) {
+								expr.setBase("%fp");
+								offset -= sto.getType().getSize();
+								expr.setOffset(Integer.toString(offset));
+							}
 							m_writer.writeLocalInitWithConst(sto, expr);
+						}
 					}
 				}
 				m_symtab.insert(sto);
@@ -762,8 +797,9 @@ class MyParser extends parser
 						sto.setBase("%fp");
 						offset -= t.getSize();
 						sto.setOffset(Integer.toString(offset));
-						if (exprIsConstVar)
-							m_writer.writeLocalInitWithVar(sto, expr);
+						if (exprIsConstVar) {
+							m_writer.writeLocalInitWithVar(sto, expr, null);
+						}
 						else
 							m_writer.writeLocalInitWithConst(sto, expr);
 					}
@@ -791,8 +827,9 @@ class MyParser extends parser
 						sto.setBase("%fp");
 						offset -= t.getSize();
 						sto.setOffset(Integer.toString(offset));
-						if (exprIsConstVar)
-							m_writer.writeLocalInitWithVar(sto, expr);
+						if (exprIsConstVar) {
+							m_writer.writeLocalInitWithVar(sto, expr, null);
+						}
 						else
 							m_writer.writeLocalInitWithConst(sto, expr);
 					}
@@ -858,8 +895,9 @@ class MyParser extends parser
 						sto.setBase("%fp");
 						offset -= expr.getType().getSize();
 						sto.setOffset(Integer.toString(offset));
-						if (exprIsConstVar)
-							m_writer.writeLocalInitWithVar(sto, expr);
+						if (exprIsConstVar) {
+							m_writer.writeLocalInitWithVar(sto, expr, null);
+						}
 						else
 							m_writer.writeLocalInitWithConst(sto, expr);
 					}
@@ -887,8 +925,9 @@ class MyParser extends parser
 						sto.setBase("%fp");
 						offset -= expr.getType().getSize();
 						sto.setOffset(Integer.toString(offset));
-						if (exprIsConstVar)
-							m_writer.writeLocalInitWithVar(sto, expr);
+						if (exprIsConstVar) {
+							m_writer.writeLocalInitWithVar(sto, expr, null);
+						}
 						else
 							m_writer.writeLocalInitWithConst(sto, expr);
 					}
@@ -916,8 +955,9 @@ class MyParser extends parser
 						sto.setBase("%fp");
 						offset -= expr.getType().getSize();
 						sto.setOffset(Integer.toString(offset));
-						if (exprIsConstVar)
-							m_writer.writeLocalInitWithVar(sto, expr);
+						if (exprIsConstVar) {
+							m_writer.writeLocalInitWithVar(sto, expr, null);
+						}
 						else
 							m_writer.writeLocalInitWithConst(sto, expr);
 					}
@@ -1047,6 +1087,7 @@ class MyParser extends parser
 
 	void writeFuncDecl(String id, Vector<STO> param){
 		m_writer.writeFuncDecl(id, param);
+		m_writer.writeAllocateMem(param);
 	}
 
 	//----------------------------------------------------------------
@@ -1204,8 +1245,16 @@ class MyParser extends parser
 		}
 		else
 		{
-			if (!expr.isConst())
-				m_writer.writeLocalInitWithVar(stoDes, expr);
+			if (!expr.isConst()) {
+				VarSTO sto = new VarSTO("temp");
+
+				if(stoDes.getType().isFloat() && expr.getType().isInt()) {
+					sto.setBase("%fp");
+					offset -= expr.getType().getSize();
+					sto.setOffset(Integer.toString(offset));
+				}
+				m_writer.writeLocalInitWithVar(stoDes, expr, sto);
+			}
 			else {
 				if(stoDes.getType().isFloat() && expr.getType().isInt())
 				{
@@ -1275,15 +1324,14 @@ class MyParser extends parser
 		}
 
 		//if not a constant folding
-		if(!a.isConst() || !b.isConst()) {
+		if( !((!a.getIsAddressable() && a.isConst()) &&  (!b.getIsAddressable() && b.isConst()))) {
 			// check I.4
 			result.setBase("%fp");
 			offset -= result.getType().getSize();
 			result.setOffset(Integer.toString(offset));
 
 			if (a.getType().isInt() && b.getType().isInt()) {
-				cmpCount++;
-				m_writer.writeIntegerBinaryArithmeticExpression(a, o, b, result, cmpCount, ifFlag);
+				m_writer.writeIntegerBinaryArithmeticExpression(a, o, b, result);
 			}
 			else if(a.getType().isFloat() || b.getType().isFloat())
 			{
@@ -1300,15 +1348,45 @@ class MyParser extends parser
 
 				m_writer.writeFloatBinaryArithmeticExpression(a, o, b, result, temp);
 			}
+			else if(a.getType().isBool() && b.getType().isBool())
+			{
+				m_writer.writeBoolBinaryArithmeticExpression(a, o, b, result);
+
+			}
 		}
 			//do stuff...
 		return result ;
 	}
 
-	void setIfFlag(boolean flag){
-		ifFlag = flag;
+
+	void pushStack( String input ) {
+		if( input == "if") {
+			ifCount++;
+			ifStack.push(ifCount);
+			m_writer.changeIfCountValue(ifCount);
+		}
+		else if ( input == "while")
+		{
+			whileCount++;
+			whileStack.push(whileCount);
+			m_writer.changeWhileCountValue(whileCount);
+		}
 	}
 
+	void popStack( String input ) {
+		if(input == "if") {
+			ifStack.pop();
+			if (!ifStack.empty())
+				m_writer.changeIfCountValue(ifStack.peek());
+		}
+		else if ( input == "while")
+		{
+			whileStack.pop();
+			if (!whileStack.empty())
+				m_writer.changeWhileCountValue(whileStack.peek());
+		}
+
+	}
 	//----------------------------------------------------------------
 	// Check 1
 	//----------------------------------------------------------------
@@ -1324,15 +1402,18 @@ class MyParser extends parser
 			m_errors.print(result.getName());
 		}
 
-		result.setBase("%fp");
-		offset -= result.getType().getSize();
-		result.setOffset(Integer.toString(offset));
+		if(a.getIsAddressable()) {
+			result.setBase("%fp");
+			offset -= result.getType().getSize();
+			result.setOffset(Integer.toString(offset));
 
-		if(a.getType().isInt()) {
-			m_writer.writeIntegerUnaryArithmeticExpression(a, o, isPre, result);
-		}
-		else if(a.getType().isFloat()) {
-			m_writer.writeFloatUnaryArithmeticExpression(a, o, isPre, result);
+			if (a.getType().isInt()) {
+				m_writer.writeIntegerUnaryArithmeticExpression(a, o, isPre, result);
+			} else if (a.getType().isFloat()) {
+				m_writer.writeFloatUnaryArithmeticExpression(a, o, isPre, result);
+			} else if (a.getType().isBool()) {
+				m_writer.writeBoolUnaryArithmeticExpression(a, o, result);
+			}
 		}
 		//do stuff...
 		return result ;
@@ -1342,7 +1423,6 @@ class MyParser extends parser
 	// Check 4
 	//----------------------------------------------------------------
 	STO DoBoolCheck(STO expr){
-
 		if(expr instanceof ErrorSTO || expr.getType().isError()) {
 			return expr;
 		}
@@ -1353,12 +1433,25 @@ class MyParser extends parser
 			m_errors.print(Formatter.toString(ErrorMsg.error4_Test, varType.getName()));
 		}
 
-		m_writer.writeEndofIf(cmpCount);
 		return expr;
 	}
 
-	public void elseBlock(){
-		m_writer.writeAssembly(AssemlyString.PREFIX + "endif." + cmpCount + ":\n\n");
+	public void writeIf(STO sto){
+		m_writer.writeIfCheck(sto);
+	}
+
+	public void writeWhile() { m_writer.writeWhile(); }
+
+	public void writeWhileLoopCondition(STO sto) {
+		m_writer.writeWhileLoopCondition(sto);
+	}
+
+	public void writeEndWhileLoop() { m_writer.writeEndWhileLoop(); }
+
+	public void writeElseBlock() { m_writer.writeElseBlock();}
+
+	public void writeEndOfIf(){
+		m_writer.writeEndOfIf();
 	}
 
 
@@ -1464,6 +1557,7 @@ class MyParser extends parser
 						}
 						else{
 							// Continue
+							m_writer.writeFuncCall(sto, arguments);
 						}
 					}
 					// Already inside the namespace
@@ -1598,7 +1692,7 @@ class MyParser extends parser
 			return new ErrorSTO("Return type not void");
 		}
 
-		m_writer.writeReturn(null, cmpCount);
+		m_writer.writeReturn(null);
 		return temp;
 	}
 
@@ -1659,7 +1753,7 @@ class MyParser extends parser
 			}
 		}
 
-		m_writer.writeReturn(a, cmpCount);
+		m_writer.writeReturn(a);
 		return a;
 	}
 
@@ -2589,6 +2683,16 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
+	void DoCin(STO sto)
+	{
+		if(!sto.getIsAddressable())
+		{
+			sto.setBase("g0");
+			sto.setOffset("0");
+		}
+		m_writer.writeCin(sto);
+	}
+
 	void DoCout(STO sto)
 	{
 		if(sto.isConst())
@@ -2620,6 +2724,9 @@ class MyParser extends parser
 			}
 			else
 				m_writer.writeVarCout(sto);
+		}
+		else if(sto.isExpr()){
+			//m_writer.writeFuncCall();
 		}
 		else
 			m_writer.writeVarCout(sto);
