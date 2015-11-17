@@ -43,7 +43,7 @@ public class AssemlyString {
     public static final String STRARRBOUND = "strArrBound";
     public static final String STRNULLPTR = "strNullPtr";
     public static final String PRINTBOOL = "printBool";
-    public static final String PRINTBOOL2 = "PrintBool2";
+    public static final String PRINTBOOL2 = "printBool2";
     public static final String ARRCHECK = "arrCheck";
     public static final String ARRCHECK2 = "arrCheck2";
     public static final String PTRCHECK = "ptrCheck";
@@ -107,6 +107,7 @@ public class AssemlyString {
     public static final String MATH_COMMENT = "! %s %s %s \n";
     public static final String RETURN_COMMENT = "! return %s;\n";
     public static final String RETURN_NULL_COMMENT = "! return;\n";
+    public static final String STORE_PARAM = "! Store params\n";
 
     public static final String STORE = "%s, [%s]";
     public static final String INIT = ".$.init.%s";

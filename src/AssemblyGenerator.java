@@ -1,4 +1,5 @@
 
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Date;
@@ -52,9 +53,8 @@ public class AssemblyGenerator {
     private static String f0 = "%f0";
     private static String f1 = "%f1";
 
-
-
     private static final StringBuilder strBuilder = new StringBuilder();
+    private static final StringBuilder buffer = new StringBuilder();
 
     public AssemblyGenerator(String fileToWrite) {
         try {
@@ -364,6 +364,8 @@ public class AssemblyGenerator {
         next();
         decreaseIndent();
 
+        // TODO SAVE THEM IN THE BUFFER AND PRINT WHENEVER YOU NEED TO
+
         //TODO PASS FUNCTIONS
         writeAssembly("! End of function .$.init." + id );
         next();
@@ -398,6 +400,7 @@ public class AssemblyGenerator {
 
     // Start of function
     private String temp;
+    Vector<String> func = new Vector<>();
     public void writeFuncDecl(String id, Vector<STO> params){
         temp = id;
         if(params == null){
@@ -409,18 +412,41 @@ public class AssemblyGenerator {
             }
         }
 
-        increaseIndent();
-        writeAssembly(AssemlyString.GLOBAL, id);
-        decreaseIndent();
+        if(!func.contains(id)){
+            increaseIndent();
+            writeAssembly(AssemlyString.GLOBAL, id);
+            func.add(id);
+            decreaseIndent();
 
-        writeAssembly(id + ":");
-        next();
+            writeAssembly(id + ":");
+            next();
+        }
+
         writeAssembly(temp + ":");
         next();
         increaseIndent();
         set("SAVE." + temp, g1);
         save(sp, g1, sp);
         next();
+    }
+
+    public void writeAllocateMem(Vector<STO> params){
+        increaseIndent();
+        writeAssembly(AssemlyString.STORE_PARAM);
+        if(params != null){
+            int fixed = 64;
+            for(int i = 0; i < params.size(); i++){
+                fixed += params.get(i).getType().getSize();
+                if(params.get(i).getType() instanceof FloatType){
+                    st("%f" + i, fp + "+" + fixed);
+                }
+                else{
+                    st("%i" + i, fp + "+" + fixed);
+                }
+            }
+        }
+        next();
+        decreaseIndent();
     }
 
     public void writeFuncDecl2(String id, Vector<STO> params, int offset){
@@ -452,6 +478,7 @@ public class AssemblyGenerator {
         increaseIndent();
         save(sp, "-96" , sp);
         retRestore();
+        next();
         decreaseIndent();
     }
 
@@ -670,6 +697,11 @@ public class AssemblyGenerator {
             writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.FITOS, "%f0", "%f0");
             writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%f0", "%o1");
         }
+        else if(sto.getType() instanceof BoolType && expr.getType() instanceof BoolType){
+            writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
+            writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
+        }
+
         next();
         decreaseIndent();
     }
@@ -799,10 +831,32 @@ public class AssemblyGenerator {
             writeAssembly(AssemlyString.THREE_PARAM, "or\t", "%o0", "%o1", "%o0");
         else if (o instanceof CaretOp)
             writeAssembly(AssemlyString.THREE_PARAM, "xor\t", "%o0", "%o1", "%o0");
-        else if(o instanceof GreaterThanOp){
+        else if (o instanceof ComparisonOp){
             cmpCount++;
             cmp(o0, o1);
-            writeAssembly(AssemlyString.BLE, AssemlyString.PREFIX + "cmp." + cmpCount);
+            if(o instanceof GreaterThanOp){
+                writeAssembly(AssemlyString.BLE, AssemlyString.PREFIX + "cmp." + cmpCount);
+            }
+            else if (o instanceof LessThanOp)
+            {
+                writeAssembly(AssemlyString.BGE, AssemlyString.PREFIX + "cmp." + cmpCount);
+            }
+            else if (o instanceof GreaterThanEqualOp)
+            {
+                writeAssembly(AssemlyString.BL, AssemlyString.PREFIX + "cmp." + cmpCount);
+            }
+            else if (o instanceof LessThanEqualOp)
+            {
+                writeAssembly(AssemlyString.BG, AssemlyString.PREFIX + "cmp." + cmpCount);
+            }
+            else if (o instanceof EqualOp)
+            {
+                writeAssembly(AssemlyString.BNE + "\t\t\t" + AssemlyString.PREFIX + "cmp." + cmpCount);
+            }
+            else if (o instanceof NotEqualOp)
+            {
+                writeAssembly(AssemlyString.BE, AssemlyString.PREFIX + "cmp." + cmpCount);
+            }
             next();
             mov(g0, o0);
             inc(o0);
@@ -811,80 +865,12 @@ public class AssemblyGenerator {
             next();
             increaseIndent();
         }
-        else if (o instanceof LessThanOp)
-        {
-            cmpCount++;
-            cmp(o0, o1);
-            writeAssembly(AssemlyString.BGE, AssemlyString.PREFIX + "cmp." + cmpCount);
-            next();
-            mov(g0, o0);
-            inc(o0);
-            decreaseIndent();
-            writeAssembly(AssemlyString.PREFIX + "cmp." + cmpCount + ":");
-            next();
-            increaseIndent();
-        }
-        else if (o instanceof GreaterThanEqualOp)
-        {
-            cmpCount++;
-            cmp(o0, o1);
-            writeAssembly(AssemlyString.BL, AssemlyString.PREFIX + "cmp." + cmpCount);
-            next();
-            mov(g0, o0);
-            inc(o0);
-            decreaseIndent();
-            writeAssembly(AssemlyString.PREFIX + "cmp." + cmpCount + ":");
-            next();
-            increaseIndent();
-        }
-        else if (o instanceof LessThanEqualOp)
-        {
-            cmpCount++;
-            cmp(o0, o1);
-            writeAssembly(AssemlyString.BG, AssemlyString.PREFIX + "cmp." + cmpCount);
-            next();
-            mov(g0, o0);
-            inc(o0);
-            decreaseIndent();
-            writeAssembly(AssemlyString.PREFIX + "cmp." + cmpCount + ":");
-            next();
-            increaseIndent();
-        }
-        else if (o instanceof EqualOp)
-        {
-            cmpCount++;
-            cmp(o0, o1);
-            writeAssembly(AssemlyString.BNE + "\t\t\t" + AssemlyString.PREFIX + "cmp." + cmpCount);
-            next();
-            mov(g0, o0);
-            inc(o0);
-            decreaseIndent();
-            writeAssembly(AssemlyString.PREFIX + "cmp." + cmpCount + ":");
-            next();
-            increaseIndent();
-        }
-        else if (o instanceof NotEqualOp)
-        {
-            cmpCount++;
-            cmp(o0, o1);
-            writeAssembly(AssemlyString.BE, AssemlyString.PREFIX + "cmp." + cmpCount);
-            next();
-            mov(g0, o0);
-            inc(o0);
-            decreaseIndent();
-            writeAssembly(AssemlyString.PREFIX + "cmp." + cmpCount + ":");
-            next();
-            increaseIndent();
-        }
+
 
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + SEPARATOR, result.getOffset(), "%o1");
         writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + SEPARATOR, result.getBase(), "%o1", "%o1");
         writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
         next();
-
-        //if(flag){
-        //    writeIfCheck(result);
-        //}
 
         decreaseIndent();
     }
@@ -1107,77 +1093,32 @@ public class AssemblyGenerator {
             writeAssembly(AssemlyString.THREE_PARAM, "fmuls", "%f0", "%f1", "%f0");
         else if(o instanceof SlashOp)
             writeAssembly(AssemlyString.THREE_PARAM, "fdivs", "%f0", "%f1", "%f0");
-        else if(o instanceof GreaterThanOp){
+        else if (o instanceof ComparisonOp){
             cmpCount++;
             fcmps(f0, f1);
-            nop();
-            writeAssembly(AssemlyString.FBLE, AssemlyString.PREFIX + "cmp." + cmpCount);
-            next();
-            mov(g0, o0);
-            inc(o0);
-            decreaseIndent();
-            writeAssembly(AssemlyString.PREFIX + "cmp." + cmpCount + ":");
-            next();
-            increaseIndent();
-        }
-        else if (o instanceof LessThanOp)
-        {
-            cmpCount++;
-            fcmps(f0, f1);
-            nop();
-            writeAssembly(AssemlyString.FBGE, AssemlyString.PREFIX + "cmp." + cmpCount);
-            next();
-            mov(g0, o0);
-            inc(o0);
-            decreaseIndent();
-            writeAssembly(AssemlyString.PREFIX + "cmp." + cmpCount + ":");
-            next();
-            increaseIndent();
-        }
-        else if(o instanceof GreaterThanEqualOp){
-            cmpCount++;
-            fcmps(f0, f1);
-            nop();
-            writeAssembly(AssemlyString.FBL, AssemlyString.PREFIX + "cmp." + cmpCount);
-            next();
-            mov(g0, o0);
-            inc(o0);
-            decreaseIndent();
-            writeAssembly(AssemlyString.PREFIX + "cmp." + cmpCount + ":");
-            next();
-            increaseIndent();
-        }
-        else if(o instanceof LessThanEqualOp){
-            cmpCount++;
-            fcmps(f0, f1);
-            nop();
-            writeAssembly(AssemlyString.FBG, AssemlyString.PREFIX + "cmp." + cmpCount);
-            next();
-            mov(g0, o0);
-            inc(o0);
-            decreaseIndent();
-            writeAssembly(AssemlyString.PREFIX + "cmp." + cmpCount + ":");
-            next();
-            increaseIndent();
-        }
-        else if(o instanceof EqualOp){
-            cmpCount++;
-            fcmps(f0, f1);
-            nop();
-            writeAssembly(AssemlyString.FBNE, AssemlyString.PREFIX + "cmp." + cmpCount);
-            next();
-            mov(g0, o0);
-            inc(o0);
-            decreaseIndent();
-            writeAssembly(AssemlyString.PREFIX + "cmp." + cmpCount + ":");
-            next();
-            increaseIndent();
-        }
-        else if(o instanceof NotEqualOp){
-            cmpCount++;
-            fcmps(f0, f1);
-            nop();
-            writeAssembly(AssemlyString.FBE, AssemlyString.PREFIX + "cmp." + cmpCount);
+            if(o instanceof GreaterThanOp){
+                writeAssembly(AssemlyString.BLE, AssemlyString.PREFIX + "cmp." + cmpCount);
+            }
+            else if (o instanceof LessThanOp)
+            {
+                writeAssembly(AssemlyString.BGE, AssemlyString.PREFIX + "cmp." + cmpCount);
+            }
+            else if (o instanceof GreaterThanEqualOp)
+            {
+                writeAssembly(AssemlyString.BL, AssemlyString.PREFIX + "cmp." + cmpCount);
+            }
+            else if (o instanceof LessThanEqualOp)
+            {
+                writeAssembly(AssemlyString.BG, AssemlyString.PREFIX + "cmp." + cmpCount);
+            }
+            else if (o instanceof EqualOp)
+            {
+                writeAssembly(AssemlyString.BNE + "\t\t\t" + AssemlyString.PREFIX + "cmp." + cmpCount);
+            }
+            else if (o instanceof NotEqualOp)
+            {
+                writeAssembly(AssemlyString.BE, AssemlyString.PREFIX + "cmp." + cmpCount);
+            }
             next();
             mov(g0, o0);
             inc(o0);
@@ -1610,6 +1551,48 @@ public class AssemblyGenerator {
         next();
         decreaseIndent();
 
+    }
+
+    // Check 9 Phase 2
+
+    void writeFuncCall(STO sto, Vector<STO> args){
+        increaseIndent();
+        writeAssembly("! " + sto.getName() + "(...)\n");
+        String temp = "";
+        Vector<STO> param = ((FuncSTO)sto).getParams();
+        for(int i = 0; i < args.size(); i++){
+            temp = temp + "." + param.get(i).getType().getName();
+            writeAssembly("! " + param.get(i).getName() + " <- " + args.get(i).getName() + "\n");
+            if(args.get(i).isConst() && !args.get(i).getIsAddressable())
+            {
+                if (args.get(i).getType() instanceof FloatType)
+                    set(String.valueOf(((ConstSTO) args.get(i)).getFloatValue()), "%f" + i);
+                else
+                    set(String.valueOf(((ConstSTO) args.get(i)).getValue()), "%o" + i);
+            }
+            else {
+                set(args.get(i).getOffset(), l7);
+                add(fp, l7, l7);
+                if (args.get(i).getType() instanceof FloatType) {
+                    ld(l7, "%f" + i);
+                } else {
+                    ld(l7, "%o" + i);
+                }
+            }
+        }
+        if (temp == ""){
+            temp = ".void";
+        }
+        temp = sto.getName() + temp;
+        call(temp);
+        nop();
+        set(sto.getOffset(), o1);
+        add(sto.getBase(), o1, o1);
+        ld(o0, o1);
+
+        next();
+
+        decreaseIndent();
     }
 
 }

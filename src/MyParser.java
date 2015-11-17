@@ -1087,6 +1087,7 @@ class MyParser extends parser
 
 	void writeFuncDecl(String id, Vector<STO> param){
 		m_writer.writeFuncDecl(id, param);
+		m_writer.writeAllocateMem(param);
 	}
 
 	//----------------------------------------------------------------
@@ -1329,15 +1330,6 @@ class MyParser extends parser
 			offset -= result.getType().getSize();
 			result.setOffset(Integer.toString(offset));
 
-/*
-		// Integer arithmetic expression
-		if(a.getType().isInt() && b.getType().isInt())
-		{
-			cmpCount++;
-			m_writer.writeIntegerBinaryArithmeticExpression(a, o, b, result, cmpCount, ifFlag);
-		}
-*/
-			// Integer arithmetic expression
 			if (a.getType().isInt() && b.getType().isInt()) {
 				m_writer.writeIntegerBinaryArithmeticExpression(a, o, b, result);
 			}
@@ -1592,6 +1584,12 @@ class MyParser extends parser
 			}
 		}
 
+		sto.setBase("%fp");
+		offset -= sto.getType().getSize();
+		sto.setOffset(Integer.toString(offset));
+
+		m_writer.writeFuncCall(sto, arguments);
+
 		return generateExpr(sto);
 	}
 
@@ -1605,6 +1603,8 @@ class MyParser extends parser
 		exprSTO.setIsAddressable(sto.getIsAddressable());
 		exprSTO.setIsModifiable(sto.getIsModifiable());
 
+		exprSTO.setBase(sto.getBase());
+		exprSTO.setOffset(sto.getOffset());
 		return exprSTO;
 	}
 
