@@ -1585,7 +1585,7 @@ class MyParser extends parser
 				}
 			}
 		}
-
+		
 		return generateExpr(sto);
 	}
 

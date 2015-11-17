@@ -452,6 +452,7 @@ public class AssemblyGenerator {
         increaseIndent();
         save(sp, "-96" , sp);
         retRestore();
+        decreaseIndent();
     }
 
     //////////////////////////// DAISY STUFF ////////////////////////////
@@ -652,6 +653,10 @@ public class AssemblyGenerator {
             writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%f0", "%o1");
         }
         else if (sto.getType() instanceof IntType && expr.getType() instanceof IntType){
+            writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
+            writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
+        }
+        else if (sto.getType() instanceof BoolType && expr.getType() instanceof BoolType){
             writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
             writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
         }
@@ -1494,6 +1499,7 @@ public class AssemblyGenerator {
         next();
         decreaseIndent();
     }
+
     //////////////////////////// END OF DAISY STUFF ////////////////////////////
 
     public void writeIfCheck(STO expr){
