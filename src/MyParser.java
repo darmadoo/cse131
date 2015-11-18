@@ -1563,7 +1563,6 @@ class MyParser extends parser
 						}
 						else{
 							// Continue
-							m_writer.writeFuncCall(sto, arguments);
 						}
 					}
 					// Already inside the namespace
@@ -1585,6 +1584,12 @@ class MyParser extends parser
 			}
 		}
 
+		sto.setBase("%fp");
+		offset -= sto.getType().getSize();
+		sto.setOffset(Integer.toString(offset));
+
+		m_writer.writeFuncCall(sto, arguments);
+
 		return generateExpr(sto);
 	}
 
@@ -1598,6 +1603,8 @@ class MyParser extends parser
 		exprSTO.setIsAddressable(sto.getIsAddressable());
 		exprSTO.setIsModifiable(sto.getIsModifiable());
 
+		exprSTO.setBase(sto.getBase());
+		exprSTO.setOffset(sto.getOffset());
 		return exprSTO;
 	}
 
@@ -2730,9 +2737,6 @@ class MyParser extends parser
 			}
 			else
 				m_writer.writeVarCout(sto);
-		}
-		else if(sto.isExpr()){
-			//m_writer.writeFuncCall();
 		}
 		else
 			m_writer.writeVarCout(sto);

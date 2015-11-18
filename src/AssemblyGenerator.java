@@ -1558,24 +1558,40 @@ public class AssemblyGenerator {
     void writeFuncCall(STO sto, Vector<STO> args){
         increaseIndent();
         writeAssembly("! " + sto.getName() + "(...)\n");
+        String temp = "";
         Vector<STO> param = ((FuncSTO)sto).getParams();
-        if(args != null){
-            for(int i = 0; i < args.size(); i++){
-                writeAssembly("! " + param.get(i).getName() + " <- " + args.get(i).getName() + "\n");
+        for(int i = 0; i < args.size(); i++){
+            temp = temp + "." + param.get(i).getType().getName();
+            writeAssembly("! " + param.get(i).getName() + " <- " + args.get(i).getName() + "\n");
+            if(args.get(i).isConst() && !args.get(i).getIsAddressable())
+            {
+                if (args.get(i).getType() instanceof FloatType)
+                    set(String.valueOf(((ConstSTO) args.get(i)).getFloatValue()), "%f" + i);
+                else
+                    set(String.valueOf(((ConstSTO) args.get(i)).getValue()), "%o" + i);
+            }
+            else {
                 set(args.get(i).getOffset(), l7);
                 add(fp, l7, l7);
-                if(args.get(i).getType() instanceof FloatType){
+                if (args.get(i).getType() instanceof FloatType) {
                     ld(l7, "%f" + i);
-                }
-                else{
+                } else {
                     ld(l7, "%o" + i);
                 }
             }
         }
-
+        if (temp == ""){
+            temp = ".void";
+        }
+        temp = sto.getName() + temp;
         call(temp);
         nop();
+        set(sto.getOffset(), o1);
+        add(sto.getBase(), o1, o1);
+        ld(o0, o1);
+
         next();
+
         decreaseIndent();
     }
 
