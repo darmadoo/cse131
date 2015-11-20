@@ -343,7 +343,6 @@ public class AssemblyGenerator {
         decreaseIndent();
 
         next();
-        next();
     }
 
     public void initGlobal(String id, STO expr, int offset){
@@ -430,19 +429,21 @@ public class AssemblyGenerator {
         next();
     }
 
+    private int fixedVal = 64;
     public void writeAllocateMem(Vector<STO> params){
         increaseIndent();
         writeAssembly(AssemlyString.STORE_PARAM);
         if(params != null){
-            int fixed = 64;
             for(int i = 0; i < params.size(); i++){
-                fixed += params.get(i).getType().getSize();
+                fixedVal += params.get(i).getType().getSize();
                 if(params.get(i).getType() instanceof FloatType){
-                    st("%f" + i, fp + "+" + fixed);
+                    st("%f" + i, fp + "+" + fixedVal);
                 }
                 else{
-                    st("%i" + i, fp + "+" + fixed);
+                    st("%i" + i, fp + "+" + fixedVal);
                 }
+                params.get(i).setBase(fp);
+                params.get(i).setOffset(Integer.toString(fixedVal));
             }
         }
         next();
@@ -478,8 +479,9 @@ public class AssemblyGenerator {
         increaseIndent();
         save(sp, "-96" , sp);
         retRestore();
-        next();
         decreaseIndent();
+
+        fixedVal = 64;
     }
 
     //////////////////////////// DAISY STUFF ////////////////////////////
@@ -511,6 +513,10 @@ public class AssemblyGenerator {
         writeAssembly(AssemlyString.COUT_COMMENT, sto.getName());
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", sto.getOffset(), "%l7");
         writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", sto.getBase(), "%l7", "%l7");
+
+        if(sto instanceof VarSTO && ((VarSTO) sto).getPbr()){
+            writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", l7, l7);
+        }
 
         if(sto.getType() instanceof IntType)
         {
@@ -672,14 +678,41 @@ public class AssemblyGenerator {
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", sto.getOffset(), "%o1");
         writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", sto.getBase(), "%o1", "%o1");
 
-        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", expr.getOffset(), "%l7");
+        if(sto instanceof VarSTO){
+            if(((VarSTO)sto).getPbr()){
+                ld(o1,o1);
+            }
+        }
+
+        if(expr instanceof VarSTO){
+            if(((VarSTO)expr).getPbr()){
+                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", Integer.toString(fixedVal), "%l7");
+            }
+            else{
+                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", expr.getOffset(), "%l7");
+            }
+        }
+        else{
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", expr.getOffset(), "%l7");
+        }
+
         writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", expr.getBase(), "%l7", "%l7");
 
         if(sto.getType() instanceof FloatType && expr.getType() instanceof FloatType) {
+            if(expr instanceof VarSTO){
+                if(((VarSTO)expr).getPbr()){
+                    writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", l7);
+                }
+            }
             writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%f0");
             writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%f0", "%o1");
         }
         else if (sto.getType() instanceof IntType && expr.getType() instanceof IntType){
+            if(expr instanceof VarSTO){
+                if(((VarSTO)expr).getPbr()){
+                    writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", l7);
+                }
+            }
             writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
             writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
         }
@@ -749,7 +782,7 @@ public class AssemblyGenerator {
     //----------------------------------------------------------------
     // Phase 1 Check 4, Phase 2 Check 3
     //----------------------------------------------------------------
-    public void writeIntegerBinaryArithmeticExpression(STO a, BinaryOp o, STO b, STO result)
+    public STO writeIntegerBinaryArithmeticExpression(STO a, BinaryOp o, STO b, STO result)
     {
         String operand = "";
         if(o instanceof AddOp)
@@ -789,41 +822,61 @@ public class AssemblyGenerator {
             set(Integer.toString(((ConstSTO) a).getIntValue()), "%o0");
         }
         else {
-            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", a.getOffset(), "%l7");
+            if(a.getOffset() == null){
+                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", Integer.toString(fixedVal), "%l7");
+            }
+            else{
+                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", a.getOffset(), "%l7");
+            }
+
             writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", a.getBase(), "%l7", "%l7");
+            if(a instanceof VarSTO && ((VarSTO) a).getPbr()){
+                writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", l7, l7);
+            }
             writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
         }
+
         if(b.isConst() && !b.getIsAddressable())
         {
             set(Integer.toString(((ConstSTO) b).getIntValue()), "%o1");
         }
         else {
-            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", b.getOffset(), "%l7");
+            if(b.getOffset() == null){
+                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", Integer.toString(fixedVal), "%l7");
+            }
+            else{
+                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", b.getOffset(), "%l7");
+            }
             writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", b.getBase(), "%l7", "%l7");
+            if(b instanceof VarSTO && ((VarSTO) b).getPbr()){
+                writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", l7, l7);
+            }
             writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o1");
         }
 
-        if(o instanceof AddOp)
-            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", "%o0", "%o1", "%o0");
-        else if(o instanceof MinusOp)
-            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.SUB + "\t", "%o0", "%o1", "%o0");
-        else if (o instanceof StarOp)
-        {
-            call(".mul");
-            nop();
-            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.MOV + "\t", "%o0", "%o0");
-        }
-        else if (o instanceof SlashOp)
-        {
-            call(".div");
-            nop();
-            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.MOV + "\t", "%o0", "%o0");
-        }
-        else if (o instanceof ModOp)
-        {
-            call(".rem");
-            nop();
-            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.MOV + "\t", "%o0", "%o0");
+        if(o instanceof ArithmeticOp){
+            if(o instanceof AddOp)
+                writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", "%o0", "%o1", "%o0");
+            else if(o instanceof MinusOp)
+                writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.SUB + "\t", "%o0", "%o1", "%o0");
+            else if (o instanceof StarOp)
+            {
+                call(".mul");
+                nop();
+                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.MOV + "\t", "%o0", "%o0");
+            }
+            else if (o instanceof SlashOp)
+            {
+                call(".div");
+                nop();
+                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.MOV + "\t", "%o0", "%o0");
+            }
+            else if (o instanceof ModOp)
+            {
+                call(".rem");
+                nop();
+                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.MOV + "\t", "%o0", "%o0");
+            }
         }
         else if (o instanceof AmpersandOp)
             writeAssembly(AssemlyString.THREE_PARAM, "and\t", "%o0", "%o1", "%o0");
@@ -873,6 +926,8 @@ public class AssemblyGenerator {
         next();
 
         decreaseIndent();
+
+        return result;
     }
 
     public void writeIntegerUnaryArithmeticExpression(STO a, UnaryOp o, boolean isPre, STO result)
@@ -880,22 +935,22 @@ public class AssemblyGenerator {
         increaseIndent();
 
         if(o instanceof MinusUnaryOp)
-            writeAssembly("! -" + a.getName() + "\n");
+            writeAssembly("! -(" + a.getName() + ")\n");
         else if ( o instanceof PlusUnaryOp)
-            writeAssembly("! +" + a.getName() + "\n");
+            writeAssembly("! +(" + a.getName() + ")\n");
         else if(o instanceof IncOp)
         {
             if(isPre)
-                writeAssembly("! ++" + a.getName() + "\n");
+                writeAssembly("! ++(" + a.getName() + ")\n");
             else
-                writeAssembly("! " + a.getName() + "++\n");
+                writeAssembly("! (" + a.getName() + ")++\n");
         }
         else if(o instanceof DecOp)
         {
             if(isPre)
-                writeAssembly("! --" + a.getName() + "\n");
+                writeAssembly("! --(" + a.getName() + ")\n");
             else
-                writeAssembly("! " + a.getName() + "--\n");
+                writeAssembly("! (" + a.getName() + ")--\n");
         }
 
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + SEPARATOR, a.getOffset(), "%l7");
@@ -1071,7 +1126,7 @@ public class AssemblyGenerator {
             // if a is int literals
             if(b.isConst() && !b.getIsAddressable())
             {
-                set(Integer.toString(((ConstSTO)b).getIntValue()), o0);
+                set(Integer.toString(((ConstSTO)b).getIntValue()), o1);
             }
             else {
                 writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", b.getOffset(), l7);
@@ -1147,16 +1202,16 @@ public class AssemblyGenerator {
         else if(o instanceof IncOp)
         {
             if(isPre)
-                writeAssembly("! ++" + a.getName() + "\n");
+                writeAssembly("! ++(" + a.getName() + ")\n");
             else
-                writeAssembly("! " + a.getName() + "++\n");
+                writeAssembly("! (" + a.getName() + ")++\n");
         }
         else if(o instanceof DecOp)
         {
             if(isPre)
-                writeAssembly("! --" + a.getName() + "\n");
+                writeAssembly("! --(" + a.getName() + ")\n");
             else
-                writeAssembly("! " + a.getName() + "--\n");
+                writeAssembly("! (" + a.getName() + ")--\n");
         }
 
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", a.getOffset(), l7);
@@ -1216,6 +1271,71 @@ public class AssemblyGenerator {
         decreaseIndent();
     }
 
+    String shortCircuitTemp;
+    public void writeShortCircuitLeft(STO a, String op)
+    {
+        shortCircuitTemp = a.getName();
+        increaseIndent();
+        writeAssembly("! Short Circuit LHS");
+        next();
+
+        if(a.isConst() && !a.getIsAddressable())
+        {
+            set(String.valueOf(((ConstSTO) a).getValue()), "%o0");
+        }
+        else {
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", a.getOffset(), "%l7");
+            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", a.getBase(), "%l7", "%l7");
+            writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
+        }
+        cmp(o0, g0);
+        andorCount++;
+        if( op == "and" )
+        {
+            writeAssembly(AssemlyString.BE, AssemlyString.PREFIX + "andorSkip." + andorCount + "\n");
+        }
+        else
+        {
+            writeAssembly(AssemlyString.BNE + "\t\t\t" + AssemlyString.PREFIX + "andorSkip." + andorCount + "\n");
+        }
+        nop();
+        next();
+        decreaseIndent();
+    }
+
+    public void writeShortCircuitRight(STO b, String op)
+    {
+        increaseIndent();
+        if(op == "and")
+            writeAssembly("! " + shortCircuitTemp + " && " + b.getName() + "\n\n");
+        else
+            writeAssembly("! " + shortCircuitTemp + " || " + b.getName() + "\n\n");
+
+        writeAssembly("! Short Circuit RHS");
+        next();
+
+        if(b.isConst() && !b.getIsAddressable())
+        {
+            set(String.valueOf(((ConstSTO) b).getValue()), "%o0");
+        }
+        else {
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", b.getOffset(), "%l7");
+            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", b.getBase(), "%l7", "%l7");
+            writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
+        }
+        cmp(o0, g0);
+        if( op == "and")
+        {
+            writeAssembly(AssemlyString.BE, AssemlyString.PREFIX + "andorSkip." + andorCount + "\n");
+        }
+        else
+        {
+            writeAssembly(AssemlyString.BNE + "\t\t\t" + AssemlyString.PREFIX + "andorSkip." + andorCount + "\n");
+        }
+        nop();
+        decreaseIndent();
+    }
+
     //----------------------------------------------------------------
     // Phase 2 Check 3
     //----------------------------------------------------------------
@@ -1232,72 +1352,28 @@ public class AssemblyGenerator {
         else if (o instanceof OrOp)
             operand = "||";
 
-        if(o instanceof AndOp || o instanceof OrOp)
-        {
-            writeAssembly("! Short Circuit LHS");
-            next();
-        }
-        else {
+        if(!( o instanceof AndOp || o instanceof OrOp))
             writeAssembly(AssemlyString.MATH_COMMENT, a.getName(), operand, b.getName());
-        }
 
-        if(a.isConst() && !a.getIsAddressable())
-        {
-            set(String.valueOf(((ConstSTO) a).getValue()), "%o0");
-        }
-        else {
-            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", a.getOffset(), "%l7");
-            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", a.getBase(), "%l7", "%l7");
-            writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
-        }
-
-        if(o instanceof AndOp || o instanceof OrOp)
-        {
-            cmp(o0, g0);
-            andorCount++;
-            if(o instanceof AndOp)
-            {
-                writeAssembly(AssemlyString.BE, AssemlyString.PREFIX + "andorSkip." + andorCount + "\n");
-            }
-            else
-            {
-                writeAssembly(AssemlyString.BNE + "\t\t\t" + AssemlyString.PREFIX + "andorSkip." + andorCount + "\n");
-            }
-            nop();
-            next();
-            writeAssembly(AssemlyString.MATH_COMMENT, a.getName(), operand, b.getName());
-            next();
-            writeAssembly("! Short Circuit RHS");
-            next();
-        }
-
-        if(b.isConst() && !b.getIsAddressable())
-        {
-            if(o instanceof AndOp || o instanceof OrOp)
-                set(String.valueOf(((ConstSTO) b).getValue()), "%o0");
-            else
-                set(String.valueOf(((ConstSTO) b).getValue()), "%o1");
-        }
-        else {
-            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", b.getOffset(), "%l7");
-            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", b.getBase(), "%l7", "%l7");
-            if(o instanceof AndOp || o instanceof OrOp)
+        if(!(o instanceof AndOp || o instanceof OrOp)) {
+            if (a.isConst() && !a.getIsAddressable()) {
+                set(String.valueOf(((ConstSTO) a).getValue()), "%o0");
+            } else {
+                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", a.getOffset(), "%l7");
+                writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", a.getBase(), "%l7", "%l7");
                 writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
-            else
+            }
+
+            if (b.isConst() && !b.getIsAddressable()) {
+                set(String.valueOf(((ConstSTO) b).getValue()), "%o1");
+            } else {
+                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", b.getOffset(), "%l7");
+                writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", b.getBase(), "%l7", "%l7");
                 writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o1");
+            }
         }
 
         if(o instanceof AndOp || o instanceof OrOp) {
-            cmp(o0, g0);
-            if(o instanceof AndOp)
-            {
-                writeAssembly(AssemlyString.BE, AssemlyString.PREFIX + "andorSkip." + andorCount + "\n");
-            }
-            else
-            {
-                writeAssembly(AssemlyString.BNE + "\t\t\t" + AssemlyString.PREFIX + "andorSkip." + andorCount + "\n");
-            }
-            nop();
             writeAssembly(AssemlyString.BA, AssemlyString.PREFIX + "andorEnd." + andorCount + "\n");
             String temp = "";
             if(result != null)
@@ -1452,7 +1528,7 @@ public class AssemblyGenerator {
         next();
         nop();
         next();
-        writeAssembly("! Start loop body \n");
+        writeAssembly("! Start of loop body \n");
         next();
     }
 
@@ -1467,6 +1543,7 @@ public class AssemblyGenerator {
         next();
         next();
         decreaseIndent();
+        whileCount--;
     }
 
     //////////////////////////// END OF DAISY STUFF ////////////////////////////
@@ -1513,6 +1590,7 @@ public class AssemblyGenerator {
         writeAssembly(" ! endif \n");
         decreaseIndent();
         writeAssembly(AssemlyString.PREFIX + "endif." + ifCount + ":\n\n");
+        next();
     }
 
     public void writeReturn(STO expr){
@@ -1521,7 +1599,14 @@ public class AssemblyGenerator {
             writeAssembly(AssemlyString.RETURN_COMMENT, expr.getName());
             if(expr.getType() instanceof IntType)
             {
-                set(expr.getName(), i0);
+                if(expr instanceof ConstSTO){
+                    set(expr.getName(), i0);
+                }
+                else if(expr instanceof ExprSTO){
+                    set(expr.getOffset(), l7);
+                    add(expr.getBase(), l7, l7);
+                    ld(l7,i0);
+                }
             }
             else if(expr.getType() instanceof FloatType){
                 section(AssemlyString.RODATA);
@@ -1541,8 +1626,7 @@ public class AssemblyGenerator {
                 set(String.valueOf(((ConstSTO) expr).getValue()), i0);
             }
 
-        }
-        else{
+        } else {
             writeAssembly(AssemlyString.RETURN_NULL_COMMENT);
         }
         call(temp + ".fini");
@@ -1555,7 +1639,7 @@ public class AssemblyGenerator {
 
     // Check 9 Phase 2
 
-    void writeFuncCall(STO sto, Vector<STO> args){
+    int writeFuncCall(STO sto, Vector<STO> args, int offset){
         increaseIndent();
         writeAssembly("! " + sto.getName() + "(...)\n");
         String temp = "";
@@ -1567,16 +1651,61 @@ public class AssemblyGenerator {
             {
                 if (args.get(i).getType() instanceof FloatType)
                     set(String.valueOf(((ConstSTO) args.get(i)).getFloatValue()), "%f" + i);
-                else
+                else{
                     set(String.valueOf(((ConstSTO) args.get(i)).getValue()), "%o" + i);
+                }
+
+                if(args.get(i).getType() instanceof IntType && param.get(i).getType() instanceof FloatType){
+                    if(args.get(i).getBase() == null){
+                        args.get(i).setBase("%fp");
+                    }
+
+                    if(args.get(i).getOffset() == null){
+                        if(!( args.get(i).getType() instanceof VoidType)){
+                            offset -= args.get(i).getType().getSize();
+                            args.get(i).setOffset(Integer.toString(offset));
+                        }
+                    }
+
+                    writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", args.get(i).getOffset(), "%l7");
+                    writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", args.get(i).getBase(), "%l7", "%l7");
+                    writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%l7");
+                    writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f0");
+                    writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.FITOS, "%f0", "%f0");
+                }
+
             }
             else {
-                set(args.get(i).getOffset(), l7);
-                add(fp, l7, l7);
-                if (args.get(i).getType() instanceof FloatType) {
-                    ld(l7, "%f" + i);
-                } else {
-                    ld(l7, "%o" + i);
+                if(args.get(i) instanceof VarSTO){
+                    if(((VarSTO) param.get(i)).getPbr()){
+                        set(args.get(i).getOffset(), o0);
+                        add(fp, o0, o0);
+                        if(((VarSTO) args.get(i)).getPbr()){
+                            if (args.get(i).getType() instanceof FloatType) {
+                                ld(o0, "%f" + i);
+                            } else {
+                                ld(o0, "%o" + i);
+                            }
+                        }
+                    }
+                    else{
+                        set(args.get(i).getOffset(), l7);
+                        add(fp, l7, l7);
+                        if (args.get(i).getType() instanceof FloatType) {
+                            ld(l7, "%f" + i);
+                        } else {
+                            ld(l7, "%o" + i);
+                        }
+                    }
+                }
+                else{
+                    set(args.get(i).getOffset(), l7);
+                    add(fp, l7, l7);
+                    if (args.get(i).getType() instanceof FloatType) {
+                        ld(l7, "%f" + i);
+                    } else {
+                        ld(l7, "%o" + i);
+                    }
                 }
             }
         }
@@ -1586,12 +1715,35 @@ public class AssemblyGenerator {
         temp = sto.getName() + temp;
         call(temp);
         nop();
-        set(sto.getOffset(), o1);
-        add(sto.getBase(), o1, o1);
-        ld(o0, o1);
+
+        if(!(((FuncSTO) sto).getReturnType() instanceof VoidType)){
+            set(sto.getOffset(), o1);
+            add(sto.getBase(), o1, o1);
+            //ld(o0, o1);
+            st(o0, o1);
+        }
 
         next();
 
+        decreaseIndent();
+        return offset;
+    }
+
+    void writeContinue(){
+        increaseIndent();
+        writeAssembly(AssemlyString.CONTINUE);
+        writeAssembly(AssemlyString.BA, ".$$.loopCheck." + whileCount + "\n");
+        nop();
+        next();
+        decreaseIndent();
+    }
+
+    void writeBreak(){
+        increaseIndent();
+        writeAssembly(AssemlyString.BREAK);
+        writeAssembly(AssemlyString.BA, ".$$.loopEnd." + whileCount + "\n");
+        nop();
+        next();
         decreaseIndent();
     }
 

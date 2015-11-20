@@ -882,8 +882,14 @@ Expr ::=            Designator:_1 T_ASSIGN Expr:_2
     ;
 
 
-Expr0 ::=           Expr0:_1 T_OR Expr1:_3
+Expr0 ::=           Expr0:_1
                     {:
+                        ((MyParser) parser).DoShortCircuitLeft (_1, "or");
+                    :}
+                    T_OR Expr1:_3
+                    {:
+                        ((MyParser) parser).DoShortCircuitRight (_3, "or");
+
                         RESULT = ((MyParser) parser).DoBinaryExpr (_1, new OrOp(), _3);
                     :}
     |               Expr1:_1
@@ -893,8 +899,14 @@ Expr0 ::=           Expr0:_1 T_OR Expr1:_3
     ;
 
 
-Expr1 ::=           Expr1:_1 T_AND Expr2:_3
+Expr1 ::=           Expr1:_1
                     {:
+                        ((MyParser) parser).DoShortCircuitLeft (_1, "and");
+                    :}
+                    T_AND Expr2:_3
+                    {:
+                        ((MyParser) parser).DoShortCircuitRight (_3, "and");
+
                         RESULT = ((MyParser) parser).DoBinaryExpr (_1, new AndOp(), _3);
                     :}
     |               Expr2:_1
@@ -1008,6 +1020,7 @@ Expr8 ::=           Expr8:_1 MulOp:_2 Designator:_3
                     :}
     |               Designator:_1
                     {:
+                        ((MyParser) parser).doOffsetCheck(_1);
                         RESULT = _1;
                     :}
     ;

@@ -104,10 +104,12 @@ public class AssemlyString {
 
     public static final String COUT_COMMENT = "! cout << %s \n";
     public static final String VAR_DECL_COMMENT = "! %s = %s \n";
-    public static final String MATH_COMMENT = "! %s %s %s \n";
+    public static final String MATH_COMMENT = "! (%s) %s (%s) \n";
     public static final String RETURN_COMMENT = "! return %s;\n";
     public static final String RETURN_NULL_COMMENT = "! return;\n";
     public static final String STORE_PARAM = "! Store params\n";
+    public static final String CONTINUE = "!continue\n";
+    public static final String BREAK = "!break\n";
 
     public static final String STORE = "%s, [%s]";
     public static final String INIT = ".$.init.%s";

@@ -52,7 +52,6 @@ class MyParser extends parser
 	private Stack<Integer> ifStack = new Stack<>();
 	private Stack<Integer> whileStack = new Stack<>();
 
-
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
@@ -486,6 +485,15 @@ class MyParser extends parser
 		else if(expr != null && ( expr.isVar() || expr.isExpr()))
 		{
 			VarSTO sto = new VarSTO(id, t);
+
+			// If the assigned value is passed by reference
+			if(expr instanceof VarSTO){
+				if(((VarSTO)expr).getPbr()){
+					expr.setBase("%fp");
+					//offset -= expr.getType().getSize();
+					//expr.setOffset(Integer.toString(offset));
+				}
+			}
 
 			if(global) {
 				sto.setBase("%g0");
@@ -1292,9 +1300,9 @@ class MyParser extends parser
 	//
 	//----------------------------------------------------------------
 	STO DoDesignator4_ID(String strID) {
-		STO sto;
+		STO sto = m_symtab.accessGlobal(strID);
 
-		if ((sto = m_symtab.accessGlobal(strID)) == null)
+		if (sto == null)
 		{
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.error0g_Scope, strID));
@@ -1324,11 +1332,18 @@ class MyParser extends parser
 		}
 
 		//if not a constant folding
-		if( !((a.isConst() && !a.getIsAddressable()) && (b.isConst() && !b.getIsAddressable())) ) {
+		if( !((a.isConst() && !a.getIsAddressable()) && (b.isConst() && !b.getIsAddressable()))) {
 			// check I.4
 			result.setBase("%fp");
 			offset -= result.getType().getSize();
 			result.setOffset(Integer.toString(offset));
+
+			if(a.getBase() == null){
+				a.setBase("%fp");
+			}
+			if(b.getBase() == null){
+				b.setBase("%fp");
+			}
 
 			if (a.getType().isInt() && b.getType().isInt()) {
 				m_writer.writeIntegerBinaryArithmeticExpression(a, o, b, result);
@@ -1363,7 +1378,6 @@ class MyParser extends parser
 			//do stuff...
 		return result ;
 	}
-
 
 	void pushStack( String input ) {
 		if( input == "if") {
@@ -1585,10 +1599,12 @@ class MyParser extends parser
 		}
 
 		sto.setBase("%fp");
-		offset -= sto.getType().getSize();
-		sto.setOffset(Integer.toString(offset));
+		if(!(((FuncSTO) sto).getReturnType() instanceof VoidType)){
+			offset -= sto.getType().getSize();
+			sto.setOffset(Integer.toString(offset));
+		}
 
-		m_writer.writeFuncCall(sto, arguments);
+		offset = m_writer.writeFuncCall(sto, arguments, offset);
 
 		return generateExpr(sto);
 	}
@@ -1683,6 +1699,14 @@ class MyParser extends parser
 		}
 		else{
 			// Solving pass by reference issue where functions are non modif L val
+			functions.get(found).setBase("%fp");
+			if(!(functions.get(found).getReturnType() instanceof VoidType)){
+				offset -= functions.get(found).getType().getSize();
+				functions.get(found).setOffset(Integer.toString(offset));
+			}
+
+			offset = m_writer.writeFuncCall(functions.get(found), arguments, offset);
+
 			return generateExpr(functions.get(found));
 		}
 	}
@@ -1740,7 +1764,6 @@ class MyParser extends parser
 			//this thing always return VarSTO......
 			var = m_symtab.access(a.getName());
 		}
-
 
 		// Is passByRef
 		if(temp.getRbr()){
@@ -1929,6 +1952,8 @@ class MyParser extends parser
 			m_nNumErrors++;
 			m_errors.print(ErrorMsg.error12_Break);
 		}
+
+		m_writer.writeBreak();
 	}
 
 	//----------------------------------------------------------------
@@ -1940,6 +1965,8 @@ class MyParser extends parser
 			m_nNumErrors++;
 			m_errors.print(ErrorMsg.error12_Continue);
 		}
+
+		m_writer.writeContinue();
 	}
 
 	//----------------------------------------------------------------
@@ -2748,5 +2775,22 @@ class MyParser extends parser
 	void DoEndlCout()
 	{
 		m_writer.writeEndlCout();
+	}
+
+	void DoShortCircuitLeft (STO sto, String input) {
+		m_writer.writeShortCircuitLeft(sto, input);
+	}
+
+	void DoShortCircuitRight (STO sto, String input) {
+		m_writer.writeShortCircuitRight(sto, input);
+	}
+
+
+	void doOffsetCheck(STO temp){
+		if(temp instanceof VarSTO){
+			if(temp.getBase() == null){
+				temp.setBase("%fp");
+			}
+		}
 	}
 }
