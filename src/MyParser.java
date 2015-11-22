@@ -302,6 +302,54 @@ class MyParser extends parser
 		m_symtab.insert(sto);
 	}
 
+	void doStaticStatement(String id, Type t, Vector<STO> arguments)
+	{
+		boolean global = true;
+		FuncSTO fun = m_symtab.getFunc();
+		if(fun != null)
+		{
+			global = false;
+		}
+
+		String input = "";
+		if(!global)
+		{
+			input = fun.getName() + "." + fun.getType().getName() + "." + id;
+		}
+		else
+		{
+			input = id;
+		}
+
+		staticTemp = input;
+		VarSTO sto = new VarSTO(input, t);
+		m_writer.writeGlobalNonInit(sto, true);
+	}
+
+	String staticTemp;
+
+	void doStaticInit()
+	{
+		boolean global = true;
+		FuncSTO fun = m_symtab.getFunc();
+		if(fun != null)
+		{
+			global = false;
+		}
+
+		if(isStaticFlag)
+		{
+			if(global)
+			{
+				m_writer.writeStaticGlobalInit(staticTemp);
+			}
+			else {
+				m_writer.writeInitGuard(staticTemp);
+			}
+		}
+	}
+
+
 	//----------------------------------------------------------------
 	//
 	//
@@ -371,6 +419,27 @@ class MyParser extends parser
 			}
 			VarSTO sto = new VarSTO(id, head);
 			sto.setIsModifiable(false);
+
+			if(global)
+			{
+				sto.setBase("%g0");
+				sto.setOffset(id);
+				m_writer.writeArrayInit(sto, isStaticFlag);
+			}
+			else{
+				if(isStaticFlag)
+				{
+					sto.setBase("%g0");
+					sto.setOffset(fun.getName() + "." + fun.getType().getName() + "." + id);
+					m_writer.writeArrayInit(sto, isStaticFlag);
+				}
+				else {
+					sto.setBase("%fp");
+					offset -= sto.getType().getSize();
+					sto.setOffset(Integer.toString(offset));
+				}
+			}
+
 			m_symtab.insert(sto);
 		}
 		else if(expr != null && !t.isAssignableTo(expr.getType()))
@@ -499,10 +568,13 @@ class MyParser extends parser
 				sto.setBase("%g0");
 				sto.setOffset(id);
 				// call global writer here
-				m_writer.writeGlobalNonInit(id, isStaticFlag);
+				//m_writer.writeGlobalNonInit(id, isStaticFlag);
 
 				if(!isStaticFlag){
 					m_writer.initGlobal(id, expr, offset);
+				}
+				else {
+					m_writer.writeGlobalStaticInitWithVar(sto, expr, offset);
 				}
 			}
 			else
@@ -549,7 +621,7 @@ class MyParser extends parser
 			if(global) {
 				sto.setBase("%g0");
 				sto.setOffset(id);
-				m_writer.writeGlobalNonInit(id, isStaticFlag);
+				m_writer.writeGlobalNonInit(sto, isStaticFlag);
 			}
 			else
 			{
@@ -558,7 +630,7 @@ class MyParser extends parser
 				{
 					sto.setBase("%g0");
 					sto.setOffset(fun.getName() + "." + fun.getType().getName() + "." + id);
-					m_writer.writeGlobalNonInit(fun.getName() + "." + fun.getType().getName() + "." + id, isStaticFlag);
+					//m_writer.writeGlobalNonInit(fun.getName() + "." + fun.getType().getName() + "." + id, isStaticFlag);
 				}
 				//local not static
 				else
@@ -657,7 +729,7 @@ class MyParser extends parser
 					sto.setBase("%g0");
 					sto.setOffset(id);
 					// call global writer here
-					m_writer.writeGlobalNonInit(id, isStaticFlag);
+					m_writer.writeGlobalNonInit(sto, isStaticFlag);
 
 					if(!isStaticFlag){
 						m_writer.initGlobal(id, expr, offset);
@@ -1332,7 +1404,7 @@ class MyParser extends parser
 		}
 
 		//if not a constant folding
-		if( !((a.isConst() && !a.getIsAddressable()) && (b.isConst() && !b.getIsAddressable()))) {
+		if( !a.isConst() && !b.isConst()) {
 			// check I.4
 			result.setBase("%fp");
 			offset -= result.getType().getSize();
@@ -1866,25 +1938,31 @@ class MyParser extends parser
 				m_errors.print(Formatter.toString(ErrorMsg.error11b_ArrExp, ((ConstSTO) expr).getIntValue(), temp.getDimensions()));
 				return new ErrorSTO(expr.getName());
 			}
+			VarSTO sto;
 
 			Type next = temp.next();
 			if (next.isArray()) {
-				VarSTO sto = new VarSTO(next.getName(), (ArrayType) next);
-				return sto;
+				sto = new VarSTO(next.getName(), (ArrayType) next);
 			} else if (next.isPointer()){
-				VarSTO sto = new VarSTO(next.getName(), (PointerType) next);
-				return sto;
+				sto = new VarSTO(next.getName(), (PointerType) next);
 			}
 			else if(next.isInt()){
-				return new VarSTO(des.getName(), new IntType());
+				sto = new VarSTO(des.getName(), new IntType());
 			} else if(next.isBool())
 			{
-				return new VarSTO(des.getName(), new BoolType());
+				sto = new VarSTO(des.getName(), new BoolType());
 			}
 			else {
-				return new VarSTO(des.getName(), new FloatType());
-
+				sto = new VarSTO(des.getName(), new FloatType());
 			}
+			sto.setBase("%fp");
+			offset -= 4;
+			sto.setOffset(Integer.toString(offset));
+
+			m_writer.writeArrayIndexCheck(des, expr, temp, sto);
+
+			return sto;
+
 		}
 		//else it's a pointer no need to do anything lah
 		if(des.getType().isPointer())
