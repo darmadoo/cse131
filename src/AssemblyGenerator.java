@@ -659,7 +659,7 @@ public class AssemblyGenerator {
             align("4");
             writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + SEPARATOR,
                     AssemlyString.PREFIX + AssemlyString.FLOAT + "." + floatCount, "%l7");
-            writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f0");
+            writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%f0");
             writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%f0", "%o1");
         }
         else if(sto.getType() instanceof FloatType && expr.getType() instanceof  IntType)
@@ -780,7 +780,7 @@ public class AssemblyGenerator {
     public void writeGlobalStaticInitWithVar(STO sto, STO expr, int offset)
     {
         //writeGlobalNonInit(sto.getOffset(), true);
-        writeLocalInitWithVar(sto, expr , null);
+        writeLocalInitWithVar(sto, expr, null);
 
         writeAssembly("! End of function " + AssemlyString.INIT, sto.getOffset() + "\n");
         call(".$.init." + sto.getOffset() + ".fini");
@@ -1725,20 +1725,23 @@ public class AssemblyGenerator {
                 }
             }
             else if(expr.getType() instanceof FloatType){
-                set(expr.getOffset(), l7);
-                add(fp,l7,l7);
-                /*
-                section(AssemlyString.RODATA);
-                align("4");
-                decreaseIndent();
-                writeAssembly(AssemlyString.PREFIX + expr.getType().getName() + "." + cmpCount + ":");
-                next();
-                //writeAssembly(AssemlyString.SINGLE, String.valueOf(((ConstSTO) expr).getFloatValue()));
-                next();
-                section(AssemlyString.TEXT);
-                align("4");
-                set(AssemlyString.PREFIX + expr.getType().getName() + "." + cmpCount, l7);
-                */
+                if(expr instanceof ConstSTO){
+                    cmpCount++;
+                    section(AssemlyString.RODATA);
+                    align("4");
+                    decreaseIndent();
+                    writeAssembly(AssemlyString.PREFIX + expr.getType().getName() + "." + cmpCount + ":");
+                    next();
+                    writeAssembly(AssemlyString.SINGLE, String.valueOf(((ConstSTO) expr).getFloatValue()));
+                    next();
+                    section(AssemlyString.TEXT);
+                    align("4");
+                    set(AssemlyString.PREFIX + expr.getType().getName() + "." + cmpCount, l7);
+                }
+                else{
+                    set(expr.getOffset(), l7);
+                    add(fp,l7,l7);
+                }
                 ld(l7, f0);
             }
             else if(expr.getType() instanceof BoolType){
@@ -1782,14 +1785,14 @@ public class AssemblyGenerator {
                     section(AssemlyString.RODATA);
                     align("4");
                     decreaseIndent();
-                    writeAssembly(AssemlyString.PREFIX + AssemlyString.FLOAT + "." +  ++floatCount + ": \n");
+                    writeAssembly(AssemlyString.PREFIX + AssemlyString.FLOAT + "." +  ++cmpCount + ": \n");
                     increaseIndent();
                     writeAssembly(AssemlyString.SINGLE, args.get(i).getName());
                     next();
 
                     section(AssemlyString.TEXT);
                     align("4");
-                    writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + SEPARATOR, AssemlyString.PREFIX + AssemlyString.FLOAT + "." + floatCount, "%l7");
+                    writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + SEPARATOR, AssemlyString.PREFIX + AssemlyString.FLOAT + "." + cmpCount, "%l7");
                     writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f" + fcount);
                     fcount++;
                 }
