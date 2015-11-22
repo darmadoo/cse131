@@ -1404,7 +1404,8 @@ class MyParser extends parser
 		}
 
 		//if not a constant folding
-		if( !a.isConst() && !b.isConst()) {
+		if( !((a.isConst() && !a.getIsAddressable()) && (b.isConst() && !b.getIsAddressable())) ||
+				!(a.isConst() && b.isConst())) {
 			// check I.4
 			result.setBase("%fp");
 			offset -= result.getType().getSize();
