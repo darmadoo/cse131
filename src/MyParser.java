@@ -1729,7 +1729,7 @@ class MyParser extends parser
 			return new ErrorSTO("Return type not void");
 		}
 
-		m_writer.writeReturn(null);
+		offset = m_writer.writeReturn(null, temp, offset);
 		return temp;
 	}
 
@@ -1789,7 +1789,7 @@ class MyParser extends parser
 			}
 		}
 
-		m_writer.writeReturn(a);
+		offset = m_writer.writeReturn(a, temp, offset);
 		return a;
 	}
 
