@@ -1949,15 +1949,15 @@ class MyParser extends parser
 			}
 			else if(next.isInt()){
 				sto = new VarSTO(des.getName() + "[" + expr.getName() + "]", new IntType());
-				sto.setPbr(true);
+				sto.setLoad(true);
 			} else if(next.isBool())
 			{
 				sto = new VarSTO(des.getName() + "[" + expr.getName() + "]", new BoolType());
-				sto.setPbr(true);
+				sto.setLoad(true);
 			}
 			else {
 				sto = new VarSTO(des.getName() + "[" + expr.getName() + "]", new FloatType());
-				sto.setPbr(true);
+				sto.setLoad(true);
 			}
 			sto.setBase("%fp");
 			offset -= 4;

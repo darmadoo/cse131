@@ -13,6 +13,8 @@ abstract class STO
 	private String base;
 	private String offset;
 
+	public boolean load;
+
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
@@ -36,6 +38,9 @@ abstract class STO
 	public void setBase(String str){ base = str; }
 	public String getOffset() { return offset; }
 	public void setOffset(String str){ offset = str; }
+
+	public boolean getLoad() { return load; }
+	public void setLoad(boolean input){ load = input; }
 
 	//----------------------------------------------------------------
 	//
