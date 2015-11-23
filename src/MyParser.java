@@ -299,6 +299,23 @@ class MyParser extends parser
 			}
 		}
 		VarSTO sto = new VarSTO(id, t);
+
+		sto.setBase("%fp");
+		offset -= sto.getType().getSize();
+		sto.setOffset(Integer.toString(offset));
+
+		if(rtType == "&")
+		{
+			sto.setLoad(true);
+		}
+
+		VarSTO temp = new VarSTO("temp", t);
+
+		temp.setBase("%fp");
+		offset -= t.getSize();
+		temp.setOffset(Integer.toString(offset));
+
+		m_writer.writeForeach(sto, expr, temp, rtType);
 		m_symtab.insert(sto);
 	}
 
@@ -1459,6 +1476,12 @@ class MyParser extends parser
 			m_writer.changeIfCountValue(ifCount);
 		}
 		else if ( input == "while")
+		{
+			whileCount++;
+			whileStack.push(whileCount);
+			m_writer.changeWhileCountValue(whileCount);
+		}
+		else if ( input == "foreach")
 		{
 			whileCount++;
 			whileStack.push(whileCount);

@@ -1796,6 +1796,82 @@ public class AssemblyGenerator {
         decreaseIndent();
     }
 
+    //----------------------------------------------------------------
+    // Phase 2 Check 11
+    //----------------------------------------------------------------
+    public void writeForeach(STO sto, STO expr, STO temp, String rtType)
+    {
+        increaseIndent();
+        writeAssembly("! foreach (...) \n");
+        writeAssembly("! traversal ptr = --array\n");
+
+        set(expr.getOffset(), o0);
+        add(expr.getBase(), o0, o0);
+        set("4", o1);
+        writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.SUB + "\t", o0, o1, o0);
+
+        set(temp.getOffset(), o1);
+        add(temp.getBase(), o1, o1);
+        st(o0, o1);
+
+        decreaseIndent();
+        writeAssembly(AssemlyString.PREFIX + "loopCheck." + whileCount + ":\n");
+        increaseIndent();
+        increaseIndent();
+
+        writeAssembly("! ++traversal ptr\n");
+        set(temp.getOffset(), o1);
+        add(temp.getBase(), o1, o1);
+        ld(o1, o0);
+        set("4", o2);
+        add(o0, o2, o0);
+        st(o0, o1);
+
+        writeAssembly("! traversal ptr < array end addr?\n");
+        set(expr.getOffset(), o0);
+        add(expr.getBase(), o0, o0);
+        set(Integer.toString(expr.getType().getSize()), o1);
+        add(o0, o1, o1);
+        set(temp.getOffset(), o0);
+        add(temp.getBase(), o0, o0);
+        ld(o0, o0);
+        cmp(o0, o1);
+        writeAssembly(AssemlyString.BGE, AssemlyString.PREFIX + "loopEnd." + whileCount + "\n");
+        nop();
+
+        ArrayType tempArray = (ArrayType) expr.getType();
+        Type next = tempArray.next();
+
+
+        writeAssembly("! iterVal = currentElem\n");
+        set(sto.getOffset(), o1);
+        add(sto.getBase(), o1, o1);
+        if(rtType != "&") {
+            if (sto.getType().isInt() || sto.getType().isBool()) {
+                ld(o0, o0);
+                st(o0, o1);
+            } else if (sto.getType().isFloat()) {
+                ld(o0, f0);
+                if (next.isFloat()) {
+                    st(f0, o1);
+                } else {
+                    writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.FITOS, f0, f0);
+                    st(f0, o1);
+                }
+            }
+        }
+        else
+        {
+            st(o0, o1);
+        }
+
+        next();
+
+        writeAssembly("! start of loop body\n\n");
+
+    }
+
+
     //////////////////////////// END OF DAISY STUFF ////////////////////////////
 
     public void writeIfCheck(STO expr){
