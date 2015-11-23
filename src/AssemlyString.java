@@ -110,6 +110,7 @@ public class AssemlyString {
     public static final String STORE_PARAM = "! Store params\n";
     public static final String CONTINUE = "!continue\n";
     public static final String BREAK = "!break\n";
+    public static final String EOF_COMMENT = "! End of function %s\n";
 
     public static final String STORE = "%s, [%s]";
     public static final String INIT = ".$.init.%s";

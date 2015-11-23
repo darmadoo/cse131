@@ -1915,4 +1915,28 @@ public class AssemblyGenerator {
         decreaseIndent();
     }
 
+    void writeStructDecl(StructdefSTO struct, int offset){
+        writeAssembly(struct.getName() + "." + struct.getName() + ".void:\n");
+        increaseIndent();
+        set("SAVE." + struct.getName() + "." + struct.getName() + ".void", g1);
+        save(sp,g1,sp);
+        next();
+
+        // Allocate memory for the ctor and dtor
+        increaseIndent();
+        for(int i = 0; i < struct.getCtorDtorsList().size(); i++){
+            STO sto = struct.getCtorDtorsList().get(i);
+            st(i0, "[" + sto.getBase() + "+" + sto.getOffset() + "]");
+        }
+        next();
+        decreaseIndent();
+
+        writeAssembly(AssemlyString.EOF_COMMENT, struct.getName() + "." + struct.getName() + ".void");
+        call(struct.getName() + "." + struct.getName() + ".void.fini");
+        nop();
+        retRestore();
+        assign("SAVE." + struct.getName() + "." + struct.getName() + ".void" ,"-(92 + " + (-offset) + ") & -8");
+        next();
+        decreaseIndent();
+    }
 }

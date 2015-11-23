@@ -1068,9 +1068,17 @@ class MyParser extends parser
 			count += varList.get(i).getType().getSize();
 		}
 
+		int tempOffset = 68;
+		for(int i = 0; i < ctorDtorList.size(); i++){
+			ctorDtorList.get(i).setBase("%fp");
+			ctorDtorList.get(i).setOffset(Integer.toString(tempOffset));
+			tempOffset += 4;
+		}
+
 		Type type = new StructType(id, count);
 		StructdefSTO sto = new StructdefSTO(id, type, varList, funcList, ctorDtorList);
 
+		m_writer.writeStructDecl(sto, offset);
 		m_symtab.insert(sto);
 	}
 
@@ -1404,7 +1412,8 @@ class MyParser extends parser
 		}
 
 		//if not a constant folding
-		if( !a.isConst() && !b.isConst()) {
+		if( !((a.isConst() && !a.getIsAddressable()) && (b.isConst() && !b.getIsAddressable())) ||
+				!(a.isConst() && b.isConst())) {
 			// check I.4
 			result.setBase("%fp");
 			offset -= result.getType().getSize();
