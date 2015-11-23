@@ -1956,13 +1956,16 @@ class MyParser extends parser
 				sto = new VarSTO(next.getName(), (PointerType) next);
 			}
 			else if(next.isInt()){
-				sto = new VarSTO(des.getName(), new IntType());
+				sto = new VarSTO(des.getName() + "[" + expr.getName() + "]", new IntType());
+				sto.setPbr(true);
 			} else if(next.isBool())
 			{
-				sto = new VarSTO(des.getName(), new BoolType());
+				sto = new VarSTO(des.getName() + "[" + expr.getName() + "]", new BoolType());
+				sto.setPbr(true);
 			}
 			else {
-				sto = new VarSTO(des.getName(), new FloatType());
+				sto = new VarSTO(des.getName() + "[" + expr.getName() + "]", new FloatType());
+				sto.setPbr(true);
 			}
 			sto.setBase("%fp");
 			offset -= 4;
