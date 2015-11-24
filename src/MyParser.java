@@ -404,7 +404,7 @@ class MyParser extends parser
 		}
 
 		tempOffset = tempOffset + "." + id;
-		System.out.println(tempOffset);
+		//System.out.println(tempOffset);
 
 		if (m_symtab.accessLocal(id) != null)
 		{

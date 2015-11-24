@@ -1919,6 +1919,11 @@ public class AssemblyGenerator {
         writeAssembly("! " + sto.getName() + "\n");
         set(expr.getOffset(), l7);
         add(expr.getBase(), l7, l7);
+
+        if(expr.getLoad())
+        {
+            ld(l7, l7);
+        }
         ld(l7, o0);
         call(AssemlyString.PREFIX + AssemlyString.PTRCHECK);
         nop();
