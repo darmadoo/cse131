@@ -114,7 +114,7 @@ public class AssemblyGenerator {
         }
 
         decreaseIndent();
-        writeAssembly(AssemlyString.VAR_NAME, sto.getName());
+        writeAssembly(AssemlyString.VAR_NAME, sto.getOffset());
         increaseIndent();
         writeAssembly(AssemlyString.SKIP, Integer.toString(sto.getType().getSize()));
         next();
@@ -531,12 +531,18 @@ public class AssemblyGenerator {
     public void writeVarCout(STO sto)
     {
         increaseIndent();
-        if(((VarSTO)sto).getisSet()){
-            writeAssembly(AssemlyString.COUT_COMMENT, ((VarSTO) sto).getInsideStruct() + "." + sto.getName());
+        if(sto instanceof VarSTO){
+            if(((VarSTO)sto).getisSet()){
+                writeAssembly(AssemlyString.COUT_COMMENT, ((VarSTO) sto).getInsideStruct() + "." + sto.getName());
+            }
+            else {
+                writeAssembly(AssemlyString.COUT_COMMENT, sto.getName());
+            }
         }
-        else {
+        else{
             writeAssembly(AssemlyString.COUT_COMMENT, sto.getName());
         }
+
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", sto.getOffset(), "%l7");
         writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", sto.getBase(), "%l7", "%l7");
 
@@ -544,7 +550,13 @@ public class AssemblyGenerator {
             writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", l7, l7);
         }
 
-        if(sto.getLoad() || ((VarSTO)sto).getisSet()){
+        if(sto instanceof VarSTO){
+            if(((VarSTO)sto).getisSet()){
+                ld(l7,l7);
+            }
+        }
+
+        if(sto.getLoad()){
             ld(l7,l7);
         }
 
@@ -794,6 +806,11 @@ public class AssemblyGenerator {
             writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
             writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
         }
+        else if (sto.getType().isPointer() && expr.getType().isPointer())
+        {
+            writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
+            writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
+        }
 
         next();
         decreaseIndent();
@@ -944,11 +961,34 @@ public class AssemblyGenerator {
 
     public void writeLocalStaticInitWithVar(STO sto, STO expr, STO temp)
     {
-        //writeGlobalNonInit(sto.getOffset(), true);
-        decreaseIndent();
-        writeLocalInitWithVar(sto, expr , temp);
+        writeGlobalNonInit(sto, true);
 
         increaseIndent();
+
+        section(AssemlyString.BSS);
+        align("4");
+
+        decreaseIndent();
+        writeAssembly(AssemlyString.INIT_VAR, sto.getOffset());
+        increaseIndent();
+
+        writeAssembly(AssemlyString.SKIP, "4");
+        next();
+        next();
+        section(AssemlyString.TEXT);
+        align("4");
+        next();
+
+        writeAssembly("! Start init guard \n");
+        writeAssembly(AssemlyString.SET + "\t\t\t" + AssemlyString.INIT, sto.getOffset() + ", %o0\n");
+        writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%o0", "%o0");
+        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.CMP + "\t", "%o0", "%g0");
+        writeAssembly(AssemlyString.BNE + "\t\t\t" + AssemlyString.INIT, sto.getOffset() + ".done \n");
+        nop();
+        next();
+
+        writeLocalInitWithVar(sto, expr, temp);
+
         writeAssembly("! End init guard \n");
         writeAssembly(AssemlyString.SET + "\t\t\t" + AssemlyString.INIT, sto.getOffset() + ", %o0\n");
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.MOV + "\t", "1", "%o1");
@@ -959,6 +999,7 @@ public class AssemblyGenerator {
         next();
     }
 
+    /*
     public void writeStaticGlobalInit(String input)
     {
         writeAssembly(AssemlyString.INIT_VAR, input);
@@ -967,6 +1008,7 @@ public class AssemblyGenerator {
         save(sp, g1, sp);
         next();
     }
+    */
 
     //----------------------------------------------------------------
     // Phase 1 Check 4, Phase 2 Check 3
@@ -1793,7 +1835,7 @@ public class AssemblyGenerator {
         }
 
         if(sto.getLoad()){
-            ld(o1,o1);
+            ld(o1, o1);
         }
 
         writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
@@ -1917,6 +1959,109 @@ public class AssemblyGenerator {
         call(AssemlyString.PREFIX + AssemlyString.PTRCHECK);
         nop();
         add(o0, o1, o0);
+        set(sto.getOffset(), o1);
+        add(sto.getBase(), o1, o1);
+        st(o0, o1);
+        next();
+        decreaseIndent();
+    }
+
+    //----------------------------------------------------------------
+    // Phase 2 Check 11
+    //----------------------------------------------------------------
+    public void writeForeach(STO sto, STO expr, STO temp, String rtType)
+    {
+        increaseIndent();
+        writeAssembly("! foreach (...) \n");
+        writeAssembly("! traversal ptr = --array\n");
+
+        set(expr.getOffset(), o0);
+        add(expr.getBase(), o0, o0);
+        set("4", o1);
+        writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.SUB + "\t", o0, o1, o0);
+
+        set(temp.getOffset(), o1);
+        add(temp.getBase(), o1, o1);
+        st(o0, o1);
+
+        decreaseIndent();
+        writeAssembly(AssemlyString.PREFIX + "loopCheck." + whileCount + ":\n");
+        increaseIndent();
+        increaseIndent();
+
+        writeAssembly("! ++traversal ptr\n");
+        set(temp.getOffset(), o1);
+        add(temp.getBase(), o1, o1);
+        ld(o1, o0);
+        set("4", o2);
+        add(o0, o2, o0);
+        st(o0, o1);
+
+        writeAssembly("! traversal ptr < array end addr?\n");
+        set(expr.getOffset(), o0);
+        add(expr.getBase(), o0, o0);
+        set(Integer.toString(expr.getType().getSize()), o1);
+        add(o0, o1, o1);
+        set(temp.getOffset(), o0);
+        add(temp.getBase(), o0, o0);
+        ld(o0, o0);
+        cmp(o0, o1);
+        writeAssembly(AssemlyString.BGE, AssemlyString.PREFIX + "loopEnd." + whileCount + "\n");
+        nop();
+
+        ArrayType tempArray = (ArrayType) expr.getType();
+        Type next = tempArray.next();
+
+
+        writeAssembly("! iterVal = currentElem\n");
+        set(sto.getOffset(), o1);
+        add(sto.getBase(), o1, o1);
+        if(rtType != "&") {
+            if (sto.getType().isInt() || sto.getType().isBool()) {
+                ld(o0, o0);
+                st(o0, o1);
+            } else if (sto.getType().isFloat()) {
+                ld(o0, f0);
+                if (next.isFloat()) {
+                    st(f0, o1);
+                } else {
+                    writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.FITOS, f0, f0);
+                    st(f0, o1);
+                }
+            }
+        }
+        else
+        {
+            st(o0, o1);
+        }
+
+        next();
+
+        writeAssembly("! start of loop body\n\n");
+
+    }
+
+    public void writeAddressOperator(STO expr, STO sto){
+        increaseIndent();
+        writeAssembly("! " + sto.getName() + "\n");
+        set(expr.getOffset(), o0);
+        add(expr.getBase(), o0, o0);
+        set(sto.getOffset(), o1);
+        add(sto.getBase(), o1, o1);
+        st(o0, o1);
+        next();
+        decreaseIndent();
+    }
+
+    public void writePointer(STO expr, STO sto)
+    {
+        increaseIndent();
+        writeAssembly("! " + sto.getName() + "\n");
+        set(expr.getOffset(), l7);
+        add(expr.getBase(), l7, l7);
+        ld(l7, o0);
+        call(AssemlyString.PREFIX + AssemlyString.PTRCHECK);
+        nop();
         set(sto.getOffset(), o1);
         add(sto.getBase(), o1, o1);
         st(o0, o1);

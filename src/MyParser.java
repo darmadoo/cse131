@@ -303,10 +303,28 @@ class MyParser extends parser
 			}
 		}
 		VarSTO sto = new VarSTO(id, t);
+
+		sto.setBase("%fp");
+		offset -= sto.getType().getSize();
+		sto.setOffset(Integer.toString(offset));
+
+		if(rtType == "&")
+		{
+			sto.setLoad(true);
+		}
+
+		VarSTO temp = new VarSTO("temp", t);
+
+		temp.setBase("%fp");
+		offset -= t.getSize();
+		temp.setOffset(Integer.toString(offset));
+
+		m_writer.writeForeach(sto, expr, temp, rtType);
 		m_symtab.insert(sto);
 	}
+	/*
 
-	void doStaticStatement(String id, Type t, Vector<STO> arguments)
+	void doStaticStatement(String id, Type t, Vector<STO> params)
 	{
 		boolean global = true;
 		FuncSTO fun = m_symtab.getFunc();
@@ -318,7 +336,16 @@ class MyParser extends parser
 		String input = "";
 		if(!global)
 		{
-			input = fun.getName() + "." + fun.getType().getName() + "." + id;
+			String temp = "";
+			if(params == null){
+				temp += ".void";
+			}
+			else{
+				for(int i = 0; i < params.size(); i++){
+					temp += "." + params.get(i).getType().getName();
+				}
+			}
+			input = fun.getName() + temp + "." + id;
 		}
 		else
 		{
@@ -327,7 +354,8 @@ class MyParser extends parser
 
 		staticTemp = input;
 		VarSTO sto = new VarSTO(input, t);
-		m_writer.writeGlobalNonInit(sto, true);
+		if(!global) //////////////I changed this check later
+			m_writer.writeGlobalNonInit(sto, true);
 	}
 
 	String staticTemp;
@@ -345,13 +373,14 @@ class MyParser extends parser
 		{
 			if(global)
 			{
-				m_writer.writeStaticGlobalInit(staticTemp);
+				//m_writer.writeStaticGlobalInit(staticTemp);    /////////////// I changed this check later
 			}
 			else {
 				m_writer.writeInitGuard(staticTemp);
 			}
 		}
 	}
+	*/
 
 
 	//----------------------------------------------------------------
@@ -362,10 +391,24 @@ class MyParser extends parser
 	{
 		boolean global = true;
 		FuncSTO fun = m_symtab.getFunc();
+		String tempOffset = "";
 		if(fun != null)
 		{
 			global = false;
+			Vector<STO> params = fun.getParams();
+			tempOffset = fun.getName();
+			if(params.size() == 0){
+				tempOffset += ".void";
+			}
+			else{
+				for(int i = 0; i < params.size(); i++){
+					tempOffset += "." + params.get(i).getType().getName();
+				}
+			}
 		}
+
+		tempOffset = tempOffset + "." + id;
+		System.out.println(tempOffset);
 
 		if (m_symtab.accessLocal(id) != null)
 		{
@@ -434,7 +477,7 @@ class MyParser extends parser
 				if(isStaticFlag)
 				{
 					sto.setBase("%g0");
-					sto.setOffset(fun.getName() + "." + fun.getType().getName() + "." + id);
+					sto.setOffset(tempOffset);
 					m_writer.writeArrayInit(sto, isStaticFlag);
 				}
 				else {
@@ -474,7 +517,7 @@ class MyParser extends parser
 					if(isStaticFlag)
 					{
 						sto.setBase("%g0");
-						sto.setOffset(fun.getName() + "." + fun.getType().getName() + "." + id);
+						sto.setOffset(tempOffset);
 						m_writer.writeGlobalInit(expr, sto.getOffset(), t, isStaticFlag);
 					}
 					//local not static
@@ -511,7 +554,7 @@ class MyParser extends parser
 					if(isStaticFlag)
 					{
 						sto.setBase("%g0");
-						sto.setOffset(fun.getName() + "." + fun.getType().getName() + "." + id);
+						sto.setOffset(tempOffset);
 						m_writer.writeGlobalInit(expr, sto.getOffset(), t, isStaticFlag);
 					}
 					//local not static
@@ -539,7 +582,7 @@ class MyParser extends parser
 					if(isStaticFlag)
 					{
 						sto.setBase("%g0");
-						sto.setOffset(fun.getName() + "." + fun.getType().getName() + "." + id);
+						sto.setOffset(tempOffset);
 						m_writer.writeGlobalInit(expr, sto.getOffset(), t, isStaticFlag);
 					}
 					//local not static
@@ -572,13 +615,10 @@ class MyParser extends parser
 				sto.setBase("%g0");
 				sto.setOffset(id);
 				// call global writer here
-				//m_writer.writeGlobalNonInit(id, isStaticFlag);
+				m_writer.writeGlobalNonInit(sto, isStaticFlag);
 
 				if(!isStaticFlag){
 					m_writer.initGlobal(id, expr, offset);
-				}
-				else {
-					m_writer.writeGlobalStaticInitWithVar(sto, expr, offset);
 				}
 			}
 			else
@@ -587,7 +627,7 @@ class MyParser extends parser
 				if(isStaticFlag)
 				{
 					sto.setBase("%g0");
-					sto.setOffset(fun.getName() + "." + fun.getType().getName() + "." + id);
+					sto.setOffset(tempOffset);
 					VarSTO temp = new VarSTO("temp");
 
 					if(sto.getType().isFloat() && expr.getType().isInt()) {
@@ -625,7 +665,8 @@ class MyParser extends parser
 			if(global) {
 				sto.setBase("%g0");
 				sto.setOffset(id);
-				m_writer.writeGlobalNonInit(sto, isStaticFlag);
+				if(!isStaticFlag)
+					m_writer.writeGlobalNonInit(sto, isStaticFlag);
 			}
 			else
 			{
@@ -633,8 +674,9 @@ class MyParser extends parser
 				if(isStaticFlag)
 				{
 					sto.setBase("%g0");
-					sto.setOffset(fun.getName() + "." + fun.getType().getName() + "." + id);
-					//m_writer.writeGlobalNonInit(fun.getName() + "." + fun.getType().getName() + "." + id, isStaticFlag);
+
+					sto.setOffset(tempOffset);
+					m_writer.writeGlobalNonInit(sto, isStaticFlag);
 				}
 				//local not static
 				else
@@ -1510,6 +1552,12 @@ class MyParser extends parser
 			m_writer.changeIfCountValue(ifCount);
 		}
 		else if ( input == "while")
+		{
+			whileCount++;
+			whileStack.push(whileCount);
+			m_writer.changeWhileCountValue(whileCount);
+		}
+		else if ( input == "foreach")
 		{
 			whileCount++;
 			whileStack.push(whileCount);
@@ -2572,7 +2620,15 @@ class MyParser extends parser
 		PointerType temp = new PointerType(t.getName() + '*', t.getSize());
 		temp.setChild(t);
 
-		return new ExprSTO(sto.getName(), temp);
+		STO newSto =  new ExprSTO("&" + sto.getName(), temp);
+
+		newSto.setBase("%fp");
+		offset -= temp.getSize();
+		newSto.setOffset(Integer.toString(offset));
+
+		m_writer.writeAddressOperator(sto, newSto);
+
+		return newSto;
 
 	}
 
@@ -2605,7 +2661,17 @@ class MyParser extends parser
 			PointerType temp = (PointerType) sto.getType();
 			if(temp.hasNext()) {
 				newType = temp.next();
-				return new VarSTO(newType.getName(), newType);
+				STO newSto = new VarSTO("*" + sto.getName(), newType);
+
+				newSto.setBase("%fp");
+				offset -= temp.getSize();
+				newSto.setOffset(Integer.toString(offset));
+
+				newSto.setLoad(true);
+
+				m_writer.writePointer(sto, newSto);
+
+				return newSto;
 			}
 		}
 		return sto;

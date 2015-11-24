@@ -233,7 +233,7 @@ ExternDecl ::=      T_EXTERN DecoratedBasicType:_2 T_ID:_3 OptArrayList:_4
     ;
 
 
-VarDecl ::=         OptStatic:_1 DecoratedType:_2 T_ID:_3 OptArrayList:_4
+VarDecl ::=         OptStatic:_1 DecoratedType:_2 T_ID:_3 OptArrayList:_4 OptInit:_5
                     {:
                         if(_1 == "STATIC"){
                             ((MyParser) parser).isStatic(true);
@@ -241,13 +241,6 @@ VarDecl ::=         OptStatic:_1 DecoratedType:_2 T_ID:_3 OptArrayList:_4
                         else{
                             ((MyParser) parser).isStatic(false);
                         }
-
-                        if(_1 == "STATIC" && _4 == null){
-                            ((MyParser) parser).doStaticStatement(_3,_2, _4);
-                        }
-                    :}
-                    OptInit:_5
-                    {:
                         ((MyParser) parser).DoVarDecl (_3, _2, (STO) _5, _4, "");
                     :}
                     T_SEMI
@@ -699,11 +692,7 @@ OptRef ::=          T_AMPERSAND
     ;
 
 
-OptInit ::=         T_ASSIGN
-                    {:
-                        ((MyParser) parser).doStaticInit();
-                    :}
-                    Expr:_1
+OptInit ::=         T_ASSIGN Expr:_1
                     {:
                         RESULT = _1;
                     :}
@@ -776,7 +765,11 @@ WhileStmt ::=       T_WHILE
     ;
 
 
-ForeachStmt ::=     T_FOREACH T_LPAREN Type:_1 OptRef:_4 T_ID:_2 T_COLON Expr:_3 T_RPAREN
+ForeachStmt ::=     T_FOREACH
+                    {:
+                        ((MyParser) parser).pushStack("foreach");
+                    :}
+                    T_LPAREN Type:_1 OptRef:_4 T_ID:_2 T_COLON Expr:_3 T_RPAREN
                     {:
                         ((MyParser) parser).DoBlockOpen();
                         ((MyParser) parser).incrementBreakCounter();
@@ -786,6 +779,7 @@ ForeachStmt ::=     T_FOREACH T_LPAREN Type:_1 OptRef:_4 T_ID:_2 T_COLON Expr:_3
                     {:
                         ((MyParser) parser).decrementBreakCounter();
                         ((MyParser) parser).DoBlockClose();
+                        ((MyParser) parser).writeEndWhileLoop();
                     :}
     ;
 
