@@ -114,7 +114,7 @@ public class AssemblyGenerator {
         }
 
         decreaseIndent();
-        writeAssembly(AssemlyString.VAR_NAME, sto.getName());
+        writeAssembly(AssemlyString.VAR_NAME, sto.getOffset());
         increaseIndent();
         writeAssembly(AssemlyString.SKIP, Integer.toString(sto.getType().getSize()));
         next();
@@ -761,6 +761,11 @@ public class AssemblyGenerator {
             writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
             writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
         }
+        else if (sto.getType().isPointer() && expr.getType().isPointer())
+        {
+            writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
+            writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
+        }
 
         next();
         decreaseIndent();
@@ -816,11 +821,34 @@ public class AssemblyGenerator {
 
     public void writeLocalStaticInitWithVar(STO sto, STO expr, STO temp)
     {
-        //writeGlobalNonInit(sto.getOffset(), true);
-        decreaseIndent();
-        writeLocalInitWithVar(sto, expr , temp);
+        writeGlobalNonInit(sto, true);
 
         increaseIndent();
+
+        section(AssemlyString.BSS);
+        align("4");
+
+        decreaseIndent();
+        writeAssembly(AssemlyString.INIT_VAR, sto.getOffset());
+        increaseIndent();
+
+        writeAssembly(AssemlyString.SKIP, "4");
+        next();
+        next();
+        section(AssemlyString.TEXT);
+        align("4");
+        next();
+
+        writeAssembly("! Start init guard \n");
+        writeAssembly(AssemlyString.SET + "\t\t\t" + AssemlyString.INIT, sto.getOffset() + ", %o0\n");
+        writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%o0", "%o0");
+        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.CMP + "\t", "%o0", "%g0");
+        writeAssembly(AssemlyString.BNE + "\t\t\t" + AssemlyString.INIT, sto.getOffset() + ".done \n");
+        nop();
+        next();
+
+        writeLocalInitWithVar(sto, expr , temp);
+
         writeAssembly("! End init guard \n");
         writeAssembly(AssemlyString.SET + "\t\t\t" + AssemlyString.INIT, sto.getOffset() + ", %o0\n");
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.MOV + "\t", "1", "%o1");
@@ -831,6 +859,7 @@ public class AssemblyGenerator {
         next();
     }
 
+    /*
     public void writeStaticGlobalInit(String input)
     {
         writeAssembly(AssemlyString.INIT_VAR, input);
@@ -839,6 +868,7 @@ public class AssemblyGenerator {
         save(sp, g1, sp);
         next();
     }
+    */
 
     //----------------------------------------------------------------
     // Phase 1 Check 4, Phase 2 Check 3
@@ -1871,6 +1901,33 @@ public class AssemblyGenerator {
 
     }
 
+    public void writeAddressOperator(STO expr, STO sto){
+        increaseIndent();
+        writeAssembly("! " + sto.getName() + "\n");
+        set(expr.getOffset(), o0);
+        add(expr.getBase(), o0, o0);
+        set(sto.getOffset(), o1);
+        add(sto.getBase(), o1, o1);
+        st(o0, o1);
+        next();
+        decreaseIndent();
+    }
+
+    public void writePointer(STO expr, STO sto)
+    {
+        increaseIndent();
+        writeAssembly("! " + sto.getName() + "\n");
+        set(expr.getOffset(), l7);
+        add(expr.getBase(), l7, l7);
+        ld(l7, o0);
+        call(AssemlyString.PREFIX + AssemlyString.PTRCHECK);
+        nop();
+        set(sto.getOffset(), o1);
+        add(sto.getBase(), o1, o1);
+        st(o0, o1);
+        next();
+        decreaseIndent();
+    }
 
     //////////////////////////// END OF DAISY STUFF ////////////////////////////
 
