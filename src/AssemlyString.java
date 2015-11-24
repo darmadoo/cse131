@@ -117,5 +117,6 @@ public class AssemlyString {
 
     public static final String SUB = "sub";
 
+    public static final String MEMMOVE = "memmove";
 
 }

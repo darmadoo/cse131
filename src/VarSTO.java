@@ -14,6 +14,8 @@ class VarSTO extends STO
 	private BigDecimal		m_value;
 
 	private int offset;
+	private String insideStruct;
+	private boolean isSet;
 
 	public VarSTO(String strName)
 	{
@@ -123,6 +125,30 @@ class VarSTO extends STO
 		return pbr;
 	}
 
+	public void setInsideStruct(String t){
+		insideStruct = t;
+	}
+
+	public String getInsideStruct(){
+		return insideStruct;
+	}
+
+	public void setStructOffset(int i){
+		offset = i;
+		isSet = true;
+	}
+
+	public int getStructOffset(){
+		return offset;
+	}
+
+	public boolean getisSet(){
+		return isSet;
+	}
+
+	public void setisSet(boolean flag){
+		isSet = flag;
+	}
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------

@@ -17,7 +17,8 @@ class StructdefSTO extends STO
 	private Vector<STO> vars, funcs, ctors;
 	private FuncSTO dtor;
 	private int size;
-	//----------------------------------------------------------------
+	//------------------
+	// ----------------------------------------------
 	//
 	//----------------------------------------------------------------
 	public StructdefSTO(String strName)
@@ -78,6 +79,10 @@ class StructdefSTO extends STO
 
 	Vector<STO> getCtorDtorsList(){
 		return ctors;
+	}
+
+	STO getDtorsList(){
+		return dtor;
 	}
 
 	int getSize(){
