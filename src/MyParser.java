@@ -1555,6 +1555,10 @@ class MyParser extends parser
 			} else if (a.getType().isBool()) {
 				m_writer.writeBoolUnaryArithmeticExpression(a, o, result);
 			}
+			else if (a.getType().isPointer())
+			{
+				m_writer.writeIntegerUnaryArithmeticExpression(a, o, isPre, result);
+			}
 		}
 		//do stuff...
 		return result ;
@@ -1993,7 +1997,8 @@ class MyParser extends parser
 			if (next.isArray()) {
 				sto = new VarSTO(next.getName(), (ArrayType) next);
 			} else if (next.isPointer()){
-				sto = new VarSTO(next.getName(), (PointerType) next);
+				sto = new VarSTO(des.getName() + "[" + expr.getName() + "]", (PointerType) next);
+				sto.setLoad(true);
 			}
 			else if(next.isInt()){
 				sto = new VarSTO(des.getName() + "[" + expr.getName() + "]", new IntType());
@@ -2007,6 +2012,7 @@ class MyParser extends parser
 				sto = new VarSTO(des.getName() + "[" + expr.getName() + "]", new FloatType());
 				sto.setLoad(true);
 			}
+
 			sto.setBase("%fp");
 			offset -= 4;
 			sto.setOffset(Integer.toString(offset));

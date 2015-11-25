@@ -1083,7 +1083,10 @@ public class AssemblyGenerator {
         }
         else
         {
-            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", "1", "%o1");
+            if(a.getType().isPointer())
+                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", "4", "%o1");
+            else
+                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", "1", "%o1");
 
             if(o instanceof IncOp)
                 writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", "%o0", "%o1", "%o2");
