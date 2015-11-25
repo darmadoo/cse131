@@ -4,6 +4,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Vector;
+import java.util.Stack;
 
 public class AssemblyGenerator {
     private int indent_level = 0;
@@ -55,6 +56,7 @@ public class AssemblyGenerator {
 
     private static final StringBuilder strBuilder = new StringBuilder();
     private static final StringBuilder buffer = new StringBuilder();
+    private static Stack<String> structStack = new Stack<>();
 
     public AssemblyGenerator(String fileToWrite) {
         try {
@@ -499,6 +501,24 @@ public class AssemblyGenerator {
         next();
         increaseIndent();
         save(sp, "-96" , sp);
+
+        while(!structStack.empty()){
+            String top = structStack.pop();
+            set(top, o0);
+            ld(o0,o0);
+            cmp(o0,g0);
+            be(top + ".fini.skip\n");
+            nop();
+            String structName = structStack.pop();
+            call(structName + ".$" + structName + ".void");
+            nop();
+            set(top, o0);
+            st(g0, o0);
+            decreaseIndent();
+            writeAssembly(top + ".fini.skip:\n");
+            increaseIndent();
+        }
+
         retRestore();
         decreaseIndent();
 
@@ -2059,6 +2079,11 @@ public class AssemblyGenerator {
         writeAssembly("! " + sto.getName() + "\n");
         set(expr.getOffset(), l7);
         add(expr.getBase(), l7, l7);
+
+        if(expr.getLoad())
+        {
+            ld(l7, l7);
+        }
         ld(l7, o0);
         call(AssemlyString.PREFIX + AssemlyString.PTRCHECK);
         nop();
@@ -2499,6 +2524,8 @@ public class AssemblyGenerator {
         align("4");
         decreaseIndent();
         writeAssembly(".$$.ctorDtor." + ctorCount + ":\n");
+        structStack.add(sto.getType().getName());
+        structStack.add(".$$.ctorDtor." + ctorCount);
         increaseIndent();
         writeAssembly(AssemlyString.SKIP, "4");
         next();
