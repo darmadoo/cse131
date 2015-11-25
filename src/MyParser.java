@@ -49,6 +49,10 @@ class MyParser extends parser
 	private int ifCount = 0;
 	private int whileCount = 0;
 
+	private boolean thisFlag = false;
+	private boolean dtor = false;
+	private boolean structDecl = false;
+
 	private Stack<Integer> ifStack = new Stack<>();
 	private Stack<Integer> whileStack = new Stack<>();
 
@@ -720,9 +724,17 @@ class MyParser extends parser
 
 		StructdefSTO tempSTO = (StructdefSTO) m_symtab.accessGlobal(typ.getName());
 
+		structDecl = true;
 		DoFuncCall(tempSTO.getCtorDtorsList().firstElement(), parameters);
+		structDecl = false;
 
 		VarSTO sto = new VarSTO(id, tempSTO.getType());
+
+		sto.setBase("%fp");
+		offset -= sto.getType().getSize();
+		sto.setOffset(Integer.toString(offset));
+
+		m_writer.writeStructDecl(sto, parameters, offset);
 		m_symtab.insert(sto);
 	}
 
@@ -1110,9 +1122,19 @@ class MyParser extends parser
 			count += varList.get(i).getType().getSize();
 		}
 
+		int tempOffset = 68;
+		for(int i = 0; i < ctorDtorList.size(); i++){
+			ctorDtorList.get(i).setBase("%fp");
+			ctorDtorList.get(i).setOffset(Integer.toString(tempOffset));
+			tempOffset += 4;
+		}
+
 		Type type = new StructType(id, count);
 		StructdefSTO sto = new StructdefSTO(id, type, varList, funcList, ctorDtorList);
 
+		if(sto.getDtorsList() == null){
+			m_writer.writeDestructor(sto, offset);
+		}
 		m_symtab.insert(sto);
 	}
 
@@ -1128,6 +1150,13 @@ class MyParser extends parser
 					m_errors.print(Formatter.toString(ErrorMsg.redeclared_id, id));
 				}
 			}
+		}
+
+		if(id.startsWith("~")){
+			dtor = true;
+		}
+		else{
+			dtor = false;
 		}
 
 		FuncSTO sto = new FuncSTO(id);
@@ -1259,7 +1288,11 @@ class MyParser extends parser
 		}
 
 		//TODO end of function, reset the local variables offset;
-		m_writer.writeFuncDecl2(id, params, offset);
+		if(id.startsWith("~")){
+			id = currentStructName;
+		}
+
+		m_writer.writeFuncDecl2(id, params, offset, isStruct, dtor);
 
 		//cmpCount = 0;
 		offset = 0;
@@ -1293,6 +1326,11 @@ class MyParser extends parser
 		if(isStruct && recursiveFunc){
 			functionSTO = m_symtab.getFunc();
 			DoDuplicateFuncCheck();
+		}
+
+		// Structs phase 2
+		if(isStruct){
+			m_writer.writeStructhead(params, currentStructName, dtor);
 		}
 
 		for(int i = 0;i < params.size(); i++){
@@ -1375,7 +1413,19 @@ class MyParser extends parser
 					offset -= expr.getType().getSize();
 					sto.setOffset(Integer.toString(offset));
 				}
-				m_writer.writeLocalInitWithVar(stoDes, expr, sto);
+
+				if(thisFlag){
+					m_writer.writeLocalInitWithVar(stoDes, expr, sto, thisFlag);
+				}
+				else {
+					// TODO MAYBE NEED TO CHECK FOR STRUCT VAR
+					if(stoDes.getType() instanceof StructType){
+						m_writer.writeLocalInitWithStruct(stoDes, expr, sto);
+					}
+					else{
+						m_writer.writeLocalInitWithVar(stoDes, expr, sto);
+					}
+				}
 			}
 			else {
 				if(stoDes.getType().isFloat() && expr.getType().isInt())
@@ -1385,8 +1435,9 @@ class MyParser extends parser
 					expr.setOffset(Integer.toString(offset));
 					m_writer.writeLocalInitWithConst(stoDes, expr);
 				}
-				else
+				else{
 					m_writer.writeLocalInitWithConst(stoDes, expr);
+				}
 			}
 		}
 
@@ -1729,7 +1780,9 @@ class MyParser extends parser
 			sto.setOffset(Integer.toString(offset));
 		}
 
-		offset = m_writer.writeFuncCall(sto, arguments, offset);
+		if(!structDecl){
+			offset = m_writer.writeFuncCall(sto, arguments, offset);
+		}
 
 		return generateExpr(sto);
 	}
@@ -2215,6 +2268,7 @@ class MyParser extends parser
 		FuncSTO emptyCtor = new FuncSTO(id);
 		emptyCtor.setParams(new Vector());
 		list.add(emptyCtor);
+		m_writer.defaultCtor(emptyCtor, offset);
 	}
 
 	//----------------------------------------------------------------
@@ -2319,7 +2373,14 @@ class MyParser extends parser
 		if((sto.getName()).equals("this")){
 			// Check the hashmap
 			if(map.containsKey(currentStructName + delimiter + strID)){
-				return map.get(currentStructName + delimiter + strID);
+				STO var = map.get(currentStructName + delimiter + strID);
+				thisFlag =true;
+				var.setBase("%fp");
+				offset -= var.getType().getSize();
+				var.setOffset(Integer.toString(offset));
+
+				m_writer.writeThis(sto, var);
+				return var;
 			}
 			// Check the overloaded hash map for functions
 			else if(funcMap.containsKey(currentStructName + delimiter + strID)){
@@ -2353,6 +2414,12 @@ class MyParser extends parser
 				while (itr.hasNext()){
 					STO var = itr.next();
 					if((var.getName()).equals(strID)){
+						var.setBase("%fp");
+						offset -= var.getType().getSize();
+						var.setOffset(Integer.toString(offset));
+						((VarSTO)var).setInsideStruct(sto.getName());
+						m_writer.writeStructVarInit(sto, var);
+
 						sto = var;
 						found = true;
 					}
@@ -2381,6 +2448,7 @@ class MyParser extends parser
 				}
 			}
 		}
+
 		return sto;
 	}
 

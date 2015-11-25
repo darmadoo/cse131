@@ -406,7 +406,7 @@ DtorDef ::=         T_TILDE T_ID_U:_3
                     :}
                     T_LPAREN T_RPAREN T_LBRACE OptStmtList:_4 T_RBRACE
                     {:
-                        ((MyParser) parser).DoFuncDecl_2(_3, new Vector());
+                        ((MyParser) parser).DoFuncDecl_2("~" + _3, new Vector());
                         RESULT = ((MyParser) parser).DoCtorDtorCheck();
                     :}
     ;
@@ -1141,7 +1141,7 @@ Designator ::=      T_STAR Designator:_1
                         RESULT = ((MyParser) parser).DoUnaryExpr (_2, new DecOp());
                       }
                     :}
-    |               Designator2:_1 
+    |               Designator2:_1
                     {:
                         RESULT = _1;
                     :}
