@@ -2064,6 +2064,9 @@ public class AssemblyGenerator {
 
     }
 
+    //----------------------------------------------------------------
+    // Phase 3 Check 2
+    //----------------------------------------------------------------
     public void writeAddressOperator(STO expr, STO sto){
         increaseIndent();
         writeAssembly("! " + sto.getName() + "\n");
@@ -2081,6 +2084,9 @@ public class AssemblyGenerator {
         decreaseIndent();
     }
 
+    //----------------------------------------------------------------
+    // Phase 3 Check 1
+    //----------------------------------------------------------------
     public void writePointer(STO expr, STO sto)
     {
         increaseIndent();
@@ -2100,6 +2106,124 @@ public class AssemblyGenerator {
         next();
         decreaseIndent();
     }
+
+    //----------------------------------------------------------------
+    // Phase 3 Check 3
+    //----------------------------------------------------------------
+    public void writePointerComparison(STO a, BinaryOp o , STO b , STO result)
+    {
+        increaseIndent();
+        String operator = "";
+        if(o instanceof EqualOp)
+        {
+            operator = " == ";
+        }
+        else if (o instanceof NotEqualOp)
+        {
+            operator = " != ";
+        }
+
+        writeAssembly("! " + a.getName() + operator + b.getName() + "\n");
+
+        if(a.getType().isNullPointer())
+        {
+            set("0" , o0);
+        }
+        else
+        {
+            set(a.getOffset(), l7);
+            add(a.getBase(), l7, l7);
+
+            if(a.getLoad()) {
+                ld(l7, l7);
+            }
+            ld(l7, o0);
+        }
+        if(b.getType().isNullPointer())
+        {
+            set("0" , o1);
+        }
+        else
+        {
+            set(b.getOffset(), l7);
+            add(b.getBase(), l7, l7);
+
+            if(b.getLoad()) {
+                ld(l7, l7);
+            }
+            ld(l7, o1);
+        }
+
+        cmp(o0, o1);
+        if(o instanceof EqualOp)
+        {
+            writeAssembly(AssemlyString.BNE + "\t\t\t" + AssemlyString.PREFIX + "cmp." + ++cmpCount + "\n");
+        }
+        else if (o instanceof NotEqualOp)
+        {
+            writeAssembly(AssemlyString.BE, AssemlyString.PREFIX + "cmp." + ++cmpCount + "\n");
+        }
+        mov(g0, o0);
+        inc(o0);
+        decreaseIndent();
+        writeAssembly(AssemlyString.FUNCTIONCALL, "cmp." + cmpCount);
+        increaseIndent();
+        set(result.getOffset(), o1);
+        add(result.getBase(), o1, o1);
+        st(o0, o1);
+
+        next();
+        decreaseIndent();
+    }
+
+
+    //----------------------------------------------------------------
+    // Phase 3 Check 4
+    //----------------------------------------------------------------
+    public void writeNewNonStructStatement(STO sto)
+    {
+        increaseIndent();
+        writeAssembly("! new ( " + sto.getName() + " )\n");
+        mov("1", o0);
+        set("4", o1);
+        call("calloc");
+        nop();
+        set(sto.getOffset(), o1);
+        add(sto.getBase(), o1 , o1);
+        st(o0, o1);
+        next();
+        decreaseIndent();
+    }
+
+    //----------------------------------------------------------------
+    // Phase 3 Check 4
+    //----------------------------------------------------------------
+    public void writeDeleteStatement(STO sto)
+    {
+        increaseIndent();
+        writeAssembly("! delete ( " + sto.getName() + " )\n");
+        set(sto.getOffset(), l7);
+        add(sto.getBase(), l7 , l7);
+        if(sto.getLoad())
+            ld(l7,l7);
+        ld(l7,o0);
+        call(AssemlyString.PREFIX + AssemlyString.PTRCHECK);
+        nop();
+        set(sto.getOffset(), l7);
+        add(sto.getBase(), l7 , l7);
+        if(sto.getLoad())
+            ld(l7,l7);
+        ld(l7,o0);
+        call("free");
+        nop();
+        set(sto.getOffset(), o1);
+        add(sto.getBase(), o1 , o1);
+        st(g0, o1);
+        next();
+        decreaseIndent();
+    }
+
+
 
     //////////////////////////// END OF DAISY STUFF ////////////////////////////
 

@@ -1532,7 +1532,10 @@ class MyParser extends parser
 			else if(a.getType().isBool() && b.getType().isBool())
 			{
 				m_writer.writeBoolBinaryArithmeticExpression(a, o, b, result);
-
+			}
+			else if(a.getType().isPointer() && b.getType().isPointer())
+			{
+				m_writer.writePointerComparison(a, o , b , result);
 			}
 		}
 		//both are constant but still need to short circuit
@@ -2708,6 +2711,9 @@ class MyParser extends parser
 						m_nNumErrors++;
 						m_errors.print(ErrorMsg.error16_New_var);
 					}
+					//type is pointer, and not pointing to a struct.
+					//it is addressable and modifiable l value
+					m_writer.writeNewNonStructStatement(des);
 				}
 			}
 			//if it's modifiable l value
@@ -2753,7 +2759,6 @@ class MyParser extends parser
 				m_errors.print(ErrorMsg.error16_New_var);
 			}
 		}
-
 	}
 
 	//----------------------------------------------------------------
@@ -2771,6 +2776,7 @@ class MyParser extends parser
 				m_nNumErrors++;
 				m_errors.print(Formatter.toString(ErrorMsg.error16_Delete, des.getType().getName()));
 			}
+			m_writer.writeDeleteStatement(des);
 		}
 		else
 		{
