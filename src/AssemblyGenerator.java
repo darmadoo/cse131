@@ -521,6 +521,7 @@ public class AssemblyGenerator {
 
         retRestore();
         decreaseIndent();
+        next();
 
         fixedVal = 64;
     }
@@ -2284,12 +2285,16 @@ public class AssemblyGenerator {
             writeAssembly(AssemlyString.RETURN_COMMENT, expr.getName());
             if(expr.getType() instanceof IntType)
             {
-                if(expr instanceof ConstSTO){
+                if(expr instanceof ConstSTO && !expr.getIsAddressable()){
                     set(expr.getName(), i0);
                 }
                 else{
                     set(expr.getOffset(), l7);
                     add(expr.getBase(), l7, l7);
+
+                    if(expr.getLoad())
+                        ld(l7, l7);
+
                     ld(l7,i0);
                 }
                 // If we have to return a float, type cast it
@@ -2304,7 +2309,7 @@ public class AssemblyGenerator {
                 }
             }
             else if(expr.getType() instanceof FloatType){
-                if(expr instanceof ConstSTO){
+                if(expr instanceof ConstSTO && !expr.getIsAddressable()){
                     cmpCount++;
                     section(AssemlyString.RODATA);
                     align("4");
@@ -2320,16 +2325,23 @@ public class AssemblyGenerator {
                 else{
                     set(expr.getOffset(), l7);
                     add(fp,l7,l7);
+
+                    if(expr.getLoad())
+                        ld(l7, l7);
                 }
                 ld(l7, f0);
             }
             else if(expr.getType() instanceof BoolType){
-                if(expr instanceof ConstSTO){
+                if(expr instanceof ConstSTO && !expr.getIsAddressable()){
                     set(String.valueOf(((ConstSTO) expr).getValue()), i0);
                 }
                 else{
                     set(expr.getOffset(), l7);
                     add(expr.getBase(), l7, l7);
+
+                    if(expr.getLoad())
+                        ld(l7, l7);
+
                     ld(l7, i0);
                 }
             }

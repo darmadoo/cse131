@@ -667,6 +667,8 @@ class MyParser extends parser
 				sto.setOffset(id);
 				if(!isStaticFlag)
 					m_writer.writeGlobalNonInit(sto, isStaticFlag);
+				else
+					m_writer.writeGlobalNonInit(sto, isStaticFlag);
 			}
 			else
 			{
@@ -744,10 +746,23 @@ class MyParser extends parser
 	void DoAutoDecl(String id,STO expr){
 		boolean global = true;
 		FuncSTO fun = m_symtab.getFunc();
+		String tempOffset = "";
 		if(fun != null)
 		{
 			global = false;
+			Vector<STO> params = fun.getParams();
+			tempOffset = fun.getName();
+			if(params.size() == 0){
+				tempOffset += ".void";
+			}
+			else{
+				for(int i = 0; i < params.size(); i++){
+					tempOffset += "." + params.get(i).getType().getName();
+				}
+			}
 		}
+
+		tempOffset = tempOffset + "." + id;
 
 		//create a new STO and assign it the type of exp
 		// proceed as normal
@@ -765,7 +780,7 @@ class MyParser extends parser
 				else {
 					if (isStaticFlag) {
 						sto.setBase("%g0");
-						sto.setOffset(fun.getName() + "." + fun.getType().getName() + "." + id);
+						sto.setOffset(tempOffset);
 						m_writer.writeGlobalInit(expr, sto.getOffset(), expr.getType(), isStaticFlag);
 					}
 					//local not static
@@ -795,7 +810,7 @@ class MyParser extends parser
 					if(isStaticFlag)
 					{
 						sto.setBase("%g0");
-						sto.setOffset(fun.getName() + "." + fun.getType().getName() + "." + id);
+						sto.setOffset(tempOffset);
 						m_writer.writeLocalStaticInitWithVar(sto, expr , null);
 					}
 					//local not static
@@ -840,10 +855,23 @@ class MyParser extends parser
 		boolean exprIsConstVar = expr.getIsAddressable();
 		boolean global = true;
 		FuncSTO fun = m_symtab.getFunc();
+		String tempOffset = "";
 		if(fun != null)
 		{
 			global = false;
+			Vector<STO> params = fun.getParams();
+			tempOffset = fun.getName();
+			if(params.size() == 0){
+				tempOffset += ".void";
+			}
+			else{
+				for(int i = 0; i < params.size(); i++){
+					tempOffset += "." + params.get(i).getType().getName();
+				}
+			}
 		}
+
+		tempOffset = tempOffset + "." + id;
 
 		if (m_symtab.accessLocal(id) != null)
 		{
@@ -881,7 +909,7 @@ class MyParser extends parser
 					if(isStaticFlag)
 					{
 						sto.setBase("%g0");
-						sto.setOffset(fun.getName() + "." + fun.getType().getName() + "." + id);
+						sto.setOffset(tempOffset);
 						m_writer.writeGlobalInit(expr, sto.getOffset(), t, isStaticFlag);
 					}
 					else {
@@ -924,7 +952,7 @@ class MyParser extends parser
 					if(isStaticFlag)
 					{
 						sto.setBase("%g0");
-						sto.setOffset(fun.getName() + "." + fun.getType().getName() + "." + id);
+						sto.setOffset(tempOffset);
 						m_writer.writeGlobalInit(expr, sto.getOffset(), t, isStaticFlag);
 					}
 					else {
@@ -954,7 +982,7 @@ class MyParser extends parser
 					if(isStaticFlag)
 					{
 						sto.setBase("%g0");
-						sto.setOffset(fun.getName() + "." + fun.getType().getName() + "." + id);
+						sto.setOffset(tempOffset);
 						m_writer.writeGlobalInit(expr, sto.getOffset(), t, isStaticFlag);
 					}
 					else {
@@ -1535,7 +1563,7 @@ class MyParser extends parser
 			}
 			else if(a.getType().isPointer() && b.getType().isPointer())
 			{
-				m_writer.writePointerComparison(a, o , b , result);
+				m_writer.writePointerComparison(a, o, b, result);
 			}
 		}
 		//both are constant but still need to short circuit
