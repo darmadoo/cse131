@@ -2892,15 +2892,35 @@ class MyParser extends parser
 				if(sto.isConst())
 				{
 					//if false
-					if (((ConstSTO)sto).getBoolValue() == false)
-						return new ConstSTO(sto.getName(), t, 0);
+					if (((ConstSTO)sto).getBoolValue() == false) {
+						ConstSTO result = new ConstSTO("(" + t.getName() + ")" + sto.getName(), t, 0);
+						result.setIsAddressable(false);
+						return result;
+					}
 					//else true
-					else
-						return new ConstSTO(sto.getName(), t, 1);
+					else {
+						ConstSTO result = new ConstSTO("(" + t.getName() + ")" + sto.getName(), t, 1);
+						result.setIsAddressable(false);
+						return result;
+					}
 				}
 				//not constant
-				else
-					return new ExprSTO(sto.getName(), t);
+				else {
+					ExprSTO result = new ExprSTO("(" + t.getName() + ")" + sto.getName(), t);
+					result.setBase("%fp");
+					offset -= t.getSize();
+					result.setOffset(Integer.toString(offset));
+
+					VarSTO temp = new VarSTO("temp", t);
+					if(t.isFloat()) {
+						temp.setBase("%fp");
+						offset -= t.getSize();
+						temp.setOffset(Integer.toString(offset));
+					}
+
+					m_writer.writeBasicTypeCast(sto, t, result, temp);
+					return result;
+				}
 			}
 			//float / int -> bool
 			else if(sto.getType().isNumeric() && t.isBool())
@@ -2911,54 +2931,149 @@ class MyParser extends parser
 					if(sto.getType().isFloat())
 					{
 						if(((ConstSTO)sto).getFloatValue() == 0.0)
-							return new ConstSTO(sto.getName(), t, false);
+						{
+							ConstSTO result = new ConstSTO("(" + t.getName() + ")" + sto.getName(), t, false);
+							result.setIsAddressable(false);
+							return result;
+						}
 						else
-							return new ConstSTO(sto.getName(), t, true);
+						{
+							ConstSTO result = new ConstSTO("(" + t.getName() + ")" + sto.getName(), t, true);
+							result.setIsAddressable(false);
+							return result;
+						}
 					}
 					//int -> bool
 					else
 					{
 						if(((ConstSTO)sto).getIntValue() == 0)
-							return new ConstSTO(sto.getName(), t, false);
+						{
+							ConstSTO result = new ConstSTO("(" + t.getName() + ")" + sto.getName(), t, false);
+							result.setIsAddressable(false);
+							return result;
+						}
 						else
-							return new ConstSTO(sto.getName(), t, true);
+						{
+							ConstSTO result = new ConstSTO("(" + t.getName() + ")" + sto.getName(), t, true);
+							result.setIsAddressable(false);
+							return result;
+						}
 					}
 				}
-				else
-					return new ExprSTO(sto.getName(), t);
+				else {
+					ExprSTO result = new ExprSTO("(" + t.getName() + ")" + sto.getName(), t);
+					result.setBase("%fp");
+					offset -= t.getSize();
+					result.setOffset(Integer.toString(offset));
+
+					VarSTO temp = new VarSTO("temp", t);
+					if(sto.getType().isFloat()) {
+						temp.setBase("%fp");
+						offset -= t.getSize();
+						temp.setOffset(Integer.toString(offset));
+					}
+
+					m_writer.writeBasicTypeCast(sto, t, result, temp);
+					return result;
+				}
 			}
 			else if(sto.getType().isInt() && t.isFloat())
 			{
 				if(sto.isConst())
-					return new ConstSTO(sto.getName(), t, (float) ((ConstSTO)sto).getIntValue());
+				{
+					ConstSTO result = new ConstSTO("(" + t.getName() + ")" + sto.getName(), t, (float) ((ConstSTO)sto).getIntValue());
+					result.setIsAddressable(false);
+					return result;
+				}
 				//not constant
-				else
-					return new ExprSTO(sto.getName(), t);
+				else {
+					ExprSTO result = new ExprSTO("(" + t.getName() + ")" + sto.getName(), t);
+					result.setBase("%fp");
+					offset -= t.getSize();
+					result.setOffset(Integer.toString(offset));
+
+					VarSTO temp = new VarSTO("temp", t);
+					temp.setBase("%fp");
+					offset -= t.getSize();
+					temp.setOffset(Integer.toString(offset));
+
+					m_writer.writeBasicTypeCast(sto, t, result, temp);
+					return result;
+				}
 			}
 			else if(sto.getType().isFloat() && t.isInt())
 			{
 				if(sto.isConst())
-					return new ConstSTO(sto.getName(), t, (int) ((ConstSTO)sto).getFloatValue());
-					//not constant
-				else
-					return new ExprSTO(sto.getName(), t);
+				{
+					ConstSTO result = new ConstSTO("(" + t.getName() + ")" + sto.getName(), t, (int) ((ConstSTO)sto).getFloatValue());
+					result.setIsAddressable(false);
+					return result;
+				}
+				//not constant
+				else {
+					ExprSTO result = new ExprSTO("(" + t.getName() + ")" + sto.getName(), t);
+					result.setBase("%fp");
+					offset -= t.getSize();
+					result.setOffset(Integer.toString(offset));
+
+					m_writer.writeBasicTypeCast(sto, t, result, null);
+					return result;
+				}
 			}
 			// int -> int
 			// float -> float
-			return new ExprSTO(sto.getName(), t);
+			// bool -> bool
+			if(!sto.isConst()) {
+				ExprSTO result = new ExprSTO("(" + t.getName() + ")" + sto.getName(), t);
+				result.setBase("%fp");
+				offset -= t.getSize();
+				result.setOffset(Integer.toString(offset));
+
+				m_writer.writeBasicTypeCast(sto, t, result, null);
+				return result;
+			}
+			else
+			{
+				if(t.isInt()) {
+					ConstSTO result = new ConstSTO("(" + t.getName() + ")" + sto.getName(), t, ((ConstSTO) sto).getIntValue());
+					result.setIsAddressable(false);
+					return result;
+				}
+				else if (t.isFloat())
+				{
+					ConstSTO result = new ConstSTO("(" + t.getName() + ")" + sto.getName(), t, ((ConstSTO) sto).getFloatValue());
+					result.setIsAddressable(false);
+					return result;
+				}
+				else {
+					ConstSTO result = new ConstSTO("(" + t.getName() + ")" + sto.getName(), t, ((ConstSTO) sto).getBoolValue());
+					result.setIsAddressable(false);
+					return result;
+				}
+			}
 		}
 		// pointers can be cast to any type except nullpointer
 		// make sure sto is pointer AND not nullptr
 		// make sure t is not nullptr
 		else if(sto.getType().isPointer() && !sto.getType().isNullPointer() && !t.isNullPointer())
 		{
-			return new ExprSTO(sto.getName(), t);
+			ExprSTO result = new ExprSTO("(" + t.getName() + ")" + sto.getName(), t);
+			result.setBase("%fp");
+			offset -= t.getSize();
+			result.setOffset(Integer.toString(offset));
+			m_writer.writePointerTypeCast(sto, t, result, null);
+			return result;
 		}
 		//sto is not basic type and not pointer type.
 		//sto basic type, t pointer type
 		else if (sto.getType().isBasic() && !t.isNullPointer() && t.isPointer())
 		{
-			return new ExprSTO(sto.getName(), t);
+			ExprSTO result = new ExprSTO("(" + t.getName() + ")" + sto.getName(), t);
+			result.setBase("%fp");
+			offset -= t.getSize();
+			result.setOffset(Integer.toString(offset));
+			m_writer.writePointerTypeCast(sto, t, result, null);
+			return result;
 		}
 
 		m_nNumErrors++;

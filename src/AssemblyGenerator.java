@@ -2224,7 +2224,160 @@ public class AssemblyGenerator {
         decreaseIndent();
     }
 
+    public void writeBasicTypeCast(STO sto, Type t, STO result, STO temp)
+    {
+        increaseIndent();
+        writeAssembly("! " + result.getName() + "\n");
+        set(sto.getOffset(), l7);
+        add(sto.getBase(), l7 , l7);
+        if(sto.getLoad())
+            ld(l7,l7);
 
+        if(sto.getType().isFloat())
+            ld(l7, f0);
+        else
+            ld(l7, o0);
+
+        if((sto.getType().isInt() && t.isInt()) || (sto.getType().isFloat() && t.isFloat()))
+        {
+            set(result.getOffset(), o1);
+            add(result.getBase(), o1, o1);
+            if(sto.getType().isFloat())
+                st(f0, o1);
+            else
+                st(o0, o1);
+        }
+        else if(sto.getType().isInt() && t.isFloat())
+        {
+            set(temp.getOffset(), l7);
+            add(temp.getBase(), l7, l7);
+            st(o0, l7);
+            ld(l7, f0);
+            writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.FITOS, f0, f0);
+            set(result.getOffset(), o1);
+            add(result.getBase(), o1, o1);
+            st(f0, o1);
+        }
+        else if(sto.getType().isInt() && t.isBool())
+        {
+            cmp(o0, g0);
+            be(AssemlyString.PREFIX + "cmp." + ++cmpCount);
+            next();
+            mov(g0, o0);
+            mov("1", o0);
+            decreaseIndent();
+            writeAssembly(AssemlyString.FUNCTIONCALL, "cmp." + cmpCount);
+            increaseIndent();
+            set(result.getOffset(), o1);
+            add(result.getBase(), o1, o1);
+            st(o0, o1);
+        }
+        else if(sto.getType().isFloat() && t.isInt())
+        {
+            writeAssembly(AssemlyString.TWO_PARAM, "fstoi", f0, f0);
+            set(result.getOffset(), o1);
+            add(result.getBase(), o1, o1);
+            st(f0, o1);
+        }
+        else if(sto.getType().isFloat() && t.isBool())
+        {
+            set(temp.getOffset(), l7);
+            add(temp.getBase(), l7, l7);
+            st(g0, l7);
+            ld(l7, f1);
+            writeAssembly(AssemlyString.TWO_PARAM, "fitos", f1, f1);
+            writeAssembly(AssemlyString.TWO_PARAM, "fcmps", f0, f1);
+            nop();
+            writeAssembly(AssemlyString.FBE, AssemlyString.PREFIX + "cmp." + ++cmpCount);
+            next();
+            mov(g0, o0);
+            mov("1", o0);
+            decreaseIndent();
+            writeAssembly(AssemlyString.FUNCTIONCALL, "cmp." + cmpCount);
+            increaseIndent();
+            set(result.getOffset(), o1);
+            add(result.getBase(), o1, o1);
+            st(o0, o1);
+        }
+        if(sto.getType().isBool())
+        {
+            cmp(o0, g0);
+            be(AssemlyString.PREFIX + "cmp." + ++cmpCount);
+            next();
+            mov(g0, o0);
+            mov("1", o0);
+            decreaseIndent();
+            writeAssembly(AssemlyString.FUNCTIONCALL, "cmp." + cmpCount);
+            increaseIndent();
+            if(t.isInt() || t.isBool())
+            {
+                set(result.getOffset(), o1);
+                add(result.getBase(), o1, o1);
+                st(o0, o1);
+            }
+            else {
+                set(temp.getOffset(), l7);
+                add(temp.getBase(), l7, l7);
+                st(o0, l7);
+                ld(l7, f0);
+                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.FITOS, f0, f0);
+                set(result.getOffset(), o1);
+                add(result.getBase(), o1, o1);
+                st(f0, o1);
+            }
+        }
+        next();
+        decreaseIndent();
+    }
+
+
+    public void writePointerTypeCast(STO sto, Type t, STO result, STO temp) {
+        increaseIndent();
+        writeAssembly("!" + result.getName() + "\n");
+
+        if(sto.isConst() && !sto.getIsAddressable())
+        {
+            if(sto.getType().isFloat())
+            {
+                section(AssemlyString.RODATA);
+                align("4");
+                decreaseIndent();
+                writeAssembly(AssemlyString.PREFIX + AssemlyString.FLOAT + "." + ++floatCount + ": \n");
+                increaseIndent();
+                writeAssembly(AssemlyString.SINGLE, String.valueOf(((ConstSTO) sto).getFloatValue()));
+                next();
+
+                section(AssemlyString.TEXT);
+                align("4");
+                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + SEPARATOR,
+                        AssemlyString.PREFIX + AssemlyString.FLOAT + "." + floatCount, "%l7");
+                writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%f0");
+                writeAssembly(AssemlyString.TWO_PARAM, "fstoi", f0, f0);
+                set(result.getOffset(), o1);
+                add(result.getBase(), o1, o1);
+                st(f0, o1);
+            }
+            else
+            {
+                set(String.valueOf(((ConstSTO) sto).getValue()), o0);
+                set(result.getOffset(), o1);
+                add(result.getBase(), o1, o1);
+                st(o0, o1);
+            }
+        }
+        else {
+            set(sto.getOffset(), l7);
+            add(sto.getBase(), l7 , l7);
+            if(sto.getLoad())
+                ld(l7,l7);
+            ld(l7,o0);
+            set(result.getOffset(), o1);
+            add(result.getBase(), o1, o1);
+            st(o0, o1);
+        }
+        next();
+        decreaseIndent();
+    }
 
     //////////////////////////// END OF DAISY STUFF ////////////////////////////
 
