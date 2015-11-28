@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.Vector;
 import java.util.Stack;
+import java.util.WeakHashMap;
 
 public class AssemblyGenerator {
     private int indent_level = 0;
@@ -365,8 +366,6 @@ public class AssemblyGenerator {
         next();
         decreaseIndent();
 
-        // TODO SAVE THEM IN THE BUFFER AND PRINT WHENEVER YOU NEED TO
-
         //TODO PASS FUNCTIONS
         writeAssembly("! End of function .$.init." + id );
         next();
@@ -501,25 +500,59 @@ public class AssemblyGenerator {
         next();
         increaseIndent();
         save(sp, "-96" , sp);
+        retRestore();
 
         while(!structStack.empty()){
-            String top = structStack.pop();
-            set(top, o0);
-            ld(o0,o0);
-            cmp(o0,g0);
-            be(top + ".fini.skip\n");
-            nop();
-            String structName = structStack.pop();
-            call(structName + ".$" + structName + ".void");
-            nop();
-            set(top, o0);
-            st(g0, o0);
-            decreaseIndent();
-            writeAssembly(top + ".fini.skip:\n");
-            increaseIndent();
+            String global = structStack.pop();
+            // Check if global
+            if(global.equalsIgnoreCase("true")){
+                String top = structStack.pop();
+                decreaseIndent();
+                writeAssembly(top + ".fini:\n");
+                increaseIndent();
+                save(sp, "-96", sp);
+                set(top, o0);
+                ld(o0,o0);
+                cmp(o0,g0);
+                be(top + ".fini.skip\n");
+                nop();
+                String structName = structStack.pop();
+                call(structName + ".$" + structName + ".void");
+                nop();
+                set(top, o0);
+                st(g0, o0);
+                decreaseIndent();
+                writeAssembly(top + ".fini.skip:\n");
+                increaseIndent();
+                retRestore();
+                next();
+                section(AssemlyString.FINI);
+                align("4");
+                call(top + ".fini");
+                nop();
+                next();
+                section(AssemlyString.TEXT);
+                align("4");
+            }
+            else{
+                String top = structStack.pop();
+                set(top, o0);
+                ld(o0,o0);
+                cmp(o0,g0);
+                be(top + ".fini.skip\n");
+                nop();
+                String structName = structStack.pop();
+                call(structName + ".$" + structName + ".void");
+                nop();
+                set(top, o0);
+                st(g0, o0);
+                decreaseIndent();
+                writeAssembly(top + ".fini.skip:\n");
+                increaseIndent();
+                retRestore();
+            }
         }
 
-        retRestore();
         decreaseIndent();
 
         fixedVal = 64;
@@ -2504,7 +2537,7 @@ public class AssemblyGenerator {
     }
 
     private int ctorCount = 1;
-    void writeStructDecl(STO sto, Vector<STO> parameters, int offset){
+    void writeStructDecl(STO sto, Vector<STO> parameters, int offset, boolean global){
         String structName = sto.getType().getName() + "." + sto.getType().getName();
         for(int i = 0; i < parameters.size(); i++){
             structName += "." + parameters.get(i).getName();
@@ -2520,9 +2553,31 @@ public class AssemblyGenerator {
         }
 
         increaseIndent();
+
+        if(global){
+            section(AssemlyString.BSS);
+            align("4");
+            global(sto.getName());
+            decreaseIndent();
+            writeAssembly(sto.getName() + ":\n");
+            increaseIndent();
+            writeAssembly(AssemlyString.SKIP, Integer.toString(sto.getType().getSize()));
+            next();
+            next();
+            section(AssemlyString.TEXT);
+            align("4");
+            decreaseIndent();
+            writeAssembly(".$.init." + sto.getName() + ":\n");
+            increaseIndent();
+            increaseIndent();
+            set("SAVE..$.init." + sto.getName(), g1);
+            save(sp, g1, sp);
+            next();
+        }
+
         writeAssembly("! " + sto.getName() + "." + sto.getType().getName() + "(...)\n");
         set(sto.getOffset(), o0);
-        add(fp, o0, o0);
+        add(sto.getBase(), o0, o0);
         call(structName);
         nop();
         next();
@@ -2533,6 +2588,7 @@ public class AssemblyGenerator {
         writeAssembly(".$$.ctorDtor." + ctorCount + ":\n");
         structStack.add(sto.getType().getName());
         structStack.add(".$$.ctorDtor." + ctorCount);
+        structStack.add(Boolean.toString(global));
         increaseIndent();
         writeAssembly(AssemlyString.SKIP, "4");
         next();
@@ -2541,13 +2597,38 @@ public class AssemblyGenerator {
         align("4");
         next();
         set(".$$.ctorDtor." + ctorCount, o0);
-        set(Integer.toString(offset), o1);
-        add(fp,o1,o1);
+        // TODO NEED TO USE THE STO OFFSET
+        //set(Integer.toString(offset), o1);
+        set(sto.getOffset(), o1);
+        add(sto.getBase(),o1,o1);
         st(o1,o0);
         next();
         ctorCount++;
-
         decreaseIndent();
+
+        if(global){
+            writeAssembly(AssemlyString.EOF_COMMENT, ".$.init." + sto.getName());
+            call(".$.init." + sto.getName() + ".fini");
+            nop();
+            retRestore();
+            assign("SAVE." + ".$.init." + sto.getName(), "-(92 + " + offset + ") & -8");
+            next();
+            decreaseIndent();
+            writeAssembly(".$.init." + sto.getName() + ".fini:\n");
+            increaseIndent();
+            save(sp, "-96", sp);
+            retRestore();
+            next();
+            section(AssemlyString.INIT_SECTION);
+            align("4");
+            call(".$.init." + sto.getName());
+            nop();
+            next();
+            section(AssemlyString.TEXT);
+            align("4");
+            next();
+            decreaseIndent();
+        }
     }
 
     void writeStructVarInit(STO sto, STO id){
@@ -2555,7 +2636,7 @@ public class AssemblyGenerator {
         int tempInt;
         writeAssembly("! " + sto.getName() + "." + id.getName() + "\n");
         set(sto.getOffset(), o0);
-        add(fp,o0,o0);
+        add(sto.getBase(),o0,o0);
         if(!((VarSTO)id).getisSet()){
             ((VarSTO)id).setStructOffset(((VarSTO)sto).getStructOffset());
             set(Integer.toString(((VarSTO)id).getStructOffset()), o1);
@@ -2575,4 +2656,120 @@ public class AssemblyGenerator {
         decreaseIndent();
     }
 
+    int writeArrow(STO left, STO newLeft, STO right, int offset){
+        increaseIndent();
+
+        writeAssembly("! *" + left.getName() + "\n");
+        set(left.getOffset(), l7);
+        add(left.getBase(), l7, l7);
+        ld(l7, o0);
+        call(AssemlyString.PREFIX + AssemlyString.PTRCHECK);
+        nop();
+
+        set(newLeft.getOffset(), o1);
+        add(newLeft.getBase(), o1, o1);
+        st(o0,o1);
+        next();
+
+        writeAssembly("! *" + left.getName() + "." + right.getName() + "\n");
+        set(newLeft.getOffset(), o0);
+        add(newLeft.getBase(), o0, o0);
+        ld(o0, o0);
+        set(Integer.toString(((VarSTO) right).getStructOffset()), o1);
+        add(g0, o1, o1);
+        add(o0, o1, o0);
+
+        // Set the right side.
+        right.setBase("%fp");
+        offset -= right.getType().getSize();
+        right.setOffset(Integer.toString(offset));
+
+        set(right.getOffset(), o1);
+        add(right.getBase(), o1, o1);
+        st(o0, o1);
+        next();
+
+        decreaseIndent();
+
+        return offset;
+    }
+
+    void writeNew(STO sto, STO des, STO newDes){
+        increaseIndent();
+
+        writeAssembly("!new(" + des.getName() + ")\n");
+        mov("1", o0);
+        set(Integer.toString(((StructdefSTO)sto).getSize()), o1);
+        call("calloc");
+        nop();
+        set(des.getOffset(), o1);
+        add(des.getBase(), o1, o1);
+//        if(des.getType() instanceof PointerType){
+//            ld(o1, o1);
+//        }
+        st(o0, o1);
+        next();
+
+        writeAssembly("!" + newDes.getName() + "\n");
+        set(des.getOffset(), l7);
+        add(des.getBase(), l7,l7);
+        ld(l7, o0);
+        call(AssemlyString.PREFIX + AssemlyString.PTRCHECK);
+        nop();
+        set(newDes.getOffset(), o1);
+        add(newDes.getBase(), o1, o1);
+        st(o0, o1);
+        next();
+
+        writeAssembly("!" + newDes.getName() + "." + sto.getName() + "(...)\n");
+        set(newDes.getOffset(), o0);
+        add(newDes.getBase(), o0, o0);
+        ld(o0, o0);
+        call(sto.getName() + "." + sto.getName() + ".void");
+        nop();
+        next();
+
+        decreaseIndent();
+    }
+
+    void writeDelete(STO des, STO newDes, Type t){
+        increaseIndent();
+
+        writeAssembly("!" + newDes.getName() + "\n");
+        set(des.getOffset(), l7);
+        add(des.getBase(), l7,l7);
+        ld(l7, o0);
+        call(AssemlyString.PREFIX + AssemlyString.PTRCHECK);
+        nop();
+        set(newDes.getOffset(), o1);
+        add(newDes.getBase(), o1, o1);
+        st(o0, o1);
+        next();
+
+        writeAssembly("!" + newDes.getName() + ".~" + t.getName() + "(...)\n");
+        set(newDes.getOffset(), o0);
+        add(newDes.getBase(), o0, o0);
+        ld(o0, o0);
+        call(t.getName() + ".$" + t.getName() + ".void");
+        nop();
+        next();
+
+        writeAssembly("!delete( " + des.getName() + " )\n");
+        set(des.getOffset(), l7);
+        add(des.getBase(), l7, l7);
+        ld(l7, o0);
+        call(AssemlyString.PREFIX + AssemlyString.PTRCHECK);
+        nop();
+        set(des.getOffset(), l7);
+        add(des.getBase(), l7, l7);
+        ld(l7, o0);
+        call("free");
+        nop();
+        set(des.getOffset(), o1);
+        add(des.getBase(), o1, o1);
+        st(g0, o1);
+        next();
+
+        decreaseIndent();
+    }
 }

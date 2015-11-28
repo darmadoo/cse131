@@ -15,6 +15,7 @@ public class AssemlyString {
     public static final String DATA = "\".data\"\n";
     public static final String TEXT = "\".text\"\n";
     public static final String RODATA = "\".rodata\"\n";
+    public static final String FINI = "\".fini\"\n";
     public static final String INIT_SECTION = "\".init\"\n";
 
     // Align
