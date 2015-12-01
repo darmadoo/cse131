@@ -52,6 +52,7 @@ class MyParser extends parser
 	private boolean thisFlag = false;
 	private boolean dtor = false;
 	private boolean structDecl = false;
+	private boolean isNew = false;
 
 	private Stack<Integer> ifStack = new Stack<>();
 	private Stack<Integer> whileStack = new Stack<>();
@@ -724,6 +725,12 @@ class MyParser extends parser
 			m_errors.print(Formatter.toString(ErrorMsg.redeclared_id, id));
 		}
 
+		boolean global = true;
+		FuncSTO fun = m_symtab.getFunc();
+		if(fun != null) {
+			global = false;
+		}
+
 		StructdefSTO tempSTO = (StructdefSTO) m_symtab.accessGlobal(typ.getName());
 
 		structDecl = true;
@@ -732,11 +739,17 @@ class MyParser extends parser
 
 		VarSTO sto = new VarSTO(id, tempSTO.getType());
 
-		sto.setBase("%fp");
-		offset -= sto.getType().getSize();
-		sto.setOffset(Integer.toString(offset));
+		if(global){
+			sto.setBase("%g0");
+			sto.setOffset(id);
+		}
+		else{
+			sto.setBase("%fp");
+			offset -= sto.getType().getSize();
+			sto.setOffset(Integer.toString(offset));
+		}
 
-		m_writer.writeStructDecl(sto, parameters, offset);
+		m_writer.writeStructDecl(sto, parameters, offset, global);
 		m_symtab.insert(sto);
 	}
 
@@ -944,7 +957,7 @@ class MyParser extends parser
 				if(global) {
 					sto.setBase("%g0");
 					sto.setOffset(id);
-					//global constant writer here
+					m_writer.writeGlobalInit(expr, id, t, isStaticFlag);
 				}
 				else
 				{
@@ -975,6 +988,7 @@ class MyParser extends parser
 					sto.setBase("%g0");
 					sto.setOffset(id);
 					//global constant writer here
+					m_writer.writeGlobalInit(expr, id, t, isStaticFlag);
 				}
 				else
 				{
@@ -1006,7 +1020,7 @@ class MyParser extends parser
 		}
 	}
 
-	//----------------------------------------------------------------
+	//-------------------x---------------------------------------------
 	//
 	//----------------------------------------------------------------
 	void DoConstDecl(String id)
@@ -1446,7 +1460,6 @@ class MyParser extends parser
 					m_writer.writeLocalInitWithVar(stoDes, expr, sto, thisFlag);
 				}
 				else {
-					// TODO MAYBE NEED TO CHECK FOR STRUCT VAR
 					if(stoDes.getType() instanceof StructType){
 						m_writer.writeLocalInitWithStruct(stoDes, expr, sto);
 					}
@@ -1525,8 +1538,8 @@ class MyParser extends parser
 		}
 
 		//if not a constant folding
-		if( !((a.isConst() && !a.getIsAddressable()) && (b.isConst() && !b.getIsAddressable())) ||
-				!(a.isConst() && b.isConst())) {
+		if( !(a.isConst() && b.isConst()) &&
+				!((a.isConst() && !a.getIsAddressable()) && (b.isConst() && !b.getIsAddressable()))) {
 			// check I.4
 			result.setBase("%fp");
 			offset -= result.getType().getSize();
@@ -1812,7 +1825,9 @@ class MyParser extends parser
 		}
 
 		if(!structDecl){
-			offset = m_writer.writeFuncCall(sto, arguments, offset);
+			if(!isNew){
+				offset = m_writer.writeFuncCall(sto, arguments, offset);
+			}
 		}
 
 		return generateExpr(sto);
@@ -2441,19 +2456,23 @@ class MyParser extends parser
 
 				Vector<STO> vars = tempSTO.getVarList();
 				// Iterate the variables
+				int count = 0;
 				Iterator<STO> itr = vars.iterator();
 				while (itr.hasNext()){
 					STO var = itr.next();
 					if((var.getName()).equals(strID)){
 						var.setBase("%fp");
-						offset -= var.getType().getSize();
+						offset -= 4;
 						var.setOffset(Integer.toString(offset));
+						((VarSTO)var).setStructOffset(count);
 						((VarSTO)var).setInsideStruct(sto.getName());
-						m_writer.writeStructVarInit(sto, var);
+
+						offset = m_writer.writeStructVarInit(sto, var, offset);
 
 						sto = var;
 						found = true;
 					}
+					count = count + var.getType().getSize();
 				}
 				// If we already found the variable, we should return it
 				if(found){
@@ -2602,6 +2621,7 @@ class MyParser extends parser
 					Vector<STO> funcList = struct.getFuncList();
 					boolean found = false;
 					int index = -1;
+					int currentOff = 0;
 
 					for(int i = 0; i < varList.size(); i++){
 						STO curVar = varList.get(i);
@@ -2609,10 +2629,35 @@ class MyParser extends parser
 							found = true;
 							index = i;
 						}
+						else{
+							if(!found){
+								currentOff += curVar.getType().getSize();
+							}
+						}
 					}
 
 					if(found){
-						return varList.get(index);
+						STO newSto;
+						if(sto instanceof VarSTO){
+							if(((VarSTO) sto).getisSet()){
+								newSto = new VarSTO("*" + ((VarSTO) sto).getInsideStruct() + "." + sto.getName(), nextType);
+							}
+							else{
+								newSto = new VarSTO("*" + sto.getName(), nextType);
+							}
+						}
+						else{
+							newSto = new VarSTO("*" + sto.getName(), nextType);
+						}
+						newSto.setBase("%fp");
+						offset -= temp.getSize();
+						newSto.setOffset(Integer.toString(offset));
+
+						STO rtVal = varList.get(index);
+						((VarSTO)rtVal).setStructOffset(currentOff);
+						((VarSTO)rtVal).setInsideStruct(newSto.getName());
+						offset = m_writer.writeArrow(sto, newSto, rtVal, offset);
+						return rtVal;
 					}
 					else{
 						for(int j = 0; j < funcList.size(); j++){
@@ -2629,6 +2674,7 @@ class MyParser extends parser
 							return new ErrorSTO(sto.getName());
 						}
 						else{
+							// TODO MIGHT WANNA INSERT SOMETHING HERE
 							return funcList.get(index);
 						}
 					}
@@ -2660,7 +2706,8 @@ class MyParser extends parser
 		STO newSto =  new ExprSTO("&" + sto.getName(), temp);
 
 		newSto.setBase("%fp");
-		offset -= temp.getSize();
+		offset -= 4;
+//		offset -= temp.getSize();
 		newSto.setOffset(Integer.toString(offset));
 
 		m_writer.writeAddressOperator(sto, newSto);
@@ -2727,11 +2774,22 @@ class MyParser extends parser
 		if(temp.isEmpty()){
 			if(des.getType() instanceof PointerType && !des.getType().isNullPointer()){
 				if(((PointerType) des.getType()).next() instanceof StructType){
-					map.size();
 					// Find the struct
 					StructType struct = (StructType)((PointerType) des.getType()).next();
 					StructdefSTO findStruct =(StructdefSTO) m_symtab.accessGlobal(struct.getName());
 					DoFuncCall(findStruct.getCtorDtorsList().firstElement(), temp);
+
+					Type newType;
+					PointerType tempType = (PointerType) des.getType();
+					if(tempType.hasNext()) {
+						newType = tempType.next();
+						STO newSto = new VarSTO("*" + des.getName(), newType);
+
+						newSto.setBase("%fp");
+						offset -= tempType.getSize();
+						newSto.setOffset(Integer.toString(offset));
+						m_writer.writeNew(findStruct, des, newSto);
+					}
 				}
 				else {
 					// Check for L modif if it is a pointer but not struct
@@ -2766,6 +2824,19 @@ class MyParser extends parser
 					StructType struct = (StructType)((PointerType) des.getType()).next();
 					StructdefSTO findStruct =(StructdefSTO) m_symtab.accessGlobal(struct.getName());
 					DoFuncCall(findStruct.getCtorDtorsList().firstElement(), temp);
+
+					// TODO MIGHT NEED TO SOMETHING ABOUT THIS
+					Type newType;
+					PointerType tempType = (PointerType) des.getType();
+					if(tempType.hasNext()) {
+						newType = tempType.next();
+						STO newSto = new VarSTO("*" + des.getName(), newType);
+
+						newSto.setBase("%fp");
+						offset -= tempType.getSize();
+						newSto.setOffset(Integer.toString(offset));
+						m_writer.writeNew(findStruct, des, newSto);
+					}
 				}
 				else{
 					m_nNumErrors++;
@@ -2789,6 +2860,9 @@ class MyParser extends parser
 		}
 	}
 
+	void setIsNew(boolean flag){
+		isNew = flag;
+	}
 	//----------------------------------------------------------------
 	// Check 16
 	//----------------------------------------------------------------
@@ -2804,12 +2878,32 @@ class MyParser extends parser
 				m_nNumErrors++;
 				m_errors.print(Formatter.toString(ErrorMsg.error16_Delete, des.getType().getName()));
 			}
-			m_writer.writeDeleteStatement(des);
 		}
 		else
 		{
 			m_nNumErrors++;
 			m_errors.print(ErrorMsg.error16_Delete_var);
+		}
+
+
+		if(des.getType() instanceof PointerType){
+			Type newType;
+			PointerType tempType = (PointerType) des.getType();
+			if(tempType.hasNext()) {
+				newType = tempType.next();
+				STO newSto = new VarSTO("*" + des.getName(), newType);
+
+				if(((VarSTO)des).getisSet()){
+					newSto.setBase("%fp");
+					offset -= tempType.getSize();
+					newSto.setOffset(Integer.toString(offset));
+				}
+
+				m_writer.writeDelete(des, newSto, newType);
+			}
+		}
+		else{
+			m_writer.writeDeleteStatement(des);
 		}
 	}
 
@@ -3106,6 +3200,7 @@ class MyParser extends parser
 
 	void DoCout(STO sto)
 	{
+
 		if(sto.isConst())
 		{
 			//handle literal -> const that is not addressable

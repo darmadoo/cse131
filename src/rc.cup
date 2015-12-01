@@ -1237,8 +1237,9 @@ Designator3 ::=     T_LPAREN Expr:_2 T_RPAREN
 
 NewStmt ::=         T_NEW Designator:_1 OptCtorCall:_2 T_SEMI
                     {:
+                        ((MyParser) parser).setIsNew(true);
                         ((MyParser) parser).DoNewStatement(_1, _2);
-
+                        ((MyParser) parser).setIsNew(false);
                     :}
     ;
 
