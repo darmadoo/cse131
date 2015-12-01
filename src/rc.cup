@@ -758,6 +758,7 @@ WhileStmt ::=       T_WHILE
                     :}
                     CodeBlock
                     {:
+                        ((MyParser) parser).popStack("while");
                         ((MyParser) parser).decrementBreakCounter();
                         ((MyParser) parser).writeEndWhileLoop();
 
@@ -777,6 +778,7 @@ ForeachStmt ::=     T_FOREACH
                     :}
                     CodeBlock
                     {:
+                        ((MyParser) parser).popStack("foreach");
                         ((MyParser) parser).decrementBreakCounter();
                         ((MyParser) parser).DoBlockClose();
                         ((MyParser) parser).writeEndWhileLoop();

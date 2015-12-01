@@ -1626,15 +1626,21 @@ class MyParser extends parser
 
 	void popStack( String input ) {
 		if(input == "if") {
-			ifStack.pop();
 			if (!ifStack.empty())
 				m_writer.changeIfCountValue(ifStack.peek());
+			ifStack.pop();
 		}
 		else if ( input == "while")
 		{
-			whileStack.pop();
 			if (!whileStack.empty())
 				m_writer.changeWhileCountValue(whileStack.peek());
+			whileStack.pop();
+		}
+		else if ( input == "foreach")
+		{
+			if (!whileStack.empty())
+				m_writer.changeWhileCountValue(whileStack.peek());
+			whileStack.pop();
 		}
 
 	}
