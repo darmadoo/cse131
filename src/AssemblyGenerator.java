@@ -2729,7 +2729,7 @@ public class AssemblyGenerator {
                     section(AssemlyString.TEXT);
                     align("4");
                     writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + SEPARATOR, AssemlyString.PREFIX + AssemlyString.FLOAT + "." + floatCount, "%l7");
-                    writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f" + totalCount);
+                    writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f" + i);//totalCount);
                     fcount++;
                     totalCount++;
                 }
@@ -2754,8 +2754,8 @@ public class AssemblyGenerator {
                     writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", args.get(i).getOffset(), "%l7");
                     writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", args.get(i).getBase(), "%l7", "%l7");
                     writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%l7");
-                    writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f" + totalCount);
-                    writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.FITOS, "%f" + fcount, "%f" + totalCount);
+                    writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f" + i); //fcount);
+                    writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.FITOS, "%f" + i, "%f" + i); //fcount, "%f" + fcount);
                     fcount++;
                     totalCount++;
                 }
@@ -2764,14 +2764,14 @@ public class AssemblyGenerator {
             else {
                 if(args.get(i) instanceof VarSTO){
                     if(((VarSTO) param.get(i)).getPbr()){
-                        set(args.get(i).getOffset(), "%o" + ocount);
-                        add(args.get(i).getBase(), "%o" + ocount, "%o" + ocount);
+                        set(args.get(i).getOffset(), "%o" + i);//ocount);
+                        add(args.get(i).getBase(), "%o" + i, "%o" + i); // ocount, "%o" + ocount);
 
                         if(((VarSTO) args.get(i)).getPbr() || args.get(i).getLoad()){
                             if (args.get(i).getType() instanceof FloatType) {
-                                ld(o0, "%f" + fcount);
+                                ld(o0, "%f" + i); //fcount);
                             } else {
-                                ld("%o" + ocount, "%o" + ocount);
+                                ld("%o" + i, "%o" + i);// ocount, "%o" + ocount);
                             }
                         }
                         ocount++;
@@ -2790,10 +2790,12 @@ public class AssemblyGenerator {
                                 ld(l7, l7);
                             }
                             if (args.get(i).getType() instanceof FloatType) {
-                                ld(l7, "%f" + totalCount);
+                                ld(l7, "%f" + i); //totalCount);
+                                fcount++;
+                                totalCount++;
                                 //ld(l7, "%f" + fcount);
                             } else {
-                                ld(l7, "%o" + totalCount);
+                                ld(l7, "%o" + i); //totalCount);
                                 ocount++;
                                 totalCount++;
                             }
@@ -2806,8 +2808,8 @@ public class AssemblyGenerator {
                                 writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", args.get(i).getOffset(), "%l7");
                                 writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", args.get(i).getBase(), "%l7", "%l7");
                                 writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o1", "%l7");
-                                writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f" + totalCount);
-                                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.FITOS, "%f" + fcount, "%f" + totalCount);
+                                writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f" + i); //fcount);
+                                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.FITOS, "%f" + i, "%f" + i); //fcount, "%f" + fcount);
                                 fcount++;
                                 totalCount++;
                             }
@@ -2818,10 +2820,10 @@ public class AssemblyGenerator {
                     set(args.get(i).getOffset(), l7);
                     add(fp, l7, l7);
                     if (args.get(i).getType() instanceof FloatType) {
-                        ld(l7, "%f" + totalCount);
+                        ld(l7, "%f" + i); //totalCount);
                     } else {
                         //ld(l7, "%o1");
-                        ld(l7, "%o" + totalCount);
+                        ld(l7, "%o" + i); //totalCount);
                     }
                     totalCount++;
                 }
