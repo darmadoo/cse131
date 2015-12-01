@@ -1537,6 +1537,21 @@ class MyParser extends parser
 			m_errors.print(result.getName());
 		}
 
+//
+//		if(a instanceof ExprSTO){
+//			Vector<FuncSTO> fun = funcMap.get(a.getName());
+//			if(fun != null){
+//				a.setLoad(true);
+//			}
+//		}
+//
+//		if(b instanceof ExprSTO){
+//			Vector<FuncSTO> fun = funcMap.get(b.getName());
+//			if(fun != null){
+//				b.setLoad(true);
+//			}
+//		}
+
 		//if not a constant folding
 		if( !(a.isConst() && b.isConst()) &&
 				!((a.isConst() && !a.getIsAddressable()) && (b.isConst() && !b.getIsAddressable()))) {
@@ -1636,6 +1651,13 @@ class MyParser extends parser
 			// handle propagating errors
 			m_nNumErrors++;
 			m_errors.print(result.getName());
+		}
+
+		if(a instanceof ExprSTO){
+			Vector<FuncSTO> fun = funcMap.get(a.getName());
+			if(fun != null){
+				a.setLoad(true);
+			}
 		}
 
 		if(!(a.isConst() && !a.getIsAddressable())) {
