@@ -2028,7 +2028,7 @@ public class AssemblyGenerator {
         next();
         next();
         decreaseIndent();
-        //whileCount--;
+        whileCount--;
     }
 
     public void writeArrayInit(STO sto, boolean isStatic)
