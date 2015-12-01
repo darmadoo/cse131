@@ -668,6 +668,8 @@ class MyParser extends parser
 				sto.setOffset(id);
 				if(!isStaticFlag)
 					m_writer.writeGlobalNonInit(sto, isStaticFlag);
+				else
+					m_writer.writeGlobalNonInit(sto, isStaticFlag);
 			}
 			else
 			{
@@ -757,10 +759,23 @@ class MyParser extends parser
 	void DoAutoDecl(String id,STO expr){
 		boolean global = true;
 		FuncSTO fun = m_symtab.getFunc();
+		String tempOffset = "";
 		if(fun != null)
 		{
 			global = false;
+			Vector<STO> params = fun.getParams();
+			tempOffset = fun.getName();
+			if(params.size() == 0){
+				tempOffset += ".void";
+			}
+			else{
+				for(int i = 0; i < params.size(); i++){
+					tempOffset += "." + params.get(i).getType().getName();
+				}
+			}
 		}
+
+		tempOffset = tempOffset + "." + id;
 
 		//create a new STO and assign it the type of exp
 		// proceed as normal
@@ -778,7 +793,7 @@ class MyParser extends parser
 				else {
 					if (isStaticFlag) {
 						sto.setBase("%g0");
-						sto.setOffset(fun.getName() + "." + fun.getType().getName() + "." + id);
+						sto.setOffset(tempOffset);
 						m_writer.writeGlobalInit(expr, sto.getOffset(), expr.getType(), isStaticFlag);
 					}
 					//local not static
@@ -808,7 +823,7 @@ class MyParser extends parser
 					if(isStaticFlag)
 					{
 						sto.setBase("%g0");
-						sto.setOffset(fun.getName() + "." + fun.getType().getName() + "." + id);
+						sto.setOffset(tempOffset);
 						m_writer.writeLocalStaticInitWithVar(sto, expr , null);
 					}
 					//local not static
@@ -853,10 +868,23 @@ class MyParser extends parser
 		boolean exprIsConstVar = expr.getIsAddressable();
 		boolean global = true;
 		FuncSTO fun = m_symtab.getFunc();
+		String tempOffset = "";
 		if(fun != null)
 		{
 			global = false;
+			Vector<STO> params = fun.getParams();
+			tempOffset = fun.getName();
+			if(params.size() == 0){
+				tempOffset += ".void";
+			}
+			else{
+				for(int i = 0; i < params.size(); i++){
+					tempOffset += "." + params.get(i).getType().getName();
+				}
+			}
 		}
+
+		tempOffset = tempOffset + "." + id;
 
 		if (m_symtab.accessLocal(id) != null)
 		{
@@ -894,7 +922,7 @@ class MyParser extends parser
 					if(isStaticFlag)
 					{
 						sto.setBase("%g0");
-						sto.setOffset(fun.getName() + "." + fun.getType().getName() + "." + id);
+						sto.setOffset(tempOffset);
 						m_writer.writeGlobalInit(expr, sto.getOffset(), t, isStaticFlag);
 					}
 					else {
@@ -937,7 +965,7 @@ class MyParser extends parser
 					if(isStaticFlag)
 					{
 						sto.setBase("%g0");
-						sto.setOffset(fun.getName() + "." + fun.getType().getName() + "." + id);
+						sto.setOffset(tempOffset);
 						m_writer.writeGlobalInit(expr, sto.getOffset(), t, isStaticFlag);
 					}
 					else {
@@ -967,7 +995,7 @@ class MyParser extends parser
 					if(isStaticFlag)
 					{
 						sto.setBase("%g0");
-						sto.setOffset(fun.getName() + "." + fun.getType().getName() + "." + id);
+						sto.setOffset(tempOffset);
 						m_writer.writeGlobalInit(expr, sto.getOffset(), t, isStaticFlag);
 					}
 					else {
@@ -991,7 +1019,7 @@ class MyParser extends parser
 		}
 	}
 
-	//----------------------------------------------------------------
+	//-------------------x---------------------------------------------
 	//
 	//----------------------------------------------------------------
 	void DoConstDecl(String id)
@@ -1431,7 +1459,6 @@ class MyParser extends parser
 					m_writer.writeLocalInitWithVar(stoDes, expr, sto, thisFlag);
 				}
 				else {
-					// TODO MAYBE NEED TO CHECK FOR STRUCT VAR
 					if(stoDes.getType() instanceof StructType){
 						m_writer.writeLocalInitWithStruct(stoDes, expr, sto);
 					}
@@ -1545,7 +1572,10 @@ class MyParser extends parser
 			else if(a.getType().isBool() && b.getType().isBool())
 			{
 				m_writer.writeBoolBinaryArithmeticExpression(a, o, b, result);
-
+			}
+			else if(a.getType().isPointer() && b.getType().isPointer())
+			{
+				m_writer.writePointerComparison(a, o, b, result);
 			}
 		}
 		//both are constant but still need to short circuit
@@ -2425,19 +2455,23 @@ class MyParser extends parser
 
 				Vector<STO> vars = tempSTO.getVarList();
 				// Iterate the variables
+				int count = 0;
 				Iterator<STO> itr = vars.iterator();
 				while (itr.hasNext()){
 					STO var = itr.next();
 					if((var.getName()).equals(strID)){
 						var.setBase("%fp");
-						offset -= var.getType().getSize();
+						offset -= 4;
 						var.setOffset(Integer.toString(offset));
+						((VarSTO)var).setStructOffset(count);
 						((VarSTO)var).setInsideStruct(sto.getName());
-						m_writer.writeStructVarInit(sto, var);
+
+						offset = m_writer.writeStructVarInit(sto, var, offset);
 
 						sto = var;
 						found = true;
 					}
+					count = count + var.getType().getSize();
 				}
 				// If we already found the variable, we should return it
 				if(found){
@@ -2586,6 +2620,7 @@ class MyParser extends parser
 					Vector<STO> funcList = struct.getFuncList();
 					boolean found = false;
 					int index = -1;
+					int currentOff = 0;
 
 					for(int i = 0; i < varList.size(); i++){
 						STO curVar = varList.get(i);
@@ -2593,16 +2628,32 @@ class MyParser extends parser
 							found = true;
 							index = i;
 						}
+						else{
+							if(!found){
+								currentOff += curVar.getType().getSize();
+							}
+						}
 					}
 
 					if(found){
-						STO newSto = new VarSTO("*" + sto.getName(), nextType);
+						STO newSto;
+						if(sto instanceof VarSTO){
+							if(((VarSTO) sto).getisSet()){
+								newSto = new VarSTO("*" + ((VarSTO) sto).getInsideStruct() + "." + sto.getName(), nextType);
+							}
+							else{
+								newSto = new VarSTO("*" + sto.getName(), nextType);
+							}
+						}
+						else{
+							newSto = new VarSTO("*" + sto.getName(), nextType);
+						}
 						newSto.setBase("%fp");
 						offset -= temp.getSize();
 						newSto.setOffset(Integer.toString(offset));
 
 						STO rtVal = varList.get(index);
-						((VarSTO)rtVal).setStructOffset(index * 4);
+						((VarSTO)rtVal).setStructOffset(currentOff);
 						((VarSTO)rtVal).setInsideStruct(newSto.getName());
 						offset = m_writer.writeArrow(sto, newSto, rtVal, offset);
 						return rtVal;
@@ -2654,7 +2705,8 @@ class MyParser extends parser
 		STO newSto =  new ExprSTO("&" + sto.getName(), temp);
 
 		newSto.setBase("%fp");
-		offset -= temp.getSize();
+		offset -= 4;
+//		offset -= temp.getSize();
 		newSto.setOffset(Integer.toString(offset));
 
 		m_writer.writeAddressOperator(sto, newSto);
@@ -2744,6 +2796,9 @@ class MyParser extends parser
 						m_nNumErrors++;
 						m_errors.print(ErrorMsg.error16_New_var);
 					}
+					//type is pointer, and not pointing to a struct.
+					//it is addressable and modifiable l value
+					m_writer.writeNewNonStructStatement(des);
 				}
 			}
 			//if it's modifiable l value
@@ -2802,7 +2857,6 @@ class MyParser extends parser
 				m_errors.print(ErrorMsg.error16_New_var);
 			}
 		}
-
 	}
 
 	void setIsNew(boolean flag){
@@ -2830,18 +2884,26 @@ class MyParser extends parser
 			m_errors.print(ErrorMsg.error16_Delete_var);
 		}
 
-		Type newType;
-		PointerType tempType = (PointerType) des.getType();
-		if(tempType.hasNext()) {
-			newType = tempType.next();
-			STO newSto = new VarSTO("*" + des.getName(), newType);
 
-			newSto.setBase("%fp");
-			offset -= tempType.getSize();
-			newSto.setOffset(Integer.toString(offset));
-			m_writer.writeDelete(des, newSto, newType);
+		if(des.getType() instanceof PointerType){
+			Type newType;
+			PointerType tempType = (PointerType) des.getType();
+			if(tempType.hasNext()) {
+				newType = tempType.next();
+				STO newSto = new VarSTO("*" + des.getName(), newType);
+
+				if(((VarSTO)des).getisSet()){
+					newSto.setBase("%fp");
+					offset -= tempType.getSize();
+					newSto.setOffset(Integer.toString(offset));
+				}
+
+				m_writer.writeDelete(des, newSto, newType);
+			}
 		}
-
+		else{
+			m_writer.writeDeleteStatement(des);
+		}
 	}
 
 	//----------------------------------------------------------------
@@ -2923,15 +2985,35 @@ class MyParser extends parser
 				if(sto.isConst())
 				{
 					//if false
-					if (((ConstSTO)sto).getBoolValue() == false)
-						return new ConstSTO(sto.getName(), t, 0);
+					if (((ConstSTO)sto).getBoolValue() == false) {
+						ConstSTO result = new ConstSTO("(" + t.getName() + ")" + sto.getName(), t, 0);
+						result.setIsAddressable(false);
+						return result;
+					}
 					//else true
-					else
-						return new ConstSTO(sto.getName(), t, 1);
+					else {
+						ConstSTO result = new ConstSTO("(" + t.getName() + ")" + sto.getName(), t, 1);
+						result.setIsAddressable(false);
+						return result;
+					}
 				}
 				//not constant
-				else
-					return new ExprSTO(sto.getName(), t);
+				else {
+					ExprSTO result = new ExprSTO("(" + t.getName() + ")" + sto.getName(), t);
+					result.setBase("%fp");
+					offset -= t.getSize();
+					result.setOffset(Integer.toString(offset));
+
+					VarSTO temp = new VarSTO("temp", t);
+					if(t.isFloat()) {
+						temp.setBase("%fp");
+						offset -= t.getSize();
+						temp.setOffset(Integer.toString(offset));
+					}
+
+					m_writer.writeBasicTypeCast(sto, t, result, temp);
+					return result;
+				}
 			}
 			//float / int -> bool
 			else if(sto.getType().isNumeric() && t.isBool())
@@ -2942,54 +3024,149 @@ class MyParser extends parser
 					if(sto.getType().isFloat())
 					{
 						if(((ConstSTO)sto).getFloatValue() == 0.0)
-							return new ConstSTO(sto.getName(), t, false);
+						{
+							ConstSTO result = new ConstSTO("(" + t.getName() + ")" + sto.getName(), t, false);
+							result.setIsAddressable(false);
+							return result;
+						}
 						else
-							return new ConstSTO(sto.getName(), t, true);
+						{
+							ConstSTO result = new ConstSTO("(" + t.getName() + ")" + sto.getName(), t, true);
+							result.setIsAddressable(false);
+							return result;
+						}
 					}
 					//int -> bool
 					else
 					{
 						if(((ConstSTO)sto).getIntValue() == 0)
-							return new ConstSTO(sto.getName(), t, false);
+						{
+							ConstSTO result = new ConstSTO("(" + t.getName() + ")" + sto.getName(), t, false);
+							result.setIsAddressable(false);
+							return result;
+						}
 						else
-							return new ConstSTO(sto.getName(), t, true);
+						{
+							ConstSTO result = new ConstSTO("(" + t.getName() + ")" + sto.getName(), t, true);
+							result.setIsAddressable(false);
+							return result;
+						}
 					}
 				}
-				else
-					return new ExprSTO(sto.getName(), t);
+				else {
+					ExprSTO result = new ExprSTO("(" + t.getName() + ")" + sto.getName(), t);
+					result.setBase("%fp");
+					offset -= t.getSize();
+					result.setOffset(Integer.toString(offset));
+
+					VarSTO temp = new VarSTO("temp", t);
+					if(sto.getType().isFloat()) {
+						temp.setBase("%fp");
+						offset -= t.getSize();
+						temp.setOffset(Integer.toString(offset));
+					}
+
+					m_writer.writeBasicTypeCast(sto, t, result, temp);
+					return result;
+				}
 			}
 			else if(sto.getType().isInt() && t.isFloat())
 			{
 				if(sto.isConst())
-					return new ConstSTO(sto.getName(), t, (float) ((ConstSTO)sto).getIntValue());
+				{
+					ConstSTO result = new ConstSTO("(" + t.getName() + ")" + sto.getName(), t, (float) ((ConstSTO)sto).getIntValue());
+					result.setIsAddressable(false);
+					return result;
+				}
 				//not constant
-				else
-					return new ExprSTO(sto.getName(), t);
+				else {
+					ExprSTO result = new ExprSTO("(" + t.getName() + ")" + sto.getName(), t);
+					result.setBase("%fp");
+					offset -= t.getSize();
+					result.setOffset(Integer.toString(offset));
+
+					VarSTO temp = new VarSTO("temp", t);
+					temp.setBase("%fp");
+					offset -= t.getSize();
+					temp.setOffset(Integer.toString(offset));
+
+					m_writer.writeBasicTypeCast(sto, t, result, temp);
+					return result;
+				}
 			}
 			else if(sto.getType().isFloat() && t.isInt())
 			{
 				if(sto.isConst())
-					return new ConstSTO(sto.getName(), t, (int) ((ConstSTO)sto).getFloatValue());
-					//not constant
-				else
-					return new ExprSTO(sto.getName(), t);
+				{
+					ConstSTO result = new ConstSTO("(" + t.getName() + ")" + sto.getName(), t, (int) ((ConstSTO)sto).getFloatValue());
+					result.setIsAddressable(false);
+					return result;
+				}
+				//not constant
+				else {
+					ExprSTO result = new ExprSTO("(" + t.getName() + ")" + sto.getName(), t);
+					result.setBase("%fp");
+					offset -= t.getSize();
+					result.setOffset(Integer.toString(offset));
+
+					m_writer.writeBasicTypeCast(sto, t, result, null);
+					return result;
+				}
 			}
 			// int -> int
 			// float -> float
-			return new ExprSTO(sto.getName(), t);
+			// bool -> bool
+			if(!sto.isConst()) {
+				ExprSTO result = new ExprSTO("(" + t.getName() + ")" + sto.getName(), t);
+				result.setBase("%fp");
+				offset -= t.getSize();
+				result.setOffset(Integer.toString(offset));
+
+				m_writer.writeBasicTypeCast(sto, t, result, null);
+				return result;
+			}
+			else
+			{
+				if(t.isInt()) {
+					ConstSTO result = new ConstSTO("(" + t.getName() + ")" + sto.getName(), t, ((ConstSTO) sto).getIntValue());
+					result.setIsAddressable(false);
+					return result;
+				}
+				else if (t.isFloat())
+				{
+					ConstSTO result = new ConstSTO("(" + t.getName() + ")" + sto.getName(), t, ((ConstSTO) sto).getFloatValue());
+					result.setIsAddressable(false);
+					return result;
+				}
+				else {
+					ConstSTO result = new ConstSTO("(" + t.getName() + ")" + sto.getName(), t, ((ConstSTO) sto).getBoolValue());
+					result.setIsAddressable(false);
+					return result;
+				}
+			}
 		}
 		// pointers can be cast to any type except nullpointer
 		// make sure sto is pointer AND not nullptr
 		// make sure t is not nullptr
 		else if(sto.getType().isPointer() && !sto.getType().isNullPointer() && !t.isNullPointer())
 		{
-			return new ExprSTO(sto.getName(), t);
+			ExprSTO result = new ExprSTO("(" + t.getName() + ")" + sto.getName(), t);
+			result.setBase("%fp");
+			offset -= t.getSize();
+			result.setOffset(Integer.toString(offset));
+			m_writer.writePointerTypeCast(sto, t, result, null);
+			return result;
 		}
 		//sto is not basic type and not pointer type.
 		//sto basic type, t pointer type
 		else if (sto.getType().isBasic() && !t.isNullPointer() && t.isPointer())
 		{
-			return new ExprSTO(sto.getName(), t);
+			ExprSTO result = new ExprSTO("(" + t.getName() + ")" + sto.getName(), t);
+			result.setBase("%fp");
+			offset -= t.getSize();
+			result.setOffset(Integer.toString(offset));
+			m_writer.writePointerTypeCast(sto, t, result, null);
+			return result;
 		}
 
 		m_nNumErrors++;
@@ -3022,6 +3199,7 @@ class MyParser extends parser
 
 	void DoCout(STO sto)
 	{
+
 		if(sto.isConst())
 		{
 			//handle literal -> const that is not addressable
