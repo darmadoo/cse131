@@ -2592,7 +2592,7 @@ public class AssemblyGenerator {
                 if(expr instanceof ConstSTO && !expr.getIsAddressable()){
                     set(expr.getName(), i0);
                 }
-                else if(expr.getBase() == fp){
+                else if(!callingFunc.getRbr()){
                     set(expr.getOffset(), l7);
                     add(expr.getBase(), l7, l7);
 
@@ -2633,7 +2633,7 @@ public class AssemblyGenerator {
                     set(AssemlyString.PREFIX + expr.getType().getName() + "." + floatCount, l7);
                     ld(l7, f0);
                 }
-                else if(expr.getBase() == fp){
+                else if(!callingFunc.getRbr()){
                     set(expr.getOffset(), l7);
                     add(fp,l7,l7);
 
@@ -2653,7 +2653,7 @@ public class AssemblyGenerator {
                 if(expr instanceof ConstSTO && !expr.getIsAddressable()){
                     set(String.valueOf(((ConstSTO) expr).getValue()), i0);
                 }
-                else if(expr.getBase() == fp){
+                else if(!callingFunc.getRbr()){
                     set(expr.getOffset(), l7);
                     add(expr.getBase(), l7, l7);
 
