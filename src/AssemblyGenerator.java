@@ -512,79 +512,153 @@ public class AssemblyGenerator {
         next();
 
         decreaseIndent();
-        writeFuncDecl2_Done(temp);
+        writeFuncDecl2_Done(temp, id);
 
     }
 
-    public void writeFuncDecl2_Done(String str){
+    public void writeFuncDecl2_Done(String str, String func){
         writeAssembly(str + ".fini:");
         next();
         increaseIndent();
         save(sp, "-96" , sp);
         boolean flag = false;
-        boolean flag2 = false;
+        boolean flag2 = true;
 
         if(!structStack.empty()){
-            while(!structStack.empty()){
-                String global = structStack.pop();
-                // Check if global
-                if(global.equalsIgnoreCase("true")){
-                    if(!flag){
-                        retRestore();
-                        flag = true;
+            String isGlobal = structStack.peek();
+
+            if(isGlobal.equalsIgnoreCase("%g0")){
+                isGlobal = structStack.pop();
+                if(func.equalsIgnoreCase("main")){
+                    while(!structStack.empty()){
+                        String useless = structStack.peek();
+                        if(useless.equalsIgnoreCase("%g0")){
+                            useless = structStack.pop();
+                        }
+                        String global = structStack.pop();
+                        // Check if global
+                        if(global.equalsIgnoreCase("true")){
+                            if(!flag){
+                                retRestore();
+                                flag = true;
+                            }
+                            String top = structStack.pop();
+                            decreaseIndent();
+                            writeAssembly(top + ".fini:\n");
+                            increaseIndent();
+                            save(sp, "-96", sp);
+                            set(top, o0);
+                            ld(o0,o0);
+                            cmp(o0,g0);
+                            be(top + ".fini.skip\n");
+                            nop();
+                            String structName = structStack.pop();
+                            call(structName + ".$" + structName + ".void");
+                            nop();
+                            set(top, o0);
+                            st(g0, o0);
+                            decreaseIndent();
+                            writeAssembly(top + ".fini.skip:\n");
+                            increaseIndent();
+                            retRestore();
+                            next();
+                            section(AssemlyString.FINI);
+                            align("4");
+                            call(top + ".fini");
+                            nop();
+                            next();
+                            section(AssemlyString.TEXT);
+                            align("4");
+                        }
+                        else{
+                            String top = structStack.pop();
+                            set(top, o0);
+                            ld(o0,o0);
+                            cmp(o0,g0);
+                            be(top + ".fini.skip\n");
+                            nop();
+                            String structName = structStack.pop();
+                            call(structName + ".$" + structName + ".void");
+                            nop();
+                            set(top, o0);
+                            st(g0, o0);
+                            decreaseIndent();
+                            writeAssembly(top + ".fini.skip:\n");
+                            increaseIndent();
+                            flag2 = true;
+                        }
                     }
-                    String top = structStack.pop();
-                    decreaseIndent();
-                    writeAssembly(top + ".fini:\n");
-                    increaseIndent();
-                    save(sp, "-96", sp);
-                    set(top, o0);
-                    ld(o0,o0);
-                    cmp(o0,g0);
-                    be(top + ".fini.skip\n");
-                    nop();
-                    String structName = structStack.pop();
-                    call(structName + ".$" + structName + ".void");
-                    nop();
-                    set(top, o0);
-                    st(g0, o0);
-                    decreaseIndent();
-                    writeAssembly(top + ".fini.skip:\n");
-                    increaseIndent();
-                    retRestore();
-                    next();
-                    section(AssemlyString.FINI);
-                    align("4");
-                    call(top + ".fini");
-                    nop();
-                    next();
-                    section(AssemlyString.TEXT);
-                    align("4");
                 }
                 else{
-                    String top = structStack.pop();
-                    set(top, o0);
-                    ld(o0,o0);
-                    cmp(o0,g0);
-                    be(top + ".fini.skip\n");
-                    nop();
-                    String structName = structStack.pop();
-                    call(structName + ".$" + structName + ".void");
-                    nop();
-                    set(top, o0);
-                    st(g0, o0);
-                    decreaseIndent();
-                    writeAssembly(top + ".fini.skip:\n");
-
-                    flag2 = true;
-                    increaseIndent();
+                    structStack.add(isGlobal);
+                    retRestore();
+                }
+            }
+            else{
+                while(!structStack.empty()) {
+                    String useless = structStack.peek();
+                    if(useless.equalsIgnoreCase("%g0")){
+                        useless = structStack.pop();
+                    }
+                    String global = structStack.pop();
+                    // Check if global
+                    if (global.equalsIgnoreCase("true")) {
+                        if (!flag) {
+                            retRestore();
+                            flag = true;
+                        }
+                        String top = structStack.pop();
+                        decreaseIndent();
+                        writeAssembly(top + ".fini:\n");
+                        increaseIndent();
+                        save(sp, "-96", sp);
+                        set(top, o0);
+                        ld(o0, o0);
+                        cmp(o0, g0);
+                        be(top + ".fini.skip\n");
+                        nop();
+                        String structName = structStack.pop();
+                        call(structName + ".$" + structName + ".void");
+                        nop();
+                        set(top, o0);
+                        st(g0, o0);
+                        decreaseIndent();
+                        writeAssembly(top + ".fini.skip:\n");
+                        increaseIndent();
+                        retRestore();
+                        next();
+                        section(AssemlyString.FINI);
+                        align("4");
+                        call(top + ".fini");
+                        nop();
+                        next();
+                        section(AssemlyString.TEXT);
+                        align("4");
+                    } else {
+                        String top = structStack.pop();
+                        set(top, o0);
+                        ld(o0, o0);
+                        cmp(o0, g0);
+                        be(top + ".fini.skip\n");
+                        nop();
+                        String structName = structStack.pop();
+                        call(structName + ".$" + structName + ".void");
+                        nop();
+                        set(top, o0);
+                        st(g0, o0);
+                        decreaseIndent();
+                        writeAssembly(top + ".fini.skip:\n");
+                        increaseIndent();
+                        flag2 = true;
+                    }
                 }
             }
         }
         else{
             retRestore();
         }
-        if(flag2 = true)
+
+        if (flag2)
             retRestore();
 
         decreaseIndent();
@@ -1983,15 +2057,22 @@ public class AssemblyGenerator {
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", sto.getOffset(), "%o1");
         writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", sto.getBase(), "%o1", "%o1");
 
-        if(sto instanceof VarSTO && ((VarSTO) sto).getPbr()){
-            writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", o1, o1);
+        if(sto instanceof VarSTO){
+            if(((VarSTO) sto).getPbr() || ((VarSTO) sto).getisSet()){
+                writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", o1, o1);
+            }
         }
 
         if(sto.getLoad()){
             ld(o1, o1);
         }
 
-        writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
+        if(sto.getType() instanceof FloatType){
+            writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%f0", "%o1");
+        }
+        else{
+            writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
+        }
         next();
         decreaseIndent();
     }
@@ -2183,10 +2264,6 @@ public class AssemblyGenerator {
         writeAssembly(AssemlyString.BGE, AssemlyString.PREFIX + "loopEnd." + whileCount + "\n");
         nop();
 
-        ArrayType tempArray = (ArrayType) expr.getType();
-        Type next = tempArray.next();
-
-
         writeAssembly("! iterVal = currentElem\n");
         set(sto.getOffset(), o1);
         add(sto.getBase(), o1, o1);
@@ -2196,12 +2273,23 @@ public class AssemblyGenerator {
                 st(o0, o1);
             } else if (sto.getType().isFloat()) {
                 ld(o0, f0);
-                if (next.isFloat()) {
-                    st(f0, o1);
-                } else {
+
+                if(expr.getType() instanceof ArrayType){
+                    ArrayType tempArray = (ArrayType) expr.getType();
+                    Type next = tempArray.next();
+
+                    if (next.isFloat()) {
+                        st(f0, o1);
+                    } else {
+                        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.FITOS, f0, f0);
+                        st(f0, o1);
+                    }
+                }
+                else {
                     writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.FITOS, f0, f0);
                     st(f0, o1);
                 }
+
             }
         }
         else
@@ -3063,6 +3151,9 @@ public class AssemblyGenerator {
         structStack.add(sto.getType().getName());
         structStack.add(".$$.ctorDtor." + ctorCount);
         structStack.add(Boolean.toString(global));
+        if(sto.getBase().equalsIgnoreCase("%g0")){
+            structStack.add(sto.getBase());
+        }
         increaseIndent();
         writeAssembly(AssemlyString.SKIP, "4");
         next();
@@ -3152,9 +3243,12 @@ public class AssemblyGenerator {
         }
         set(left.getOffset(), l7);
         add(left.getBase(), l7, l7);
-        if(((VarSTO) left).getisSet()){
-            ld(l7, l7);
+        if(left instanceof VarSTO){
+            if(((VarSTO) left).getisSet()){
+                ld(l7, l7);
+            }
         }
+
         ld(l7, o0);
         call(AssemlyString.PREFIX + AssemlyString.PTRCHECK);
         nop();
@@ -3274,7 +3368,7 @@ public class AssemblyGenerator {
     void writeDelete(STO des, STO newDes, Type t){
         increaseIndent();
 
-        if(((VarSTO)des).getisSet()){
+        if(((VarSTO)des).getisSet() || des.getType() instanceof PointerType){
             if(des instanceof VarSTO){
                 if(((VarSTO) des).getisSet()){
                     writeAssembly("!*" + ((VarSTO) des).getInsideStruct() + "." + des.getName() + "\n");
