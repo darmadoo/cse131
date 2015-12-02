@@ -574,7 +574,13 @@ public class AssemblyGenerator {
                     st(g0, o0);
                     decreaseIndent();
                     writeAssembly(top + ".fini.skip:\n");
+
+                    //ADDED BY DAISY -> TAK TERJAMIN
                     increaseIndent();
+                    retRestore();
+
+                    // DAISY COMMENTED THIS ONE OUT
+                    //increaseIndent();
                 }
             }
         }
