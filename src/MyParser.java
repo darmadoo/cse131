@@ -1871,6 +1871,10 @@ class MyParser extends parser
 		exprSTO.setIsAddressable(sto.getIsAddressable());
 		exprSTO.setIsModifiable(sto.getIsModifiable());
 
+		if(((FuncSTO) sto).getRbr())
+		{
+			exprSTO.setLoad(true);
+		}
 		exprSTO.setBase(sto.getBase());
 		exprSTO.setOffset(sto.getOffset());
 		return exprSTO;

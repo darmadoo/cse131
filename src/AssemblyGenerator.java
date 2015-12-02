@@ -524,11 +524,16 @@ public class AssemblyGenerator {
         boolean flag = false;
 
         if(!structStack.empty()){
-            String isGlobal = structStack.pop();
+            String isGlobal = structStack.peek();
 
             if(isGlobal.equalsIgnoreCase("%g0")){
+                isGlobal = structStack.pop();
                 if(func.equalsIgnoreCase("main")){
                     while(!structStack.empty()){
+                        String useless = structStack.peek();
+                        if(useless.equalsIgnoreCase("%g0")){
+                            useless = structStack.pop();
+                        }
                         String global = structStack.pop();
                         // Check if global
                         if(global.equalsIgnoreCase("true")){
@@ -589,6 +594,10 @@ public class AssemblyGenerator {
             }
             else{
                 while(!structStack.empty()) {
+                    String useless = structStack.peek();
+                    if(useless.equalsIgnoreCase("%g0")){
+                        useless = structStack.pop();
+                    }
                     String global = structStack.pop();
                     // Check if global
                     if (global.equalsIgnoreCase("true")) {
@@ -2249,10 +2258,6 @@ public class AssemblyGenerator {
         writeAssembly(AssemlyString.BGE, AssemlyString.PREFIX + "loopEnd." + whileCount + "\n");
         nop();
 
-        ArrayType tempArray = (ArrayType) expr.getType();
-        Type next = tempArray.next();
-
-
         writeAssembly("! iterVal = currentElem\n");
         set(sto.getOffset(), o1);
         add(sto.getBase(), o1, o1);
@@ -2262,12 +2267,23 @@ public class AssemblyGenerator {
                 st(o0, o1);
             } else if (sto.getType().isFloat()) {
                 ld(o0, f0);
-                if (next.isFloat()) {
-                    st(f0, o1);
-                } else {
+
+                if(expr.getType() instanceof ArrayType){
+                    ArrayType tempArray = (ArrayType) expr.getType();
+                    Type next = tempArray.next();
+
+                    if (next.isFloat()) {
+                        st(f0, o1);
+                    } else {
+                        writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.FITOS, f0, f0);
+                        st(f0, o1);
+                    }
+                }
+                else {
                     writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.FITOS, f0, f0);
                     st(f0, o1);
                 }
+
             }
         }
         else
@@ -3129,7 +3145,9 @@ public class AssemblyGenerator {
         structStack.add(sto.getType().getName());
         structStack.add(".$$.ctorDtor." + ctorCount);
         structStack.add(Boolean.toString(global));
-        structStack.add(sto.getBase());
+        if(sto.getBase().equalsIgnoreCase("%g0")){
+            structStack.add(sto.getBase());
+        }
         increaseIndent();
         writeAssembly(AssemlyString.SKIP, "4");
         next();
