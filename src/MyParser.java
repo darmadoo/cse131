@@ -2921,7 +2921,7 @@ class MyParser extends parser
 				newType = tempType.next();
 				STO newSto = new VarSTO("*" + des.getName(), newType);
 
-				if(((VarSTO)des).getisSet()){
+				if(((VarSTO)des).getisSet() || des.getType() instanceof PointerType){
 					newSto.setBase("%fp");
 					offset -= tempType.getSize();
 					newSto.setOffset(Integer.toString(offset));
@@ -3194,6 +3194,7 @@ class MyParser extends parser
 			result.setBase("%fp");
 			offset -= t.getSize();
 			result.setOffset(Integer.toString(offset));
+			sto.setLoad(true);
 			m_writer.writePointerTypeCast(sto, t, result, null);
 			return result;
 		}

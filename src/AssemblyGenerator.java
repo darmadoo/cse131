@@ -512,11 +512,11 @@ public class AssemblyGenerator {
         next();
 
         decreaseIndent();
-        writeFuncDecl2_Done(temp);
+        writeFuncDecl2_Done(temp, id);
 
     }
 
-    public void writeFuncDecl2_Done(String str){
+    public void writeFuncDecl2_Done(String str, String func){
         writeAssembly(str + ".fini:");
         next();
         increaseIndent();
@@ -524,57 +524,121 @@ public class AssemblyGenerator {
         boolean flag = false;
 
         if(!structStack.empty()){
-            while(!structStack.empty()){
-                String global = structStack.pop();
-                // Check if global
-                if(global.equalsIgnoreCase("true")){
-                    if(!flag){
-                        retRestore();
-                        flag = true;
+            String isGlobal = structStack.pop();
+
+            if(isGlobal.equalsIgnoreCase("%g0")){
+                if(func.equalsIgnoreCase("main")){
+                    while(!structStack.empty()){
+                        String global = structStack.pop();
+                        // Check if global
+                        if(global.equalsIgnoreCase("true")){
+                            if(!flag){
+                                retRestore();
+                                flag = true;
+                            }
+                            String top = structStack.pop();
+                            decreaseIndent();
+                            writeAssembly(top + ".fini:\n");
+                            increaseIndent();
+                            save(sp, "-96", sp);
+                            set(top, o0);
+                            ld(o0,o0);
+                            cmp(o0,g0);
+                            be(top + ".fini.skip\n");
+                            nop();
+                            String structName = structStack.pop();
+                            call(structName + ".$" + structName + ".void");
+                            nop();
+                            set(top, o0);
+                            st(g0, o0);
+                            decreaseIndent();
+                            writeAssembly(top + ".fini.skip:\n");
+                            increaseIndent();
+                            retRestore();
+                            next();
+                            section(AssemlyString.FINI);
+                            align("4");
+                            call(top + ".fini");
+                            nop();
+                            next();
+                            section(AssemlyString.TEXT);
+                            align("4");
+                        }
+                        else{
+                            String top = structStack.pop();
+                            set(top, o0);
+                            ld(o0,o0);
+                            cmp(o0,g0);
+                            be(top + ".fini.skip\n");
+                            nop();
+                            String structName = structStack.pop();
+                            call(structName + ".$" + structName + ".void");
+                            nop();
+                            set(top, o0);
+                            st(g0, o0);
+                            decreaseIndent();
+                            writeAssembly(top + ".fini.skip:\n");
+                            increaseIndent();
+                        }
                     }
-                    String top = structStack.pop();
-                    decreaseIndent();
-                    writeAssembly(top + ".fini:\n");
-                    increaseIndent();
-                    save(sp, "-96", sp);
-                    set(top, o0);
-                    ld(o0,o0);
-                    cmp(o0,g0);
-                    be(top + ".fini.skip\n");
-                    nop();
-                    String structName = structStack.pop();
-                    call(structName + ".$" + structName + ".void");
-                    nop();
-                    set(top, o0);
-                    st(g0, o0);
-                    decreaseIndent();
-                    writeAssembly(top + ".fini.skip:\n");
-                    increaseIndent();
-                    retRestore();
-                    next();
-                    section(AssemlyString.FINI);
-                    align("4");
-                    call(top + ".fini");
-                    nop();
-                    next();
-                    section(AssemlyString.TEXT);
-                    align("4");
                 }
                 else{
-                    String top = structStack.pop();
-                    set(top, o0);
-                    ld(o0,o0);
-                    cmp(o0,g0);
-                    be(top + ".fini.skip\n");
-                    nop();
-                    String structName = structStack.pop();
-                    call(structName + ".$" + structName + ".void");
-                    nop();
-                    set(top, o0);
-                    st(g0, o0);
-                    decreaseIndent();
-                    writeAssembly(top + ".fini.skip:\n");
-                    increaseIndent();
+                    structStack.add(isGlobal);
+                    retRestore();
+                }
+            }
+            else{
+                while(!structStack.empty()) {
+                    String global = structStack.pop();
+                    // Check if global
+                    if (global.equalsIgnoreCase("true")) {
+                        if (!flag) {
+                            retRestore();
+                            flag = true;
+                        }
+                        String top = structStack.pop();
+                        decreaseIndent();
+                        writeAssembly(top + ".fini:\n");
+                        increaseIndent();
+                        save(sp, "-96", sp);
+                        set(top, o0);
+                        ld(o0, o0);
+                        cmp(o0, g0);
+                        be(top + ".fini.skip\n");
+                        nop();
+                        String structName = structStack.pop();
+                        call(structName + ".$" + structName + ".void");
+                        nop();
+                        set(top, o0);
+                        st(g0, o0);
+                        decreaseIndent();
+                        writeAssembly(top + ".fini.skip:\n");
+                        increaseIndent();
+                        retRestore();
+                        next();
+                        section(AssemlyString.FINI);
+                        align("4");
+                        call(top + ".fini");
+                        nop();
+                        next();
+                        section(AssemlyString.TEXT);
+                        align("4");
+                    } else {
+                        String top = structStack.pop();
+                        set(top, o0);
+                        ld(o0, o0);
+                        cmp(o0, g0);
+                        be(top + ".fini.skip\n");
+                        nop();
+                        String structName = structStack.pop();
+                        call(structName + ".$" + structName + ".void");
+                        nop();
+                        set(top, o0);
+                        st(g0, o0);
+                        decreaseIndent();
+                        writeAssembly(top + ".fini.skip:\n");
+                        increaseIndent();
+                    }
                 }
             }
         }
@@ -1978,15 +2042,22 @@ public class AssemblyGenerator {
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", sto.getOffset(), "%o1");
         writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", sto.getBase(), "%o1", "%o1");
 
-        if(sto instanceof VarSTO && ((VarSTO) sto).getPbr()){
-            writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", o1, o1);
+        if(sto instanceof VarSTO){
+            if(((VarSTO) sto).getPbr() || ((VarSTO) sto).getisSet()){
+                writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", o1, o1);
+            }
         }
 
         if(sto.getLoad()){
             ld(o1, o1);
         }
 
-        writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
+        if(sto.getType() instanceof FloatType){
+            writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%f0", "%o1");
+        }
+        else{
+            writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
+        }
         next();
         decreaseIndent();
     }
@@ -2592,7 +2663,7 @@ public class AssemblyGenerator {
                 if(expr instanceof ConstSTO && !expr.getIsAddressable()){
                     set(expr.getName(), i0);
                 }
-                else if(expr.getBase() == fp){
+                else if(!callingFunc.getRbr()){
                     set(expr.getOffset(), l7);
                     add(expr.getBase(), l7, l7);
 
@@ -2633,7 +2704,7 @@ public class AssemblyGenerator {
                     set(AssemlyString.PREFIX + expr.getType().getName() + "." + floatCount, l7);
                     ld(l7, f0);
                 }
-                else if(expr.getBase() == fp){
+                else if(!callingFunc.getRbr()){
                     set(expr.getOffset(), l7);
                     add(fp,l7,l7);
 
@@ -2653,7 +2724,7 @@ public class AssemblyGenerator {
                 if(expr instanceof ConstSTO && !expr.getIsAddressable()){
                     set(String.valueOf(((ConstSTO) expr).getValue()), i0);
                 }
-                else if(expr.getBase() == fp){
+                else if(!callingFunc.getRbr()){
                     set(expr.getOffset(), l7);
                     add(expr.getBase(), l7, l7);
 
@@ -2729,7 +2800,7 @@ public class AssemblyGenerator {
                     section(AssemlyString.TEXT);
                     align("4");
                     writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + SEPARATOR, AssemlyString.PREFIX + AssemlyString.FLOAT + "." + floatCount, "%l7");
-                    writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f" + totalCount);
+                    writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f" + i);//totalCount);
                     fcount++;
                     totalCount++;
                 }
@@ -2754,8 +2825,8 @@ public class AssemblyGenerator {
                     writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", args.get(i).getOffset(), "%l7");
                     writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", args.get(i).getBase(), "%l7", "%l7");
                     writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%l7");
-                    writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f" + totalCount);
-                    writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.FITOS, "%f" + fcount, "%f" + totalCount);
+                    writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f" + i); //fcount);
+                    writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.FITOS, "%f" + i, "%f" + i); //fcount, "%f" + fcount);
                     fcount++;
                     totalCount++;
                 }
@@ -2764,14 +2835,14 @@ public class AssemblyGenerator {
             else {
                 if(args.get(i) instanceof VarSTO){
                     if(((VarSTO) param.get(i)).getPbr()){
-                        set(args.get(i).getOffset(), "%o" + ocount);
-                        add(args.get(i).getBase(), "%o" + ocount, "%o" + ocount);
+                        set(args.get(i).getOffset(), "%o" + i);//ocount);
+                        add(args.get(i).getBase(), "%o" + i, "%o" + i); // ocount, "%o" + ocount);
 
                         if(((VarSTO) args.get(i)).getPbr() || args.get(i).getLoad()){
                             if (args.get(i).getType() instanceof FloatType) {
-                                ld(o0, "%f" + fcount);
+                                ld(o0, "%f" + i); //fcount);
                             } else {
-                                ld("%o" + ocount, "%o" + ocount);
+                                ld("%o" + i, "%o" + i);// ocount, "%o" + ocount);
                             }
                         }
                         ocount++;
@@ -2790,10 +2861,12 @@ public class AssemblyGenerator {
                                 ld(l7, l7);
                             }
                             if (args.get(i).getType() instanceof FloatType) {
-                                ld(l7, "%f" + totalCount);
+                                ld(l7, "%f" + i); //totalCount);
+                                fcount++;
+                                totalCount++;
                                 //ld(l7, "%f" + fcount);
                             } else {
-                                ld(l7, "%o" + totalCount);
+                                ld(l7, "%o" + i); //totalCount);
                                 ocount++;
                                 totalCount++;
                             }
@@ -2806,8 +2879,8 @@ public class AssemblyGenerator {
                                 writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", args.get(i).getOffset(), "%l7");
                                 writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", args.get(i).getBase(), "%l7", "%l7");
                                 writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o1", "%l7");
-                                writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f" + totalCount);
-                                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.FITOS, "%f" + fcount, "%f" + totalCount);
+                                writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", "%l7", "%f" + i); //fcount);
+                                writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.FITOS, "%f" + i, "%f" + i); //fcount, "%f" + fcount);
                                 fcount++;
                                 totalCount++;
                             }
@@ -2818,10 +2891,10 @@ public class AssemblyGenerator {
                     set(args.get(i).getOffset(), l7);
                     add(fp, l7, l7);
                     if (args.get(i).getType() instanceof FloatType) {
-                        ld(l7, "%f" + totalCount);
+                        ld(l7, "%f" + i); //totalCount);
                     } else {
                         //ld(l7, "%o1");
-                        ld(l7, "%o" + totalCount);
+                        ld(l7, "%o" + i); //totalCount);
                     }
                     totalCount++;
                 }
@@ -3056,6 +3129,7 @@ public class AssemblyGenerator {
         structStack.add(sto.getType().getName());
         structStack.add(".$$.ctorDtor." + ctorCount);
         structStack.add(Boolean.toString(global));
+        structStack.add(sto.getBase());
         increaseIndent();
         writeAssembly(AssemlyString.SKIP, "4");
         next();
@@ -3145,9 +3219,12 @@ public class AssemblyGenerator {
         }
         set(left.getOffset(), l7);
         add(left.getBase(), l7, l7);
-        if(((VarSTO) left).getisSet()){
-            ld(l7, l7);
+        if(left instanceof VarSTO){
+            if(((VarSTO) left).getisSet()){
+                ld(l7, l7);
+            }
         }
+
         ld(l7, o0);
         call(AssemlyString.PREFIX + AssemlyString.PTRCHECK);
         nop();
@@ -3265,7 +3342,7 @@ public class AssemblyGenerator {
     void writeDelete(STO des, STO newDes, Type t){
         increaseIndent();
 
-        if(((VarSTO)des).getisSet()){
+        if(((VarSTO)des).getisSet() || des.getType() instanceof PointerType){
             if(des instanceof VarSTO){
                 if(((VarSTO) des).getisSet()){
                     writeAssembly("!*" + ((VarSTO) des).getInsideStruct() + "." + des.getName() + "\n");
