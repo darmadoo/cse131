@@ -522,6 +522,7 @@ public class AssemblyGenerator {
         increaseIndent();
         save(sp, "-96" , sp);
         boolean flag = false;
+        boolean flag2 = false;
 
         if(!structStack.empty()){
             while(!structStack.empty()){
@@ -575,18 +576,16 @@ public class AssemblyGenerator {
                     decreaseIndent();
                     writeAssembly(top + ".fini.skip:\n");
 
-                    //ADDED BY DAISY -> TAK TERJAMIN
+                    flag2 = true;
                     increaseIndent();
-                    retRestore();
-
-                    // DAISY COMMENTED THIS ONE OUT
-                    //increaseIndent();
                 }
             }
         }
         else{
             retRestore();
         }
+        if(flag2 = true)
+            retRestore();
 
         decreaseIndent();
         next();
@@ -3183,10 +3182,12 @@ public class AssemblyGenerator {
         add(g0, o1, o1);
         add(o0, o1, o0);
 
+
         // Set the right side.
         right.setBase("%fp");
         offset -= left.getType().getSize();
         right.setOffset(Integer.toString(offset));
+
 
         set(right.getOffset(), o1);
         add(right.getBase(), o1, o1);

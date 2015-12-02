@@ -2685,10 +2685,15 @@ class MyParser extends parser
 						offset -= temp.getSize();
 						newSto.setOffset(Integer.toString(offset));
 
-						STO rtVal = varList.get(index);
-						((VarSTO)rtVal).setStructOffset(currentOff);
-						((VarSTO)rtVal).setInsideStruct(newSto.getName());
+						STO rtVal = new VarSTO(varList.get(index).getName(), varList.get(index).getType());
+
+						//((VarSTO)rtVal).setStructOffset(currentOff);
+						//((VarSTO)rtVal).setInsideStruct(newSto.getName());
+
 						offset = m_writer.writeArrow(sto, newSto, rtVal, offset);
+
+						rtVal.setBase("%fp");
+						rtVal.setOffset(Integer.toString(offset));
 						return rtVal;
 					}
 					else{
