@@ -1791,6 +1791,7 @@ public class AssemblyGenerator {
         decreaseIndent();
     }
 
+    private Stack<Integer> andorStack = new Stack<>();
     String shortCircuitTemp;
     public void writeShortCircuitLeft(STO a, String op)
     {
@@ -1819,6 +1820,7 @@ public class AssemblyGenerator {
         }
         cmp(o0, g0);
         andorCount++;
+        andorStack.push(andorCount);
         if( op == "and" )
         {
             writeAssembly(AssemlyString.BE, AssemlyString.PREFIX + "andorSkip." + andorCount + "\n");
@@ -1832,6 +1834,7 @@ public class AssemblyGenerator {
         decreaseIndent();
     }
 
+    int shortcircuitTemp = 0;
     public void writeShortCircuitRight(STO b, String op)
     {
         increaseIndent();
@@ -1862,13 +1865,14 @@ public class AssemblyGenerator {
             writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
         }
         cmp(o0, g0);
+        shortcircuitTemp = andorStack.pop();
         if( op == "and")
         {
-            writeAssembly(AssemlyString.BE, AssemlyString.PREFIX + "andorSkip." + andorCount + "\n");
+            writeAssembly(AssemlyString.BE, AssemlyString.PREFIX + "andorSkip." + shortcircuitTemp + "\n");
         }
         else
         {
-            writeAssembly(AssemlyString.BNE + "\t\t\t" + AssemlyString.PREFIX + "andorSkip." + andorCount + "\n");
+            writeAssembly(AssemlyString.BNE + "\t\t\t" + AssemlyString.PREFIX + "andorSkip." + shortcircuitTemp + "\n");
         }
         nop();
         decreaseIndent();
@@ -1930,7 +1934,7 @@ public class AssemblyGenerator {
         }
 
         if(o instanceof AndOp || o instanceof OrOp) {
-            writeAssembly(AssemlyString.BA, AssemlyString.PREFIX + "andorEnd." + andorCount + "\n");
+            writeAssembly(AssemlyString.BA, AssemlyString.PREFIX + "andorEnd." + shortcircuitTemp + "\n");
             String temp = "";
             if(result != null)
                 temp = o0;
@@ -1940,22 +1944,22 @@ public class AssemblyGenerator {
             {
                 mov("1", temp);
                 decreaseIndent();
-                writeAssembly(AssemlyString.PREFIX + "andorSkip." + andorCount + ":\n");
+                writeAssembly(AssemlyString.PREFIX + "andorSkip." + shortcircuitTemp + ":\n");
                 increaseIndent();
                 mov("0", temp);
                 decreaseIndent();
-                writeAssembly(AssemlyString.PREFIX + "andorEnd." + andorCount + ":\n");
+                writeAssembly(AssemlyString.PREFIX + "andorEnd." + shortcircuitTemp + ":\n");
                 increaseIndent();
             }
             else
             {
                 mov("0", temp);
                 decreaseIndent();
-                writeAssembly(AssemlyString.PREFIX + "andorSkip." + andorCount + ":\n");
+                writeAssembly(AssemlyString.PREFIX + "andorSkip." + shortcircuitTemp + ":\n");
                 increaseIndent();
                 mov("1", temp);
                 decreaseIndent();
-                writeAssembly(AssemlyString.PREFIX + "andorEnd." + andorCount + ":\n");
+                writeAssembly(AssemlyString.PREFIX + "andorEnd." + shortcircuitTemp + ":\n");
                 increaseIndent();
             }
         }
@@ -2726,7 +2730,7 @@ public class AssemblyGenerator {
                 }
                 else if(!callingFunc.getRbr()){
                     set(expr.getOffset(), l7);
-                    add(fp,l7,l7);
+                    add(expr.getBase(),l7,l7);
 
                     if(expr instanceof VarSTO && ((VarSTO) expr).getPbr()){
                         ld(l7, l7);
