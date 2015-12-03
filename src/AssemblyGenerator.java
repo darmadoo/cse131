@@ -647,9 +647,12 @@ public class AssemblyGenerator {
                         decreaseIndent();
                         writeAssembly(top + ".fini.skip:\n");
                         increaseIndent();
+                        if(structStack.empty()){
+                            retRestore();
+                        }
                     }
                 }
-                retRestore();
+
             }
         }
         else{
@@ -1792,6 +1795,7 @@ public class AssemblyGenerator {
         decreaseIndent();
     }
 
+    private Stack<Integer> andorStack = new Stack<>();
     String shortCircuitTemp;
     public void writeShortCircuitLeft(STO a, String op)
     {
@@ -1820,6 +1824,7 @@ public class AssemblyGenerator {
         }
         cmp(o0, g0);
         andorCount++;
+        andorStack.push(andorCount);
         if( op == "and" )
         {
             writeAssembly(AssemlyString.BE, AssemlyString.PREFIX + "andorSkip." + andorCount + "\n");
@@ -1833,6 +1838,7 @@ public class AssemblyGenerator {
         decreaseIndent();
     }
 
+    int shortcircuitTemp = 0;
     public void writeShortCircuitRight(STO b, String op)
     {
         increaseIndent();
@@ -1863,13 +1869,14 @@ public class AssemblyGenerator {
             writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
         }
         cmp(o0, g0);
+        shortcircuitTemp = andorStack.pop();
         if( op == "and")
         {
-            writeAssembly(AssemlyString.BE, AssemlyString.PREFIX + "andorSkip." + andorCount + "\n");
+            writeAssembly(AssemlyString.BE, AssemlyString.PREFIX + "andorSkip." + shortcircuitTemp + "\n");
         }
         else
         {
-            writeAssembly(AssemlyString.BNE + "\t\t\t" + AssemlyString.PREFIX + "andorSkip." + andorCount + "\n");
+            writeAssembly(AssemlyString.BNE + "\t\t\t" + AssemlyString.PREFIX + "andorSkip." + shortcircuitTemp + "\n");
         }
         nop();
         decreaseIndent();
@@ -1931,7 +1938,7 @@ public class AssemblyGenerator {
         }
 
         if(o instanceof AndOp || o instanceof OrOp) {
-            writeAssembly(AssemlyString.BA, AssemlyString.PREFIX + "andorEnd." + andorCount + "\n");
+            writeAssembly(AssemlyString.BA, AssemlyString.PREFIX + "andorEnd." + shortcircuitTemp + "\n");
             String temp = "";
             if(result != null)
                 temp = o0;
@@ -1941,22 +1948,22 @@ public class AssemblyGenerator {
             {
                 mov("1", temp);
                 decreaseIndent();
-                writeAssembly(AssemlyString.PREFIX + "andorSkip." + andorCount + ":\n");
+                writeAssembly(AssemlyString.PREFIX + "andorSkip." + shortcircuitTemp + ":\n");
                 increaseIndent();
                 mov("0", temp);
                 decreaseIndent();
-                writeAssembly(AssemlyString.PREFIX + "andorEnd." + andorCount + ":\n");
+                writeAssembly(AssemlyString.PREFIX + "andorEnd." + shortcircuitTemp + ":\n");
                 increaseIndent();
             }
             else
             {
                 mov("0", temp);
                 decreaseIndent();
-                writeAssembly(AssemlyString.PREFIX + "andorSkip." + andorCount + ":\n");
+                writeAssembly(AssemlyString.PREFIX + "andorSkip." + shortcircuitTemp + ":\n");
                 increaseIndent();
                 mov("1", temp);
                 decreaseIndent();
-                writeAssembly(AssemlyString.PREFIX + "andorEnd." + andorCount + ":\n");
+                writeAssembly(AssemlyString.PREFIX + "andorEnd." + shortcircuitTemp + ":\n");
                 increaseIndent();
             }
         }
@@ -2189,7 +2196,8 @@ public class AssemblyGenerator {
         set(Integer.toString(array.getDimensions()), o1);
         call(AssemlyString.PREFIX + AssemlyString.ARRCHECK);
         nop();
-        set("4", o1);
+        Type next = array.next();
+        set(Integer.toString(next.getSize()), o1);
         call(".mul");
         nop();
         mov(o0,o1);
@@ -2227,7 +2235,7 @@ public class AssemblyGenerator {
 
         set(expr.getOffset(), o0);
         add(expr.getBase(), o0, o0);
-        set("4", o1);
+        set(Integer.toString(expr.getType().getSize()), o1);
         writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.SUB + "\t", o0, o1, o0);
 
         set(temp.getOffset(), o1);
@@ -2243,7 +2251,7 @@ public class AssemblyGenerator {
         set(temp.getOffset(), o1);
         add(temp.getBase(), o1, o1);
         ld(o1, o0);
-        set("4", o2);
+        set(Integer.toString(expr.getType().getSize()), o2);
         add(o0, o2, o0);
         st(o0, o1);
 
@@ -2697,6 +2705,10 @@ public class AssemblyGenerator {
                     set(expr.getOffset(), i0);
                     add(expr.getBase(), i0, i0);
 
+                    if(expr instanceof VarSTO && ((VarSTO) expr).getPbr()){
+                        ld(i0, i0);
+                    }
+
                     if(expr.getLoad())
                         ld(i0, i0);
                 }
@@ -2727,7 +2739,7 @@ public class AssemblyGenerator {
                 }
                 else if(!callingFunc.getRbr()){
                     set(expr.getOffset(), l7);
-                    add(fp,l7,l7);
+                    add(expr.getBase(),l7,l7);
 
                     if(expr instanceof VarSTO && ((VarSTO) expr).getPbr()){
                         ld(l7, l7);
@@ -2735,11 +2747,16 @@ public class AssemblyGenerator {
 
                     if(expr.getLoad())
                         ld(l7, l7);
+
                     ld(l7, f0);
                 }
                 else {
                     set(expr.getOffset(), i0);
                     add(expr.getBase(), i0, i0);
+
+                    if(expr instanceof VarSTO && ((VarSTO) expr).getPbr()){
+                        ld(i0, i0);
+                    }
 
                     if(expr.getLoad())
                         ld(i0, i0);
@@ -2765,6 +2782,10 @@ public class AssemblyGenerator {
                 else {
                     set(expr.getOffset(), i0);
                     add(expr.getBase(), i0, i0);
+
+                    if(expr instanceof VarSTO && ((VarSTO) expr).getPbr()){
+                        ld(i0, i0);
+                    }
 
                     if(expr.getLoad())
                         ld(i0, i0);
@@ -3106,6 +3127,138 @@ public class AssemblyGenerator {
     }
 
     private int ctorCount = 1;
+
+    int writeArrayStructDecl(STO sto, Vector<STO> parameters, int offset, boolean global, Type t){
+        String structName;
+        structName = t.getName() + "." + t.getName();
+
+        for(int i = 0; i < parameters.size(); i++){
+            structName += "." + parameters.get(i).getName();
+        }
+
+        if(parameters == null){
+            structName += ".void";
+        }
+        else{
+            if(parameters.size() == 0){
+                structName += ".void";
+            }
+        }
+
+        increaseIndent();
+
+        if(global){
+            section(AssemlyString.BSS);
+            align("4");
+            global(sto.getName());
+            decreaseIndent();
+            writeAssembly(sto.getName() + ":\n");
+            increaseIndent();
+            writeAssembly(AssemlyString.SKIP, Integer.toString(sto.getType().getSize()));
+            next();
+            next();
+            section(AssemlyString.TEXT);
+            align("4");
+            decreaseIndent();
+            writeAssembly(".$.init." + sto.getName() + ":\n");
+            increaseIndent();
+            increaseIndent();
+            set("SAVE..$.init." + sto.getName(), g1);
+            save(sp, g1, sp);
+            next();
+        }
+
+        ArrayType temp = null;
+        if(sto.getType().isArray())
+            temp = (ArrayType) sto.getType();
+        for(int i = 0 ; i < temp.getDimensions() ; i++ ) {
+
+            writeAssembly("! " + sto.getName() + "[" + i + "]\n");
+            set(Integer.toString(i), o0);
+
+            set(Integer.toString(temp.getDimensions()), o1);
+            call(AssemlyString.PREFIX + AssemlyString.ARRCHECK);
+            nop();
+            set(Integer.toString(temp.getSize()), o1);
+            call(".mul");
+            nop();
+            mov(o0,o1);
+            set(sto.getOffset(), o0);
+            add(sto.getBase(), o0, o0);
+
+            call(AssemlyString.PREFIX + AssemlyString.PTRCHECK);
+            nop();
+            add(o0, o1, o0);
+            offset -= 4;
+            set(Integer.toString(offset), o1);
+            add(fp, o1, o1);
+            st(o0, o1);
+            next();
+
+            writeAssembly("! " + sto.getName() + "[" + i + "]." + sto.getType().getName() + "(...)\n");
+            set(Integer.toString(offset), o0);
+            add(fp, o0, o0);
+            ld(o0, o0);
+            call(structName);
+            nop();
+            next();
+
+            section(AssemlyString.BSS);
+            align("4");
+            decreaseIndent();
+            writeAssembly(".$$.ctorDtor." + ctorCount + ":\n");
+            structStack.add(t.getName());
+            structStack.add(".$$.ctorDtor." + ctorCount);
+            structStack.add(Boolean.toString(global));
+            if (sto.getBase().equalsIgnoreCase("%g0")) {
+                structStack.add(sto.getBase());
+            }
+            increaseIndent();
+            writeAssembly(AssemlyString.SKIP, "4");
+            next();
+            next();
+            section(AssemlyString.TEXT);
+            align("4");
+            next();
+            set(".$$.ctorDtor." + ctorCount, o0);
+            // TODO NEED TO USE THE STO OFFSET
+            //set(Integer.toString(offset), o1);
+            set(Integer.toString(offset), o1);
+            add(fp, o1, o1);
+            ld(o1, o1);
+            st(o1, o0);
+            next();
+            ctorCount++;
+        }
+        decreaseIndent();
+
+        if(global){
+            writeAssembly(AssemlyString.EOF_COMMENT, ".$.init." + sto.getName());
+            call(".$.init." + sto.getName() + ".fini");
+            nop();
+            retRestore();
+            assign("SAVE." + ".$.init." + sto.getName(), "-(92 + " + offset + ") & -8");
+            next();
+            decreaseIndent();
+            writeAssembly(".$.init." + sto.getName() + ".fini:\n");
+            increaseIndent();
+            save(sp, "-96", sp);
+            retRestore();
+            next();
+            section(AssemlyString.INIT_SECTION);
+            align("4");
+            call(".$.init." + sto.getName());
+            nop();
+            next();
+            section(AssemlyString.TEXT);
+            align("4");
+            next();
+            decreaseIndent();
+        }
+
+        return offset;
+    }
+
     void writeStructDecl(STO sto, Vector<STO> parameters, int offset, boolean global){
         String structName = sto.getType().getName() + "." + sto.getType().getName();
         for(int i = 0; i < parameters.size(); i++){
@@ -3212,6 +3365,9 @@ public class AssemblyGenerator {
         if(((VarSTO)sto).getPbr()){
             ld(o0, o0);
         }
+
+        if(sto.getLoad())
+            ld(o0, o0);
 
         if(!((VarSTO)id).getisSet()) {
             ((VarSTO)id).setStructOffset(((VarSTO)sto).getStructOffset());
@@ -3455,10 +3611,37 @@ public class AssemblyGenerator {
     }
 
     void writeGlobalStack(){
-        if(!structStack.empty()){
+        while(!structStack.empty()){
             String global = structStack.pop();
+            String useless = structStack.pop();
 
-
+            String top = structStack.pop();
+            writeAssembly(top + ".fini:\n");
+            increaseIndent();
+            save(sp, "-96", sp);
+            set(top, o0);
+            ld(o0,o0);
+            cmp(o0,g0);
+            be(top + ".fini.skip\n");
+            nop();
+            String structName = structStack.pop();
+            call(structName + ".$" + structName + ".void");
+            nop();
+            set(top, o0);
+            st(g0, o0);
+            decreaseIndent();
+            writeAssembly(top + ".fini.skip:\n");
+            increaseIndent();
+            retRestore();
+            next();
+            section(AssemlyString.FINI);
+            align("4");
+            call(top + ".fini");
+            nop();
+            next();
+            section(AssemlyString.TEXT);
+            align("4");
+            decreaseIndent();
         }
     }
 }

@@ -718,7 +718,7 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	// Overloaded function for structs
 	//----------------------------------------------------------------
-	void DoVarDecl(String id, Type typ, Vector<STO> parameters)
+	void DoVarDecl(String id, Type typ, Vector<STO> arguments, Vector<STO> parameters)
 	{
 		if (m_symtab.accessLocal(id) != null)
 		{
@@ -728,31 +728,117 @@ class MyParser extends parser
 
 		boolean global = true;
 		FuncSTO fun = m_symtab.getFunc();
+		String tempOffset = "";
 		if(fun != null) {
 			global = false;
+			Vector<STO> params = fun.getParams();
+			tempOffset = fun.getName();
+			if(params.size() == 0){
+				tempOffset += ".void";
+			}
+			else{
+				for(int i = 0; i < params.size(); i++){
+					tempOffset += "." + params.get(i).getType().getName();
+				}
+			}
 		}
 
-		StructdefSTO tempSTO = (StructdefSTO) m_symtab.accessGlobal(typ.getName());
+		if(arguments == null) {
+			StructdefSTO tempSTO = (StructdefSTO) m_symtab.accessGlobal(typ.getName());
 
-		structDecl = true;
-		DoFuncCall(tempSTO.getCtorDtorsList().firstElement(), parameters);
-		structDecl = false;
+			structDecl = true;
+			DoFuncCall(tempSTO.getCtorDtorsList().firstElement(), parameters);
+			structDecl = false;
 
-		VarSTO sto = new VarSTO(id, tempSTO.getType());
+			VarSTO sto = new VarSTO(id, tempSTO.getType());
 
-		if(global){
-			sto.setBase("%g0");
-			sto.setOffset(id);
+			if (global) {
+				sto.setBase("%g0");
+				sto.setOffset(id);
+			} else {
+				sto.setBase("%fp");
+				offset -= sto.getType().getSize();
+				sto.setOffset(Integer.toString(offset));
+			}
+
+			m_writer.writeStructDecl(sto, parameters, offset, global);
+			m_symtab.insert(sto);
 		}
-		else{
-			sto.setBase("%fp");
-			offset -= sto.getType().getSize();
-			sto.setOffset(Integer.toString(offset));
-		}
+		else {
+			ArrayType head = null;
+			ArrayType pointer = null;
+			ArrayType temp;
+			while(!arguments.isEmpty()) {
+				STO x = arguments.firstElement();
+				if (x.isError())
+					return;
 
-		m_writer.writeStructDecl(sto, parameters, offset, global);
-		m_symtab.insert(sto);
+				x = DoDesignator2_Array(x);
+
+				if (x.isError())
+					return;
+
+				if (x.isConst())
+				{
+					temp = new ArrayType(typ.getName() + GetType(arguments), GetSize(arguments) * typ.getSize(), ((ConstSTO) x).getIntValue());
+					if(head == null) {
+						head = temp;
+					}
+					else {
+						pointer = head;
+						while (pointer.hasNext()) {
+							pointer = (ArrayType) pointer.next();
+						}
+						pointer.setChild(temp);
+					}
+				}
+
+				arguments.remove(x);
+			}
+
+			pointer = head;
+			while (pointer.hasNext()) {
+				pointer = (ArrayType) pointer.next();
+			}
+			if(pointer != null){
+				pointer.setChild(typ);
+			}
+
+			pointer= head;
+			while(pointer.hasNext())
+			{
+				if(pointer.next().isArray())
+					pointer = (ArrayType)pointer.next();
+				else
+					break;
+			}
+			VarSTO sto = new VarSTO(id, head);
+			sto.setIsModifiable(false);
+
+			if(global)
+			{
+				sto.setBase("%g0");
+				sto.setOffset(id);
+			}
+			else{
+				if(isStaticFlag)
+				{
+					sto.setBase("%g0");
+					sto.setOffset(tempOffset);
+				}
+				else {
+					sto.setBase("%fp");
+					offset -= sto.getType().getSize();
+					sto.setOffset(Integer.toString(offset));
+				}
+			}
+
+			offset = m_writer.writeArrayStructDecl(sto, parameters, offset, global, typ);
+
+			m_symtab.insert(sto);
+		}
 	}
+
 
 	//----------------------------------------------------------------
 	//
@@ -1660,12 +1746,15 @@ class MyParser extends parser
 			m_errors.print(result.getName());
 		}
 
+		//I dont think this one is correct?
+		/*
 		if(a instanceof ExprSTO){
 			Vector<FuncSTO> fun = funcMap.get(a.getName());
 			if(fun != null){
 				a.setLoad(true);
 			}
 		}
+		*/
 
 		if(!(a.isConst() && !a.getIsAddressable())) {
 			result.setBase("%fp");
@@ -2407,7 +2496,6 @@ class MyParser extends parser
 
 		// prob wrong
 		return new StructType(strID);
-
 	}
 
 	//----------------------------------------------------------------
