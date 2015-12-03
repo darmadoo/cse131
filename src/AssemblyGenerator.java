@@ -522,6 +522,7 @@ public class AssemblyGenerator {
         increaseIndent();
         save(sp, "-96" , sp);
         boolean flag = false;
+        boolean flag2 = true;
 
         if(!structStack.empty()){
             String isGlobal = structStack.peek();
@@ -584,6 +585,7 @@ public class AssemblyGenerator {
                             decreaseIndent();
                             writeAssembly(top + ".fini.skip:\n");
                             increaseIndent();
+                            flag2 = true;
                         }
                     }
                 }
@@ -647,6 +649,7 @@ public class AssemblyGenerator {
                         decreaseIndent();
                         writeAssembly(top + ".fini.skip:\n");
                         increaseIndent();
+                        flag2 = true;
                     }
                 }
             }
@@ -654,6 +657,9 @@ public class AssemblyGenerator {
         else{
             retRestore();
         }
+
+        if (flag2)
+            retRestore();
 
         decreaseIndent();
         next();
@@ -3270,10 +3276,12 @@ public class AssemblyGenerator {
         add(g0, o1, o1);
         add(o0, o1, o0);
 
+
         // Set the right side.
         right.setBase("%fp");
         offset -= left.getType().getSize();
         right.setOffset(Integer.toString(offset));
+
 
         set(right.getOffset(), o1);
         add(right.getBase(), o1, o1);
