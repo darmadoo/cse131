@@ -925,11 +925,12 @@ public class AssemblyGenerator {
                 writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", expr.getOffset(), "%l7");
             }
         }
-        else{
+        else if(!expr.getType().isNullPointer()){
             writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", expr.getOffset(), "%l7");
         }
 
-        writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", expr.getBase(), "%l7", "%l7");
+        if(!expr.getType().isNullPointer())
+            writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", expr.getBase(), "%l7", "%l7");
 
 
         if(expr.getLoad()){
@@ -978,9 +979,14 @@ public class AssemblyGenerator {
             writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
             writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
         }
-        else if (sto.getType().isPointer() && expr.getType().isPointer())
+        else if (sto.getType().isPointer() && expr.getType().isPointer() && !expr.getType().isNullPointer())
         {
             writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
+            writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
+        }
+        else if(sto.getType().isPointer() && expr.getType().isNullPointer())
+        {
+            set("0", o0);
             writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
         }
 
