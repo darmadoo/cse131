@@ -3173,7 +3173,7 @@ public class AssemblyGenerator {
             set(Integer.toString(temp.getDimensions()), o1);
             call(AssemlyString.PREFIX + AssemlyString.ARRCHECK);
             nop();
-            set(Integer.toString(temp.getSize()), o1);
+            set(Integer.toString(temp.next().getSize()), o1);
             call(".mul");
             nop();
             mov(o0,o1);
