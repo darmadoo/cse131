@@ -7,10 +7,14 @@ import java.util.Vector;
 
 /** CUP v0.10k TUM Edition 20050516 generated parser.
 <<<<<<< HEAD
+<<<<<<< HEAD
   * @version Thu Dec 03 10:08:25 PST 2015
 =======
   * @version Thu Dec 03 09:51:03 PST 2015
 >>>>>>> 21aec8f34587cbbbc44dcfd4a3d4c6c7edfd0694
+=======
+  * @version Thu Dec 03 10:07:03 PST 2015
+>>>>>>> 383f67c6895a1b14ad49fd79e3d24b92eacb7098
   */
 public class parser extends java_cup.runtime.lr_parser {
 
