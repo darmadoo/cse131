@@ -522,7 +522,6 @@ public class AssemblyGenerator {
         increaseIndent();
         save(sp, "-96" , sp);
         boolean flag = false;
-        boolean flag2 = true;
 
         if(!structStack.empty()){
             String isGlobal = structStack.peek();
@@ -585,7 +584,6 @@ public class AssemblyGenerator {
                             decreaseIndent();
                             writeAssembly(top + ".fini.skip:\n");
                             increaseIndent();
-                            flag2 = true;
                         }
                     }
                 }
@@ -649,17 +647,14 @@ public class AssemblyGenerator {
                         decreaseIndent();
                         writeAssembly(top + ".fini.skip:\n");
                         increaseIndent();
-                        flag2 = true;
                     }
                 }
+                retRestore();
             }
         }
         else{
             retRestore();
         }
-
-        if (flag2)
-            retRestore();
 
         decreaseIndent();
         next();
@@ -2689,6 +2684,10 @@ public class AssemblyGenerator {
                     set(expr.getOffset(), l7);
                     add(expr.getBase(), l7, l7);
 
+                    if(expr instanceof VarSTO && ((VarSTO) expr).getPbr()){
+                        ld(l7, l7);
+                    }
+
                     if(expr.getLoad())
                         ld(l7, l7);
 
@@ -2730,6 +2729,10 @@ public class AssemblyGenerator {
                     set(expr.getOffset(), l7);
                     add(fp,l7,l7);
 
+                    if(expr instanceof VarSTO && ((VarSTO) expr).getPbr()){
+                        ld(l7, l7);
+                    }
+
                     if(expr.getLoad())
                         ld(l7, l7);
                     ld(l7, f0);
@@ -2749,6 +2752,10 @@ public class AssemblyGenerator {
                 else if(!callingFunc.getRbr()){
                     set(expr.getOffset(), l7);
                     add(expr.getBase(), l7, l7);
+
+                    if(expr instanceof VarSTO && ((VarSTO) expr).getPbr()){
+                        ld(l7, l7);
+                    }
 
                     if(expr.getLoad())
                         ld(l7, l7);
@@ -3249,6 +3256,9 @@ public class AssemblyGenerator {
             }
         }
 
+        if(left.getLoad())
+            ld(l7, l7);
+
         ld(l7, o0);
         call(AssemlyString.PREFIX + AssemlyString.PTRCHECK);
         nop();
@@ -3316,6 +3326,8 @@ public class AssemblyGenerator {
         if(((VarSTO) des).getisSet()){
             ld(o1, o1);
         }
+        if(des.getLoad())
+            ld(o1, o1);
         st(o0, o1);
         next();
 
@@ -3368,7 +3380,15 @@ public class AssemblyGenerator {
     void writeDelete(STO des, STO newDes, Type t){
         increaseIndent();
 
-        if(((VarSTO)des).getisSet() || des.getType() instanceof PointerType){
+        Type next = null;
+        if(des.getType() instanceof PointerType)
+        {
+            PointerType temp = (PointerType)des.getType();
+            next = temp.next();
+        }
+
+        if(((VarSTO)des).getisSet() || next instanceof StructType) {
+                //des.getType() instanceof PointerType){
             if(des instanceof VarSTO){
                 if(((VarSTO) des).getisSet()){
                     writeAssembly("!*" + ((VarSTO) des).getInsideStruct() + "." + des.getName() + "\n");
@@ -3382,6 +3402,10 @@ public class AssemblyGenerator {
             }
             set(des.getOffset(), l7);
             add(des.getBase(), l7,l7);
+
+            if(des.getLoad())
+                ld(l7, l7);
+
             if(((VarSTO) des).getisSet()){
                 ld(l7, l7);
             }
@@ -3428,6 +3452,14 @@ public class AssemblyGenerator {
         next();
 
         decreaseIndent();
+    }
+
+    void writeGlobalStack(){
+        if(!structStack.empty()){
+            String global = structStack.pop();
+
+
+        }
     }
 }
 

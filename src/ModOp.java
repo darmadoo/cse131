@@ -10,10 +10,10 @@ public class ModOp extends ArithmeticOp {
         if (!(aType instanceof IntType) || !(bType instanceof IntType)) {
             // error when one of them is not numeric
             if(!(aType instanceof  IntType)){
-                return new ErrorSTO(Formatter.toString(ErrorMsg.error1w_Expr, aType.getName(), "%", "int"));
+                return new ErrorSTO(Formatter.toString(ErrorMsg.error1w_Expr, aType.getName(), "%%", "int"));
             }
             else{
-                return new ErrorSTO(Formatter.toString(ErrorMsg.error1w_Expr, bType.getName(), "%", "int"));
+                return new ErrorSTO(Formatter.toString(ErrorMsg.error1w_Expr, bType.getName(), "%%", "int"));
             }
         } else {
             // Int % Int = Int
@@ -21,13 +21,13 @@ public class ModOp extends ArithmeticOp {
                 if (((ConstSTO) b).getIntValue() == 0)
                     return new ErrorSTO(ErrorMsg.error8_Arithmetic);
                 else {
-                    ConstSTO sto = new ConstSTO("(" + a.getName() + " % " + b.getName() + ")", new IntType("int", 4), ((ConstSTO) a).getIntValue() % ((ConstSTO) b).getIntValue());
+                    ConstSTO sto = new ConstSTO("(" + a.getName() + " %% " + b.getName() + ")", new IntType("int", 4), ((ConstSTO) a).getIntValue() % ((ConstSTO) b).getIntValue());
                     sto.setIsAddressable(false);
                     return sto;
                 }
             }
             else
-                return new ExprSTO("(" + a.getName() + " % " + b.getName() + ")", new IntType("int", 4));
+                return new ExprSTO("(" + a.getName() + " %% " + b.getName() + ")", new IntType("int", 4));
         }
     }
 
