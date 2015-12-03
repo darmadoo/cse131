@@ -2683,6 +2683,10 @@ public class AssemblyGenerator {
                     set(expr.getOffset(), l7);
                     add(expr.getBase(), l7, l7);
 
+                    if(expr instanceof VarSTO && ((VarSTO) expr).getPbr()){
+                        ld(l7, l7);
+                    }
+
                     if(expr.getLoad())
                         ld(l7, l7);
 
@@ -2724,6 +2728,10 @@ public class AssemblyGenerator {
                     set(expr.getOffset(), l7);
                     add(fp,l7,l7);
 
+                    if(expr instanceof VarSTO && ((VarSTO) expr).getPbr()){
+                        ld(l7, l7);
+                    }
+
                     if(expr.getLoad())
                         ld(l7, l7);
                     ld(l7, f0);
@@ -2743,6 +2751,10 @@ public class AssemblyGenerator {
                 else if(!callingFunc.getRbr()){
                     set(expr.getOffset(), l7);
                     add(expr.getBase(), l7, l7);
+
+                    if(expr instanceof VarSTO && ((VarSTO) expr).getPbr()){
+                        ld(l7, l7);
+                    }
 
                     if(expr.getLoad())
                         ld(l7, l7);
