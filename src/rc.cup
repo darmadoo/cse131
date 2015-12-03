@@ -257,7 +257,7 @@ VarDecl ::=         OptStatic:_1 DecoratedType:_2 T_ID:_3 OptArrayList:_4 OptIni
                     T_SEMI
     |               OptStatic:_1 StructType:_2 T_ID:_3 OptArrayList:_4 OptCtorCall:_5
                     {:
-                        ((MyParser) parser).DoVarDecl (_3, _2, _5);
+                        ((MyParser) parser).DoVarDecl (_3, _2, _4,  _5);
                     :}
                     T_SEMI
     ;
