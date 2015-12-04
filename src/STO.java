@@ -14,6 +14,8 @@ abstract class STO
 	private String offset;
 
 	public boolean load;
+	private boolean isExtern = false;
+
 
 	//----------------------------------------------------------------
 	//
@@ -131,4 +133,12 @@ abstract class STO
 	public boolean isFunc() { return false; }
 	public boolean isStructdef() { return false; }
 	public boolean isError() { return false; }
+	void setExtern(boolean flag){
+		isExtern = flag;
+	}
+
+	boolean getExtern(){
+		return isExtern;
+	}
+
 }

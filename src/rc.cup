@@ -40,7 +40,6 @@ terminal
     T_ENDL,
     T_EQU,
     T_EXIT,
-    T_EXTERN,
     T_FALSE,
     T_FLOAT,
     T_FOREACH,
@@ -89,6 +88,7 @@ terminal String
     T_INT_LITERAL,
     T_STR_LITERAL,
     T_ID_U,
+    T_EXTERN,
     T_ID
     ;
 
@@ -227,7 +227,7 @@ GlobalDecl ::=      ExternDecl
 
 ExternDecl ::=      T_EXTERN DecoratedBasicType:_2 T_ID:_3 OptArrayList:_4
                     {:
-                        ((MyParser) parser).DoExternDecl (_3);
+                        ((MyParser) parser).DoExternDecl (_3, _2);
                     :}
                     T_SEMI
     ;
@@ -460,12 +460,14 @@ FuncDef ::=         T_FUNCTION T_COLON ReturnType:_1 OptRef:_2 T_ID:_3
 
 FuncDecl ::=        T_EXTERN T_FUNCTION T_COLON ReturnType:_1 T_ID:_3
                     {:
+                        ((MyParser) parser).setExtern(true);
                         ((MyParser) parser).DoFuncDecl_1(_3, _1);
                     :}
                     T_LPAREN OptParamList:_4 T_RPAREN
                     {:
                         ((MyParser) parser).DoFormalParams(_4);
                         ((MyParser) parser).DoFuncDecl_2(_3, _4);
+                        ((MyParser) parser).setExtern(false);
                     :}
                     T_SEMI
     ;
@@ -836,8 +838,6 @@ WritePairList ::=   WritePair
 
 WritePair ::=       Expr:_1
                     {:
-                        //System.out.println(_1.getName());
-                        //System.out.println(_1);
                         ((MyParser) parser).DoCout(_1);
                     :}
     |               T_ENDL

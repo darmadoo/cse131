@@ -12,7 +12,6 @@ class FuncSTO extends STO
 	private Vector<STO> currentFunc;
 	private int level;
 	private boolean overloaded = false;
-
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
@@ -104,4 +103,5 @@ class FuncSTO extends STO
 
 	// 9.2
 	public boolean getOverloaded() { return  overloaded; }
+
 }

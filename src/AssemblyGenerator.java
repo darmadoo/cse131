@@ -2832,15 +2832,18 @@ public class AssemblyGenerator {
         Vector<STO> param = ((FuncSTO)sto).getParams();
         for(int i = 0; i < args.size(); i++){
             STO first = param.get(i);
-            if(first.getType() instanceof ArrayType){
-                temp += "." + ((ArrayType) param.get(i).getType()).next().getName() + "$" + ((ArrayType) param.get(i).getType()).getDimensions() + "$";
+            if(!sto.getExtern()){
+                if(first.getType() instanceof ArrayType){
+                    temp += "." + ((ArrayType) param.get(i).getType()).next().getName() + "$" + ((ArrayType) param.get(i).getType()).getDimensions() + "$";
+                }
+                else if (param.get(i).getType() instanceof PointerType){
+                    temp += "." + ((PointerType) param.get(i).getType()).next().getName() + "$";
+                }
+                else{
+                    temp = temp + "." + param.get(i).getType().getName();
+                }
             }
-            else if(param.get(i).getType() instanceof PointerType){
-                temp += "." + ((PointerType) param.get(i).getType()).next().getName() + "$";
-            }
-            else{
-                temp = temp + "." + param.get(i).getType().getName();
-            }
+
             writeAssembly("! " + param.get(i).getName() + " <- " + args.get(i).getName() + "\n");
             if(args.get(i).isConst() && !args.get(i).getIsAddressable())
             {
@@ -2956,9 +2959,12 @@ public class AssemblyGenerator {
                 }
             }
         }
-        if (temp == ""){
-            temp = ".void";
+        if(!sto.getExtern()){
+            if (temp == ""){
+                temp = ".void";
+            }
         }
+
         temp = sto.getName() + temp;
         call(temp);
         nop();

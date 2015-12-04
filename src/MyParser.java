@@ -57,6 +57,8 @@ class MyParser extends parser
 	private Stack<Integer> ifStack = new Stack<>();
 	private Stack<Integer> whileStack = new Stack<>();
 
+	private boolean isExtern = false;
+
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
@@ -935,7 +937,7 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	//
 	//----------------------------------------------------------------
-	void DoExternDecl(String id)
+	void DoExternDecl(String id, Type t)
 	{
 		if (m_symtab.accessLocal(id) != null)
 		{
@@ -943,7 +945,9 @@ class MyParser extends parser
 			m_errors.print(Formatter.toString(ErrorMsg.redeclared_id, id));
 		}
 
-		VarSTO sto = new VarSTO(id);
+		VarSTO sto = new VarSTO(id, t);
+		sto.setBase("%g0");
+		sto.setOffset(id);
 		m_symtab.insert(sto);
 	}
 
@@ -1315,6 +1319,10 @@ class MyParser extends parser
 		}
 
 		FuncSTO sto = new FuncSTO(id, typ);
+		if(isExtern){
+			sto.setExtern(true);
+		}
+
 		m_symtab.insert(sto);
 
 		m_symtab.openScope();
@@ -1375,62 +1383,65 @@ class MyParser extends parser
 	//----------------------------------------------------------------
 	void DoFuncDecl_2(String id, Vector<STO> params)
 	{
-		FuncSTO temp = m_symtab.getFunc();
-		String hashKey = generateUniqueKey(temp, temp.getParams());
+		if(!isExtern){
+			FuncSTO temp = m_symtab.getFunc();
+			String hashKey = generateUniqueKey(temp, temp.getParams());
 
-		// Check 13.1
-		if(isStruct){
-			// Save the structure when it is a struct
-			functionSTO = temp;
-			if(!(temp.getReturnType() instanceof VoidType)) {
-				if (!topLevelFlag) {
-					m_nNumErrors++;
-					m_errors.print(ErrorMsg.error6c_Return_missing);
-					return;
+			// Check 13.1
+			if(isStruct){
+				// Save the structure when it is a struct
+				functionSTO = temp;
+				if(!(temp.getReturnType() instanceof VoidType)) {
+					if (!topLevelFlag) {
+						m_nNumErrors++;
+						m_errors.print(ErrorMsg.error6c_Return_missing);
+						return;
+					}
 				}
 			}
-		}
-		else{
-			// Check 9.1
-			if(map.containsKey(hashKey)){
-				m_nNumErrors++;
-				m_errors.print(Formatter.toString(ErrorMsg.error9_Decl, temp.getName()));
-				return;
+			else{
+				// Check 9.1
+				if(map.containsKey(hashKey)){
+					m_nNumErrors++;
+					m_errors.print(Formatter.toString(ErrorMsg.error9_Decl, temp.getName()));
+					return;
+				}
+
+				// Insert the function into the hashmap
+				map.put(hashKey, m_symtab.getFunc());
+
+				// Check 9.2
+				// Get the name of the function
+				String funcName = temp.getName();
+				buildOverloadedHashMap(temp, funcName);
+
+				// Check 6.3
+				if(!(temp.getReturnType() instanceof VoidType)) {
+					if (!topLevelFlag) {
+						m_nNumErrors++;
+						m_errors.print(ErrorMsg.error6c_Return_missing);
+						return;
+					}
+				}
 			}
 
-			// Insert the function into the hashmap
-			map.put(hashKey, m_symtab.getFunc());
+			//TODO end of function, reset the local variables offset;
+			if(id.startsWith("~")){
+				id = currentStructName;
+			}
 
-			// Check 9.2
-			// Get the name of the function
-			String funcName = temp.getName();
-			buildOverloadedHashMap(temp, funcName);
+			m_writer.writeFuncDecl2(id, params, offset, isStruct, dtor);
+
+			//cmpCount = 0;
+			offset = 0;
+			m_symtab.closeScope();
 
 			// Check 6.3
-			if(!(temp.getReturnType() instanceof VoidType)) {
-				if (!topLevelFlag) {
-					m_nNumErrors++;
-					m_errors.print(ErrorMsg.error6c_Return_missing);
-					return;
-				}
-			}
+			topLevelFlag = false;
+
+			m_symtab.setFunc(null);
 		}
 
-		//TODO end of function, reset the local variables offset;
-		if(id.startsWith("~")){
-			id = currentStructName;
-		}
-
-		m_writer.writeFuncDecl2(id, params, offset, isStruct, dtor);
-
-		//cmpCount = 0;
-		offset = 0;
-		m_symtab.closeScope();
-
-		// Check 6.3
-		topLevelFlag = false;
-
-		m_symtab.setFunc(null);
 	}
 
 	//----------------------------------------------------------------
@@ -3379,7 +3390,6 @@ class MyParser extends parser
 		m_writer.writeShortCircuitRight(sto, input);
 	}
 
-
 	void doOffsetCheck(STO temp){
 		if(temp instanceof VarSTO){
 			if(temp.getBase() == null){
@@ -3387,4 +3397,13 @@ class MyParser extends parser
 			}
 		}
 	}
+
+	void setExtern(boolean flag){
+		isExtern = flag;
+	}
+
+	boolean getExtern(){
+		return isExtern;
+	}
+
 }
