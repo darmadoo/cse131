@@ -2261,12 +2261,21 @@ class MyParser extends parser
 		//else it's a pointer no need to do anything lah
 		if(des.getType().isPointer())
 		{
+			VarSTO sto = null;
 			Type newType;
 			PointerType temp = (PointerType) des.getType();
 			if(temp.hasNext()) {
 				newType = temp.next();
-				return new VarSTO(newType.getName(), newType);
+				sto = new VarSTO(des.getName() + "[" + expr.getName() + "]", newType);
+				sto.setLoad(true);
 			}
+
+			sto.setBase("%fp");
+			offset -= 4;
+			sto.setOffset(Integer.toString(offset));
+
+			m_writer.writeArrayIndexCheck(des, expr, temp, sto);
+			return sto;
 		}
 		return des;
 	}

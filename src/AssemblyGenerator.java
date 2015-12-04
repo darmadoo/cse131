@@ -2073,64 +2073,111 @@ public class AssemblyGenerator {
         decreaseIndent();
     }
 
-    public void writeArrayIndexCheck(STO des, STO expr, ArrayType array, STO sto)
+    public void writeArrayIndexCheck(STO des, STO expr, Type array, STO sto)
     {
-        increaseIndent();
-        if(des instanceof VarSTO){
-            if(((VarSTO) des).getisSet()){
-                writeAssembly("! " + ((VarSTO) des).getInsideStruct() + "." + des.getName() + "[" + expr.getName() + "]");
-            }
-            else{
+        if(array.isArray()) {
+            ArrayType temp = (ArrayType) array;
+            increaseIndent();
+            if (des instanceof VarSTO) {
+                if (((VarSTO) des).getisSet()) {
+                    writeAssembly("! " + ((VarSTO) des).getInsideStruct() + "." + des.getName() + "[" + expr.getName() + "]");
+                } else {
+                    writeAssembly("! " + des.getName() + "[" + expr.getName() + "]");
+                }
+            } else {
                 writeAssembly("! " + des.getName() + "[" + expr.getName() + "]");
             }
-        }
-        else{
-            writeAssembly("! " + des.getName() + "[" + expr.getName() + "]");
-        }
-        next();
+            next();
 
-        // if a is int literals
-        if(expr.isConst() && !expr.getIsAddressable())
-        {
-            set(Integer.toString(((ConstSTO)expr).getIntValue()), o0);
-        }
-        else {
-            set(expr.getOffset(), l7);
-            add(expr.getBase(), l7, l7);
-            if(expr.getLoad()){
-                ld(l7,l7);
+            // if a is int literals
+            if (expr.isConst() && !expr.getIsAddressable()) {
+                set(Integer.toString(((ConstSTO) expr).getIntValue()), o0);
+            } else {
+                set(expr.getOffset(), l7);
+                add(expr.getBase(), l7, l7);
+                if (expr.getLoad()) {
+                    ld(l7, l7);
+                }
+                ld(l7, o0);
             }
-            ld(l7,o0);
-        }
-        set(Integer.toString(array.getDimensions()), o1);
-        call(AssemlyString.PREFIX + AssemlyString.ARRCHECK);
-        nop();
-        Type next = array.next();
-        set(Integer.toString(next.getSize()), o1);
-        call(".mul");
-        nop();
-        mov(o0,o1);
-        set(des.getOffset(), o0);
-        add(des.getBase(), o0, o0);
+            set(Integer.toString(temp.getDimensions()), o1);
+            call(AssemlyString.PREFIX + AssemlyString.ARRCHECK);
+            nop();
+            Type next = temp.next();
+            set(Integer.toString(next.getSize()), o1);
+            call(".mul");
+            nop();
+            mov(o0, o1);
+            set(des.getOffset(), o0);
+            add(des.getBase(), o0, o0);
 
-        if(des instanceof VarSTO && ((VarSTO) des).getPbr())
-        {
-            ld(o0, o0);
-        }
-
-        if(des instanceof VarSTO) {
-            if (((VarSTO) des).getisSet()) {
+            if (des instanceof VarSTO && ((VarSTO) des).getPbr()) {
                 ld(o0, o0);
             }
+
+            if (des instanceof VarSTO) {
+                if (((VarSTO) des).getisSet()) {
+                    ld(o0, o0);
+                }
+            }
+            call(AssemlyString.PREFIX + AssemlyString.PTRCHECK);
+            nop();
+            add(o0, o1, o0);
+            set(sto.getOffset(), o1);
+            add(sto.getBase(), o1, o1);
+            st(o0, o1);
+            next();
+            decreaseIndent();
         }
-        call(AssemlyString.PREFIX + AssemlyString.PTRCHECK);
-        nop();
-        add(o0, o1, o0);
-        set(sto.getOffset(), o1);
-        add(sto.getBase(), o1, o1);
-        st(o0, o1);
-        next();
-        decreaseIndent();
+        //pointer type
+        else
+        {
+            increaseIndent();
+            if (des instanceof VarSTO) {
+                if (((VarSTO) des).getisSet()) {
+                    writeAssembly("! " + ((VarSTO) des).getInsideStruct() + "." + des.getName() + "[" + expr.getName() + "]");
+                } else {
+                    writeAssembly("! " + des.getName() + "[" + expr.getName() + "]");
+                }
+            } else {
+                writeAssembly("! " + des.getName() + "[" + expr.getName() + "]");
+            }
+            next();
+
+            // if a is int literals
+            if (expr.isConst() && !expr.getIsAddressable()) {
+                set(Integer.toString(((ConstSTO) expr).getIntValue()), o0);
+            } else {
+                set(expr.getOffset(), l7);
+                add(expr.getBase(), l7, l7);
+                if (expr.getLoad()) {
+                    ld(l7, l7);
+                }
+                ld(l7, o0);
+            }
+            PointerType temp = (PointerType) array;
+            Type next = temp.next();
+            set(Integer.toString(next.getSize()), o1);
+            call(".mul");
+            nop();
+            mov(o0, o1);
+            set(des.getOffset(), l7);
+            add(des.getBase(), l7, l7);
+
+            if (des instanceof VarSTO && ( ((VarSTO) des).getPbr()) || (((VarSTO) des).getisSet()) ) {
+                ld(l7, l7);
+            }
+
+            ld(l7, o0);
+            call(AssemlyString.PREFIX + AssemlyString.PTRCHECK);
+            nop();
+            add(o0, o1, o0);
+            set(sto.getOffset(), o1);
+            add(sto.getBase(), o1, o1);
+            st(o0, o1);
+            next();
+            decreaseIndent();
+        }
     }
 
     //----------------------------------------------------------------
