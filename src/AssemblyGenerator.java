@@ -2191,7 +2191,7 @@ public class AssemblyGenerator {
 
         set(expr.getOffset(), o0);
         add(expr.getBase(), o0, o0);
-        set(Integer.toString(expr.getType().getSize()), o1);
+        set(Integer.toString(temp.getType().getSize()), o1);
         writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.SUB + "\t", o0, o1, o0);
 
         set(temp.getOffset(), o1);
@@ -2207,7 +2207,7 @@ public class AssemblyGenerator {
         set(temp.getOffset(), o1);
         add(temp.getBase(), o1, o1);
         ld(o1, o0);
-        set(Integer.toString(expr.getType().getSize()), o2);
+        set(Integer.toString(temp.getType().getSize()), o2);
         add(o0, o2, o0);
         st(o0, o1);
 
