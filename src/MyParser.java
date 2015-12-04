@@ -2232,6 +2232,10 @@ class MyParser extends parser
 				sto = new VarSTO(des.getName() + "[" + expr.getName() + "]", (PointerType) next);
 				sto.setLoad(true);
 			}
+			else if (next.isStruct()){
+				sto = new VarSTO(des.getName() + "[" + expr.getName() + "]", (StructType) next);
+				sto.setLoad(true);
+			}
 			else if(next.isInt()){
 				sto = new VarSTO(des.getName() + "[" + expr.getName() + "]", new IntType());
 				sto.setLoad(true);

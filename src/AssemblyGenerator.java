@@ -710,14 +710,9 @@ public class AssemblyGenerator {
             writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", l7, l7);
         }
 
-        if(sto instanceof VarSTO){
-            if(((VarSTO)sto).getisSet()){
-                ld(l7,l7);
-            }
-        }
-
-        if(sto.getLoad()){
-            ld(l7,l7);
+        if(sto.getLoad() || (sto instanceof VarSTO && (((VarSTO)sto).getisSet() )))
+        {
+            ld(l7, l7);
         }
 
         if(sto.getType() instanceof IntType)
@@ -847,14 +842,9 @@ public class AssemblyGenerator {
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", sto.getOffset(), "%o1");
         writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", sto.getBase(), "%o1", "%o1");
 
-        if(sto instanceof VarSTO){
-            if(((VarSTO)sto).getPbr() || ((VarSTO) sto).getInsideStruct() != null){
-                ld(o1,o1);
-            }
-        }
-
-        if(sto.getLoad()){
-            ld(o1,o1);
+        if(sto.getLoad() || (sto instanceof VarSTO && (((VarSTO)sto).getPbr() || ((VarSTO) sto).getInsideStruct() != null)))
+        {
+            ld(o1, o1);
         }
 
         if(sto.getType() instanceof FloatType && expr.getType() instanceof  FloatType)
@@ -911,13 +901,8 @@ public class AssemblyGenerator {
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", sto.getOffset(), "%o1");
         writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", sto.getBase(), "%o1", "%o1");
 
-        if(sto instanceof VarSTO){
-            if(((VarSTO)sto).getPbr() || ((VarSTO) sto).getisSet()){
-                ld(o1,o1);
-            }
-        }
-
-        if(sto.getLoad()){
+        if(sto.getLoad() || (sto instanceof VarSTO && (((VarSTO)sto).getPbr() || ((VarSTO) sto).getisSet())))
+        {
             ld(o1,o1);
         }
 
@@ -937,14 +922,9 @@ public class AssemblyGenerator {
             writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", expr.getBase(), "%l7", "%l7");
 
 
-        if(expr.getLoad()){
+        if(expr.getLoad() || (expr instanceof VarSTO && (((VarSTO)expr).getPbr() || ((VarSTO) expr).getisSet())))
+        {
             ld(l7,l7);
-        }
-
-        if(expr instanceof VarSTO) {
-            if (((VarSTO) expr).getisSet()) {
-                ld(l7,l7);
-            }
         }
 
         if(sto.getType() instanceof FloatType && expr.getType() instanceof FloatType) {
@@ -1027,13 +1007,8 @@ public class AssemblyGenerator {
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", sto.getOffset(), "%o1");
         writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", sto.getBase(), "%o1", "%o1");
 
-        if(sto instanceof VarSTO){
-            if(((VarSTO)sto).getPbr() || flag){
-                ld(o1,o1);
-            }
-        }
-
-        if(sto.getLoad()){
+        if(sto.getLoad() || (sto instanceof VarSTO && (((VarSTO)sto).getPbr() || flag)))
+        {
             ld(o1,o1);
         }
 
@@ -1052,25 +1027,17 @@ public class AssemblyGenerator {
         writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", expr.getBase(), "%l7", "%l7");
 
 
-        if(expr.getLoad()){
-            ld(l7,l7);
+        if(expr.getLoad() || (expr instanceof VarSTO && (((VarSTO)expr).getPbr())))
+        {
+            ld(l7, l7);
         }
 
         if(sto.getType() instanceof FloatType && expr.getType() instanceof FloatType) {
-            if(expr instanceof VarSTO){
-                if(((VarSTO)expr).getPbr()){
-                    writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", l7);
-                }
-            }
             writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%f0");
             writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%f0", "%o1");
         }
-        else if (sto.getType() instanceof IntType && expr.getType() instanceof IntType){
-            if(expr instanceof VarSTO){
-                if(((VarSTO)expr).getPbr()){
-                    writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", l7);
-                }
-            }
+        else if (sto.getType() instanceof IntType && expr.getType() instanceof IntType)
+        {
             writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
             writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
         }
@@ -1259,18 +1226,9 @@ public class AssemblyGenerator {
 
             writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", a.getBase(), "%l7", "%l7");
 
-            if(a.getLoad()){
-                ld(l7,l7);
-            }
-
-            if(a instanceof VarSTO){
-                if(((VarSTO) a).getisSet()){
-                    ld(l7,l7);
-                }
-            }
-
-            if(a instanceof VarSTO && ((VarSTO) a).getPbr()){
-                writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", l7, l7);
+            if(a.getLoad() || (a instanceof VarSTO && (((VarSTO)a).getPbr() || ((VarSTO)a).getisSet() )))
+            {
+                ld(l7, l7);
             }
             writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
         }
@@ -1288,17 +1246,9 @@ public class AssemblyGenerator {
             }
             writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", b.getBase(), "%l7", "%l7");
 
-            if(b.getLoad()){
-                ld(l7,l7);
-            }
-            if(b instanceof VarSTO){
-                if(((VarSTO) b).getisSet()){
-                    ld(l7,l7);
-                }
-            }
-
-            if(b instanceof VarSTO && ((VarSTO) b).getPbr()){
-                writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", l7, l7);
+            if(b.getLoad() || (b instanceof VarSTO && (((VarSTO)b).getPbr() || ((VarSTO)b).getisSet() )))
+            {
+                ld(l7, l7);
             }
             writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o1");
         }
@@ -1405,12 +1355,9 @@ public class AssemblyGenerator {
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + SEPARATOR, a.getOffset(), "%l7");
         writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + SEPARATOR, a.getBase(), "%l7", "%l7");
 
-        if(a instanceof VarSTO && ((VarSTO) a).getPbr()){
-            writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", l7, l7);
-        }
-
-        if(a.getLoad()){
-            ld(l7,l7);
+        if(a.getLoad() || (a instanceof VarSTO && (((VarSTO)a).getPbr() )))
+        {
+            ld(l7, l7);
         }
 
         writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
@@ -1452,12 +1399,9 @@ public class AssemblyGenerator {
             writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", a.getOffset(), "%o1");
             writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", a.getBase(), "%o1", "%o1");
 
-            if(a.getLoad()){
-                ld(o1,o1);
-            }
-
-            if(a instanceof VarSTO && ((VarSTO)a).getPbr()){
-                ld(o1,o1);
+            if(a.getLoad() || (a instanceof VarSTO && (((VarSTO)a).getPbr() )))
+            {
+                ld(o1, o1);
             }
             writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o2", "%o1");
         }
@@ -1540,17 +1484,8 @@ public class AssemblyGenerator {
                 writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", a.getOffset(), l7);
                 writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", a.getBase(), l7, l7);
 
-                if(a instanceof VarSTO && ((VarSTO) a).getPbr()){
-                    writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", l7, l7);
-                }
-
-                if(a instanceof VarSTO){
-                    if(((VarSTO) a).getisSet()){
-                        ld(l7,l7);
-                    }
-                }
-
-                if(a.getLoad()){
+                if(a.getLoad() || (a instanceof VarSTO && (((VarSTO)a).getPbr() || ((VarSTO)a).getisSet() )))
+                {
                     ld(l7, l7);
                 }
 
@@ -1570,11 +1505,9 @@ public class AssemblyGenerator {
                 writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", a.getOffset(), l7);
                 writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", a.getBase(), l7, l7);
 
-                if(a instanceof VarSTO && ((VarSTO) a).getPbr()){
-                    writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", l7, l7);
-                }
-                if(a.getLoad()){
-                    ld(l7,l7);
+                if(a.getLoad() || (a instanceof VarSTO && (((VarSTO)a).getPbr() )))
+                {
+                    ld(l7, l7);
                 }
 
                 writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
@@ -1611,13 +1544,11 @@ public class AssemblyGenerator {
                 writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", b.getOffset(), l7);
                 writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", b.getBase(), l7, l7);
 
-                if(b instanceof VarSTO && ((VarSTO) b).getPbr()){
-                    writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", l7, l7);
+                if(b.getLoad() || (b instanceof VarSTO && (((VarSTO)b).getPbr() )))
+                {
+                    ld(l7, l7);
                 }
 
-                if(b.getLoad()){
-                    ld(l7,l7);
-                }
                 writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%f1");
             }
         }
@@ -1633,12 +1564,9 @@ public class AssemblyGenerator {
                 writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", b.getOffset(), l7);
                 writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", b.getBase(), l7, l7);
 
-                if(b instanceof VarSTO && ((VarSTO) b).getPbr()){
-                    writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", l7, l7);
-                }
-
-                if(b.getLoad()){
-                    ld(l7,l7);
+                if(b.getLoad() || (b instanceof VarSTO && (((VarSTO)b).getPbr() )))
+                {
+                    ld(l7, l7);
                 }
 
                 writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o1");
@@ -1733,12 +1661,9 @@ public class AssemblyGenerator {
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", a.getOffset(), l7);
         writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", a.getBase(), l7, l7);
 
-        if(a instanceof VarSTO && ((VarSTO) a).getPbr()){
-            writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", l7, l7);
-        }
-
-        if(a.getLoad()){
-            ld(l7,l7);
+        if(a.getLoad() || (a instanceof VarSTO && (((VarSTO)a).getPbr() )))
+        {
+            ld(l7, l7);
         }
 
         writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%f0");
@@ -1818,12 +1743,9 @@ public class AssemblyGenerator {
             writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", a.getOffset(), "%l7");
             writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", a.getBase(), "%l7", "%l7");
 
-            if(a instanceof VarSTO && ((VarSTO) a).getPbr()){
-                writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", l7, l7);
-            }
-
-            if(a.getLoad()){
-                ld(l7,l7);
+            if(a.getLoad() || (a instanceof VarSTO && (((VarSTO)a).getPbr() )))
+            {
+                ld(l7, l7);
             }
 
             writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
@@ -1864,12 +1786,9 @@ public class AssemblyGenerator {
             writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", b.getOffset(), "%l7");
             writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", b.getBase(), "%l7", "%l7");
 
-            if(b instanceof VarSTO && ((VarSTO) b).getPbr()){
-                writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", l7, l7);
-            }
-
-            if(b.getLoad()){
-                ld(l7,l7);
+            if(b.getLoad() || (b instanceof VarSTO && (((VarSTO)b).getPbr() )))
+            {
+                ld(l7, l7);
             }
 
             writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
@@ -1914,12 +1833,9 @@ public class AssemblyGenerator {
                 writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", a.getOffset(), "%l7");
                 writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", a.getBase(), "%l7", "%l7");
 
-                if(a instanceof VarSTO && ((VarSTO) a).getPbr()){
-                    writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", l7, l7);
-                }
-
-                if(a.getLoad()){
-                    ld(l7,l7);
+                if(a.getLoad() || (a instanceof VarSTO && (((VarSTO)a).getPbr() )))
+                {
+                    ld(l7, l7);
                 }
 
                 writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
@@ -1931,12 +1847,9 @@ public class AssemblyGenerator {
                 writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", b.getOffset(), "%l7");
                 writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", b.getBase(), "%l7", "%l7");
 
-                if(b instanceof VarSTO && ((VarSTO) b).getPbr()){
-                    writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", l7, l7);
-                }
-
-                if(b.getLoad()){
-                    ld(l7,l7);
+                if(b.getLoad() || (b instanceof VarSTO && (((VarSTO)b).getPbr() )))
+                {
+                    ld(l7, l7);
                 }
 
                 writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o1");
@@ -2022,12 +1935,9 @@ public class AssemblyGenerator {
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", a.getOffset(), "%l7");
         writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", a.getBase(), "%l7", "%l7");
 
-        if(a instanceof VarSTO && ((VarSTO) a).getPbr()){
-            writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", l7, l7);
-        }
-
-        if(a.getLoad()){
-            ld(l7,l7);
+        if(a.getLoad() || (a instanceof VarSTO && (((VarSTO)a).getPbr() )))
+        {
+            ld(l7, l7);
         }
 
         writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
@@ -2065,13 +1975,8 @@ public class AssemblyGenerator {
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", sto.getOffset(), "%o1");
         writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", sto.getBase(), "%o1", "%o1");
 
-        if(sto instanceof VarSTO){
-            if(((VarSTO) sto).getPbr() || ((VarSTO) sto).getisSet()){
-                writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", o1, o1);
-            }
-        }
-
-        if(sto.getLoad()){
+        if(sto.getLoad() || (sto instanceof VarSTO && (((VarSTO)sto).getPbr() || ((VarSTO)sto).getisSet() )))
+        {
             ld(o1, o1);
         }
 
@@ -2116,12 +2021,10 @@ public class AssemblyGenerator {
         else {
             set(sto.getOffset(), l7);
             add(sto.getBase(), l7, l7);
-            if(sto instanceof VarSTO && ((VarSTO) sto).getPbr()){
-                writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", l7, l7);
-            }
 
-            if(sto.getLoad()){
-                ld(l7,l7);
+            if(sto.getLoad() || (sto instanceof VarSTO && (((VarSTO)sto).getPbr() || ((VarSTO)sto).getisSet() )))
+            {
+                ld(l7, l7);
             }
 
             ld(l7, o0);
@@ -2321,7 +2224,7 @@ public class AssemblyGenerator {
         set(expr.getOffset(), o0);
         add(expr.getBase(), o0, o0);
 
-        if(expr.getLoad() || ((VarSTO)expr).getPbr()) {
+        if(expr.getLoad() || (expr instanceof VarSTO && ((VarSTO)expr).getPbr())) {
             ld(o0, o0);
         }
 
@@ -2342,15 +2245,11 @@ public class AssemblyGenerator {
         set(expr.getOffset(), l7);
         add(expr.getBase(), l7, l7);
 
-        if(expr.getLoad()) {
+        if(expr.getLoad() || (expr instanceof VarSTO && ( ((VarSTO)expr).getisSet() )))
+        {
             ld(l7, l7);
         }
 
-        if(expr instanceof VarSTO){
-            if(((VarSTO) expr).getisSet()){
-                ld(l7, l7);
-            }
-        }
         ld(l7, o0);
         call(AssemlyString.PREFIX + AssemlyString.PTRCHECK);
         nop();
@@ -2646,12 +2545,12 @@ public class AssemblyGenerator {
         else {
             set(expr.getOffset(), l7);
             add(expr.getBase(), l7, l7);
-            if(expr instanceof VarSTO && ((VarSTO) expr).getPbr()){
-                ld(l7,l7);
-            }
-            if(expr.getLoad()){
+
+            if(expr.getLoad() || (expr instanceof VarSTO && (((VarSTO)expr).getPbr() )))
+            {
                 ld(l7, l7);
             }
+
             ld(l7, o0);
         }
         cmp(o0, g0);
@@ -2698,12 +2597,10 @@ public class AssemblyGenerator {
                     set(expr.getOffset(), l7);
                     add(expr.getBase(), l7, l7);
 
-                    if(expr instanceof VarSTO && ((VarSTO) expr).getPbr()){
+                    if(expr.getLoad() || (expr instanceof VarSTO && (((VarSTO)expr).getPbr() )))
+                    {
                         ld(l7, l7);
                     }
-
-                    if(expr.getLoad())
-                        ld(l7, l7);
 
                     ld(l7,i0);
                 }
@@ -2711,12 +2608,10 @@ public class AssemblyGenerator {
                     set(expr.getOffset(), i0);
                     add(expr.getBase(), i0, i0);
 
-                    if(expr instanceof VarSTO && ((VarSTO) expr).getPbr()){
+                    if(expr.getLoad() || (expr instanceof VarSTO && (((VarSTO)expr).getPbr() )))
+                    {
                         ld(i0, i0);
                     }
-
-                    if(expr.getLoad())
-                        ld(i0, i0);
                 }
                 // If we have to return a float, type cast it
                 if(callingFunc.getReturnType() instanceof FloatType){
@@ -2747,12 +2642,10 @@ public class AssemblyGenerator {
                     set(expr.getOffset(), l7);
                     add(expr.getBase(),l7,l7);
 
-                    if(expr instanceof VarSTO && ((VarSTO) expr).getPbr()){
+                    if(expr.getLoad() || (expr instanceof VarSTO && (((VarSTO)expr).getPbr() )))
+                    {
                         ld(l7, l7);
                     }
-
-                    if(expr.getLoad())
-                        ld(l7, l7);
 
                     ld(l7, f0);
                 }
@@ -2760,12 +2653,10 @@ public class AssemblyGenerator {
                     set(expr.getOffset(), i0);
                     add(expr.getBase(), i0, i0);
 
-                    if(expr instanceof VarSTO && ((VarSTO) expr).getPbr()){
+                    if(expr.getLoad() || (expr instanceof VarSTO && (((VarSTO)expr).getPbr() )))
+                    {
                         ld(i0, i0);
                     }
-
-                    if(expr.getLoad())
-                        ld(i0, i0);
                 }
             }
             else if(expr.getType() instanceof BoolType){
@@ -2776,12 +2667,10 @@ public class AssemblyGenerator {
                     set(expr.getOffset(), l7);
                     add(expr.getBase(), l7, l7);
 
-                    if(expr instanceof VarSTO && ((VarSTO) expr).getPbr()){
+                    if(expr.getLoad() || (expr instanceof VarSTO && (((VarSTO)expr).getPbr() )))
+                    {
                         ld(l7, l7);
                     }
-
-                    if(expr.getLoad())
-                        ld(l7, l7);
 
                     ld(l7, i0);
                 }
@@ -2789,12 +2678,10 @@ public class AssemblyGenerator {
                     set(expr.getOffset(), i0);
                     add(expr.getBase(), i0, i0);
 
-                    if(expr instanceof VarSTO && ((VarSTO) expr).getPbr()){
+                    if(expr.getLoad() || (expr instanceof VarSTO && (((VarSTO)expr).getPbr() )))
+                    {
                         ld(i0, i0);
                     }
-
-                    if(expr.getLoad())
-                        ld(i0, i0);
                 }
             }
 
@@ -2911,14 +2798,12 @@ public class AssemblyGenerator {
                         if(!(args.get(i).getType() instanceof ArrayType)){
                             set(args.get(i).getOffset(), l7);
                             add(args.get(i).getBase(), l7, l7);
-                            if(args.get(i) instanceof VarSTO){
-                                if(((VarSTO) args.get(i)).getPbr()){
-                                    ld(l7, l7);
-                                }
-                            }
-                            if(args.get(i).getLoad()){
+
+                            if(args.get(i).getLoad() || (args.get(i) instanceof VarSTO && (((VarSTO)args.get(i)).getPbr() )))
+                            {
                                 ld(l7, l7);
                             }
+
                             if (args.get(i).getType() instanceof FloatType) {
                                 ld(l7, "%f" + i); //totalCount);
                                 fcount++;
@@ -3374,12 +3259,11 @@ public class AssemblyGenerator {
         writeAssembly("! " + sto.getName() + "." + id.getName() + "\n");
         set(sto.getOffset(), o0);
         add(sto.getBase(),o0,o0);
-        if(((VarSTO)sto).getPbr()){
+
+        if(sto.getLoad() || ( sto instanceof VarSTO && (((VarSTO)sto).getPbr() )))
+        {
             ld(o0, o0);
         }
-
-        if(sto.getLoad())
-            ld(o0, o0);
 
         if(!((VarSTO)id).getisSet()) {
             ((VarSTO)id).setStructOffset(((VarSTO)sto).getStructOffset());
@@ -3418,14 +3302,11 @@ public class AssemblyGenerator {
         }
         set(left.getOffset(), l7);
         add(left.getBase(), l7, l7);
-        if(left instanceof VarSTO){
-            if(((VarSTO) left).getisSet()){
-                ld(l7, l7);
-            }
-        }
 
-        if(left.getLoad())
+        if(left.getLoad() || (left instanceof VarSTO && (((VarSTO)left).getisSet() )))
+        {
             ld(l7, l7);
+        }
 
         ld(l7, o0);
         call(AssemlyString.PREFIX + AssemlyString.PTRCHECK);
@@ -3491,11 +3372,12 @@ public class AssemblyGenerator {
         nop();
         set(des.getOffset(), o1);
         add(des.getBase(), o1, o1);
-        if(((VarSTO) des).getisSet()){
+
+        if(des.getLoad() || (des instanceof VarSTO && (((VarSTO)des).getisSet() )))
+        {
             ld(o1, o1);
         }
-        if(des.getLoad())
-            ld(o1, o1);
+
         st(o0, o1);
         next();
 
@@ -3571,12 +3453,11 @@ public class AssemblyGenerator {
             set(des.getOffset(), l7);
             add(des.getBase(), l7,l7);
 
-            if(des.getLoad())
-                ld(l7, l7);
-
-            if(((VarSTO) des).getisSet()){
+            if(des.getLoad() || (des instanceof VarSTO && (((VarSTO)des).getisSet() )))
+            {
                 ld(l7, l7);
             }
+
             ld(l7, o0);
             call(AssemlyString.PREFIX + AssemlyString.PTRCHECK);
             nop();
