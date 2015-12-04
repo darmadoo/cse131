@@ -2905,7 +2905,6 @@ class MyParser extends parser
 				newSto.setLoad(true);
 
 				m_writer.writePointer(sto, newSto);
-
 				return newSto;
 			}
 		}
@@ -2937,7 +2936,7 @@ class MyParser extends parser
 						STO newSto = new VarSTO("*" + des.getName(), newType);
 
 						newSto.setBase("%fp");
-						offset -= tempType.getSize();
+						offset -= 4;
 						newSto.setOffset(Integer.toString(offset));
 						m_writer.writeNew(findStruct, des, newSto);
 					}
@@ -3044,7 +3043,7 @@ class MyParser extends parser
 				newType = tempType.next();
 				STO newSto = new VarSTO("*" + des.getName(), newType);
 
-				if(((VarSTO)des).getisSet() || des.getType() instanceof PointerType){
+				if(((VarSTO)des).getisSet() || newType instanceof StructType){
 					newSto.setBase("%fp");
 					offset -= tempType.getSize();
 					newSto.setOffset(Integer.toString(offset));
