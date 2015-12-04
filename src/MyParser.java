@@ -1472,7 +1472,6 @@ class MyParser extends parser
 
 		// Structs phase 2
 		if(isStruct){
-			// TODO uncomment this
 			m_writer.writeStructhead(params, currentStructName, dtor);
 		}
 

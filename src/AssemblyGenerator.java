@@ -718,10 +718,6 @@ public class AssemblyGenerator {
         writeAssembly(AssemlyString.TWO_PARAM, AssemlyString.SET + "\t", sto.getOffset(), "%l7");
         writeAssembly(AssemlyString.THREE_PARAM, AssemlyString.ADD + "\t", sto.getBase(), "%l7", "%l7");
 
-        if(sto instanceof VarSTO && ((VarSTO) sto).getPbr()){
-            writeAssembly(AssemlyString.LD + "\t\t\t" +  AssemlyString.LOAD + "\n", l7, l7);
-        }
-
         if(sto.getLoad() || (sto instanceof VarSTO && (((VarSTO)sto).getisSet() || ((VarSTO)sto).getPbr() )))
         {
             ld(l7, l7);
