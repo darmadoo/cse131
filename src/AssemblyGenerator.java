@@ -2282,7 +2282,7 @@ public class AssemblyGenerator {
         set(expr.getOffset(), l7);
         add(expr.getBase(), l7, l7);
 
-        if(expr.getLoad() || (expr instanceof VarSTO && ( ((VarSTO)expr).getisSet() )))
+        if(expr.getLoad() || (expr instanceof VarSTO && ( ((VarSTO)expr).getisSet() || ((VarSTO)expr).getPbr() )))
         {
             ld(l7, l7);
         }
@@ -2380,6 +2380,11 @@ public class AssemblyGenerator {
         nop();
         set(sto.getOffset(), o1);
         add(sto.getBase(), o1 , o1);
+
+        if(sto.getLoad() || (sto instanceof VarSTO && (((VarSTO)sto).getPbr() ||((VarSTO)sto).getisSet())))
+        {
+            ld(o1, o1);
+        }
         st(o0, o1);
         next();
         decreaseIndent();
@@ -2583,7 +2588,7 @@ public class AssemblyGenerator {
             set(expr.getOffset(), l7);
             add(expr.getBase(), l7, l7);
 
-            if(expr.getLoad() || (expr instanceof VarSTO && (((VarSTO)expr).getPbr() )))
+            if(expr.getLoad() || (expr instanceof VarSTO && (((VarSTO)expr).getPbr() || ((VarSTO)expr).getisSet())))
             {
                 ld(l7, l7);
             }
@@ -3410,7 +3415,7 @@ public class AssemblyGenerator {
         set(des.getOffset(), o1);
         add(des.getBase(), o1, o1);
 
-        if(des.getLoad() || (des instanceof VarSTO && (((VarSTO)des).getisSet() )))
+        if(des.getLoad() || (des instanceof VarSTO && (((VarSTO)des).getisSet() || ((VarSTO)des).getPbr())))
         {
             ld(o1, o1);
         }
