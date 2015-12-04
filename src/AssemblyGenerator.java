@@ -2282,7 +2282,7 @@ public class AssemblyGenerator {
         set(expr.getOffset(), l7);
         add(expr.getBase(), l7, l7);
 
-        if(expr.getLoad() || (expr instanceof VarSTO && ( ((VarSTO)expr).getisSet() )))
+        if(expr.getLoad() || (expr instanceof VarSTO && ( ((VarSTO)expr).getisSet() || ((VarSTO)expr).getPbr() )))
         {
             ld(l7, l7);
         }
