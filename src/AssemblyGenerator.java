@@ -928,20 +928,10 @@ public class AssemblyGenerator {
         }
 
         if(sto.getType() instanceof FloatType && expr.getType() instanceof FloatType) {
-            if(expr instanceof VarSTO){
-                if(((VarSTO)expr).getPbr()){
-                    writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", l7);
-                }
-            }
             writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%f0");
             writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%f0", "%o1");
         }
         else if (sto.getType() instanceof IntType && expr.getType() instanceof IntType){
-            if(expr instanceof VarSTO){
-                if(((VarSTO)expr).getPbr()){
-                    writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", l7);
-                }
-            }
             writeAssembly(AssemlyString.LD + "\t\t\t" + AssemlyString.LOAD + "\n", "%l7", "%o0");
             writeAssembly(AssemlyString.ST + "\t\t\t" + AssemlyString.STORE + "\n", "%o0", "%o1");
         }
