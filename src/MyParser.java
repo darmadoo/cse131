@@ -1374,7 +1374,9 @@ class MyParser extends parser
 	}
 
 	void writeFuncDecl(String id, Vector<STO> param){
-		m_writer.writeFuncDecl(id, param);
+		if(!isStruct){
+			m_writer.writeFuncDecl(id, param);
+		}
 		m_writer.writeAllocateMem(param);
 	}
 
@@ -1470,6 +1472,7 @@ class MyParser extends parser
 
 		// Structs phase 2
 		if(isStruct){
+			// TODO uncomment this
 			m_writer.writeStructhead(params, currentStructName, dtor);
 		}
 
@@ -3351,7 +3354,6 @@ class MyParser extends parser
 
 	void DoCout(STO sto)
 	{
-
 		if(sto.isConst())
 		{
 			//handle literal -> const that is not addressable
