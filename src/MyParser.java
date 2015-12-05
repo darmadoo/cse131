@@ -58,6 +58,7 @@ class MyParser extends parser
 	private Stack<Integer> whileStack = new Stack<>();
 
 	private boolean isExtern = false;
+	private int tracker = 0;
 
 	//----------------------------------------------------------------
 	//
@@ -1472,7 +1473,7 @@ class MyParser extends parser
 
 		// Structs phase 2
 		if(isStruct){
-			m_writer.writeStructhead(params, currentStructName, dtor);
+			//m_writer.writeStructhead(params, currentStructName, dtor);
 		}
 
 		for(int i = 0;i < params.size(); i++){
@@ -2368,6 +2369,7 @@ class MyParser extends parser
 		// Should reset the global, for the next struct or function
 		currentStructName = "";
 		isStruct = false;
+		tracker = 0;
 	}
 
 	//----------------------------------------------------------------
@@ -2382,8 +2384,10 @@ class MyParser extends parser
 			m_errors.print(Formatter.toString(ErrorMsg.error13a_Struct, curVar.getName()));
 		}
 		else{
+			curVar.setStructOffset(tracker * 4);
 			// Put it inside the scope otherwise
 			map.put(structName, curVar);
+			tracker++;
 		}
 	}
 
@@ -2566,6 +2570,7 @@ class MyParser extends parser
 		if((sto.getName()).equals("this")){
 			// Check the hashmap
 			if(map.containsKey(currentStructName + delimiter + strID)){
+
 				STO var = map.get(currentStructName + delimiter + strID);
 				thisFlag =true;
 				var.setBase("%fp");

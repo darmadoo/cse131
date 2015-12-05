@@ -3019,8 +3019,8 @@ public class AssemblyGenerator {
         set("68", o0);
         add(fp,o0,o0);
         ld(o0,o0);
-        set("0", o1);
-        add(g0,o1,o1);
+        set(Integer.toString(((VarSTO)right).getStructOffset()), o1);
+        add(g0, o1, o1);
         add(o0,o1,o0);
         set(right.getOffset(), o1);
         add(fp, o1, o1);
