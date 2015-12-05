@@ -387,7 +387,7 @@ class MyParser extends parser
 	}
 	*/
 
-
+	private HashMap<String, Integer> staticMangling = new HashMap<>();
 	//----------------------------------------------------------------
 	//
 	//
@@ -420,7 +420,22 @@ class MyParser extends parser
 			m_nNumErrors++;
 			m_errors.print(Formatter.toString(ErrorMsg.redeclared_id, id));
 		}
-		else if(arguments != null)
+
+		if(fun != null && isStaticFlag)
+		{
+			if(staticMangling.get(id) == null)
+			{
+				staticMangling.put(id, 0);
+			}
+			else {
+				int mangling = staticMangling.get(id);
+				mangling++;
+				staticMangling.put(id, mangling);
+				tempOffset = tempOffset + "$" + mangling;
+			}
+		}
+
+		if(arguments != null)
 		{
 			ArrayType head = null;
 			ArrayType pointer = null;
@@ -2611,7 +2626,7 @@ class MyParser extends parser
 				var.setBase("%fp");
 				offset -= var.getType().getSize();
 				var.setOffset(Integer.toString(offset));
-
+				var.setThis(true);
 				m_writer.writeThis(sto, var);
 				return var;
 			}

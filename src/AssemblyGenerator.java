@@ -2654,7 +2654,13 @@ public class AssemblyGenerator {
     public int writeReturn(STO expr, FuncSTO callingFunc, int offset){
         increaseIndent();
         if(expr != null){
-            writeAssembly(AssemlyString.RETURN_COMMENT, expr.getName());
+            if(expr.getThis()){
+                writeAssembly(AssemlyString.RETURN_COMMENT, "this." + expr.getName());
+            }
+            else{
+                writeAssembly(AssemlyString.RETURN_COMMENT, expr.getName());
+            }
+
             if(expr.getType() instanceof IntType)
             {
                 if(expr instanceof ConstSTO && !expr.getIsAddressable()){
@@ -2860,11 +2866,11 @@ public class AssemblyGenerator {
                         add(args.get(i).getBase(), "%o" + i, "%o" + i); // ocount, "%o" + ocount);
 
                         if(((VarSTO) args.get(i)).getPbr() || args.get(i).getLoad()){
-                            if (args.get(i).getType() instanceof FloatType) {
-                                ld(o0, "%f" + i); //fcount);
-                            } else {
+                            //if (args.get(i).getType() instanceof FloatType) {
+                            //    ld("%o" + i, "%f" + i); //fcount);
+                            //} else {
                                 ld("%o" + i, "%o" + i);// ocount, "%o" + ocount);
-                            }
+                            //}
                         }
                         ocount++;
                         totalCount++;
