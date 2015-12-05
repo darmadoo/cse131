@@ -2908,7 +2908,7 @@ public class AssemblyGenerator {
                 }
                 else{
                     set(args.get(i).getOffset(), l7);
-                    add(fp, l7, l7);
+                    add(args.get(i).getBase(), l7, l7);
                     if (args.get(i).getType() instanceof FloatType) {
                         ld(l7, "%f" + i); //totalCount);
                     } else {
@@ -3572,7 +3572,8 @@ public class AssemblyGenerator {
         nop();
         set(des.getOffset(), o1);
         add(des.getBase(), o1, o1);
-        if(((VarSTO) des).getisSet()){
+        if(des.getLoad() || (des instanceof VarSTO && (((VarSTO)des).getisSet() || ((VarSTO)des).getPbr() )))
+        {
             ld(o1, o1);
         }
         st(g0, o1);

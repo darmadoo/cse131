@@ -531,14 +531,27 @@ class MyParser extends parser
 						sto.setBase("%fp");
 						offset -= t.getSize();
 						sto.setOffset(Integer.toString(offset));
-						if(t.isInt())
-							m_writer.writeLocalInitWithConst(sto, expr);
+						if(t.isInt()) {
+							if(!expr.getIsAddressable())
+								m_writer.writeLocalInitWithConst(sto, expr);
+							else
+								m_writer.writeLocalInitWithVar(sto, expr, null);
+						}
 						else // assign int to float
 						{
-							expr.setBase("%fp");
-							offset -= expr.getType().getSize();
-							expr.setOffset(Integer.toString(offset));
-							m_writer.writeLocalInitWithConst(sto, expr);
+							if(!expr.getIsAddressable()) {
+								expr.setBase("%fp");
+								offset -= expr.getType().getSize();
+								expr.setOffset(Integer.toString(offset));
+								m_writer.writeLocalInitWithConst(sto, expr);
+							}
+							else {
+								VarSTO temp = new VarSTO("temp");
+								temp.setBase("%fp");
+								offset -= temp.getType().getSize();
+								temp.setOffset(Integer.toString(offset));
+								m_writer.writeLocalInitWithVar(sto, expr, temp);
+							}
 						}
 					}
 				}
@@ -568,7 +581,10 @@ class MyParser extends parser
 						sto.setBase("%fp");
 						offset -= t.getSize();
 						sto.setOffset(Integer.toString(offset));
-						m_writer.writeLocalInitWithConst(sto, expr);
+						if(!expr.getIsAddressable())
+							m_writer.writeLocalInitWithConst(sto, expr);
+						else
+							m_writer.writeLocalInitWithVar(sto, expr, null);
 					}
 				}
 
@@ -596,7 +612,10 @@ class MyParser extends parser
 						sto.setBase("%fp");
 						offset -= t.getSize();
 						sto.setOffset(Integer.toString(offset));
-						m_writer.writeLocalInitWithConst(sto, expr);
+						if(!expr.getIsAddressable())
+							m_writer.writeLocalInitWithConst(sto, expr);
+						else
+							m_writer.writeLocalInitWithVar(sto, expr, null);
 					}
 				}
 
@@ -891,7 +910,10 @@ class MyParser extends parser
 						sto.setBase("%fp");
 						offset -= expr.getType().getSize();
 						sto.setOffset(Integer.toString(offset));
-						m_writer.writeLocalInitWithConst(sto, expr);
+						if(!expr.getIsAddressable())
+							m_writer.writeLocalInitWithConst(sto, expr);
+						else
+							m_writer.writeLocalInitWithVar(sto, expr, null);
 					}
 				}
 			}
@@ -1572,13 +1594,26 @@ class MyParser extends parser
 			else {
 				if(stoDes.getType().isFloat() && expr.getType().isInt())
 				{
-					expr.setBase("%fp");
-					offset -= expr.getType().getSize();
-					expr.setOffset(Integer.toString(offset));
-					m_writer.writeLocalInitWithConst(stoDes, expr);
+					if(!expr.getIsAddressable()) {
+						expr.setBase("%fp");
+						offset -= expr.getType().getSize();
+						expr.setOffset(Integer.toString(offset));
+						m_writer.writeLocalInitWithConst(stoDes, expr);
+					}
+					else
+					{
+						STO temp = new VarSTO("temp");
+						temp.setBase("%fp");
+						offset -= expr.getType().getSize();
+						temp.setOffset(Integer.toString(offset));
+						m_writer.writeLocalInitWithVar(stoDes, expr, temp);
+					}
 				}
 				else{
-					m_writer.writeLocalInitWithConst(stoDes, expr);
+					if(!expr.getIsAddressable())
+						m_writer.writeLocalInitWithConst(stoDes, expr);
+					else
+						m_writer.writeLocalInitWithVar(stoDes, expr, null);
 				}
 			}
 		}
