@@ -15,6 +15,7 @@ abstract class STO
 
 	public boolean load;
 	private boolean isExtern = false;
+	private boolean isThis = false;
 
 
 	//----------------------------------------------------------------
@@ -139,6 +140,13 @@ abstract class STO
 
 	boolean getExtern(){
 		return isExtern;
+	}
+	void setThis(boolean flag){
+		isThis = flag;
+	}
+
+	boolean getThis(){
+		return isThis;
 	}
 
 }

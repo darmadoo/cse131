@@ -2654,7 +2654,13 @@ public class AssemblyGenerator {
     public int writeReturn(STO expr, FuncSTO callingFunc, int offset){
         increaseIndent();
         if(expr != null){
-            writeAssembly(AssemlyString.RETURN_COMMENT, expr.getName());
+            if(expr.getThis()){
+                writeAssembly(AssemlyString.RETURN_COMMENT, "this." + expr.getName());
+            }
+            else{
+                writeAssembly(AssemlyString.RETURN_COMMENT, expr.getName());
+            }
+
             if(expr.getType() instanceof IntType)
             {
                 if(expr instanceof ConstSTO && !expr.getIsAddressable()){
@@ -3019,8 +3025,8 @@ public class AssemblyGenerator {
         set("68", o0);
         add(fp,o0,o0);
         ld(o0,o0);
-        set("0", o1);
-        add(g0,o1,o1);
+        set(Integer.toString(((VarSTO)right).getStructOffset()), o1);
+        add(g0, o1, o1);
         add(o0,o1,o0);
         set(right.getOffset(), o1);
         add(fp, o1, o1);
