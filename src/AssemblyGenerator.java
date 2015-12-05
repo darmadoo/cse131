@@ -2860,11 +2860,11 @@ public class AssemblyGenerator {
                         add(args.get(i).getBase(), "%o" + i, "%o" + i); // ocount, "%o" + ocount);
 
                         if(((VarSTO) args.get(i)).getPbr() || args.get(i).getLoad()){
-                            if (args.get(i).getType() instanceof FloatType) {
-                                ld(o0, "%f" + i); //fcount);
-                            } else {
+                            //if (args.get(i).getType() instanceof FloatType) {
+                            //    ld("%o" + i, "%f" + i); //fcount);
+                            //} else {
                                 ld("%o" + i, "%o" + i);// ocount, "%o" + ocount);
-                            }
+                            //}
                         }
                         ocount++;
                         totalCount++;
