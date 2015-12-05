@@ -2933,7 +2933,7 @@ public class AssemblyGenerator {
             set(sto.getOffset(), o1);
             add(sto.getBase(), o1, o1);
             //ld(o0, o1);
-            if(((FuncSTO) sto).getReturnType() instanceof FloatType){
+            if(!((FuncSTO) sto).getRbr() && ((FuncSTO) sto).getReturnType() instanceof FloatType){
                 st(f0, o1);
             }
             else{
